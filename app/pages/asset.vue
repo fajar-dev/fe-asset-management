@@ -76,6 +76,7 @@ const columns: TableColumn<User>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
+    filterFn: 'equals',
     cell: ({ row }) => {
       const color = {
         subscribed: 'success' as const,
@@ -115,6 +116,21 @@ const columns: TableColumn<User>[] = [
   }
 ]
 
+const statusFilter = ref('all')
+
+watch(() => statusFilter.value, (newVal) => {
+  if (!table?.value?.tableApi) return
+
+  const statusColumn = table.value.tableApi.getColumn('status')
+  if (!statusColumn) return
+
+  if (newVal === 'all') {
+    statusColumn.setFilterValue(undefined)
+  } else {
+    statusColumn.setFilterValue(newVal)
+  }
+})
+
 const pagination = ref({
   pageIndex: 0,
   pageSize: 10
@@ -124,7 +140,7 @@ const pagination = ref({
 <template>
   <UDashboardPanel id="customers">
     <template #header>
-      <UDashboardNavbar title="Categories">
+      <UDashboardNavbar title="Sub Categories">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -144,7 +160,23 @@ const pagination = ref({
           placeholder="Filter emails..."
           @update:model-value="table?.tableApi?.getColumn('email')?.setFilterValue($event)"
         />
+
+        <div class="flex flex-wrap items-center gap-1.5">
+          <USelect
+            v-model="statusFilter"
+            :items="[
+              { label: 'All', value: 'all' },
+              { label: 'Subscribed', value: 'subscribed' },
+              { label: 'Unsubscribed', value: 'unsubscribed' },
+              { label: 'Bounced', value: 'bounced' }
+            ]"
+            :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
+            placeholder="Filter status"
+            class="min-w-28"
+          />
+        </div>
       </div>
+
       <UTable
         ref="table"
         v-model:column-filters="columnFilters"

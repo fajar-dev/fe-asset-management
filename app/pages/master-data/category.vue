@@ -2,92 +2,66 @@
 import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { Row } from '@tanstack/table-core'
-import type { User } from '~/types'
+import { useCategory } from '~/composables/useCategory'
 
-const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
-const UBadge = resolveComponent('UBadge')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const toast = useToast()
-const table = useTemplateRef('table')
 
-const columnFilters = ref([{
-  id: 'email',
-  value: ''
-}])
-const { data, status } = await useFetch<User[]>('/api/customers', {
-  lazy: true
+const search = ref('')
+
+const { categories, apiPagination, pagination, loading, fetchCategories, deleteCategory }
+  = useCategory()
+
+onMounted(() => {
+  fetchCategories(search.value, pagination.value.pageIndex + 1, pagination.value.pageSize)
 })
 
-function getRowItems(_row: Row<User>) {
+watch(search, () => {
+  pagination.value.pageIndex = 0
+  fetchCategories(search.value, 1, pagination.value.pageSize)
+})
+
+function handlePageChange(newPage: number) {
+  fetchCategories(search.value, newPage, pagination.value.pageSize)
+}
+
+function getRowItems(row: Row<any>) {
   return [
-    {
-      type: 'label',
-      label: 'Actions'
-    },
-    {
-      label: 'Edit',
-      icon: 'i-lucide-pencil'
-    },
+    { type: 'label', label: 'Actions' },
+    { label: 'Edit', icon: 'i-lucide-pencil' },
     {
       label: 'Delete',
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect() {
+        deleteCategory(row.original.id)
         toast.add({
-          title: 'Customer deleted',
-          description: 'The customer has been deleted.'
+          title: 'Category deleted',
+          description: 'The category has been deleted.'
         })
+        fetchCategories(search.value, pagination.value.pageIndex + 1, pagination.value.pageSize)
       }
     }
   ]
 }
 
-const columns: TableColumn<User>[] = [
+const columns: TableColumn<any>[] = [
+  { accessorKey: 'name', header: 'Name' },
   {
-    accessorKey: 'id',
-    header: 'ID'
+    accessorKey: 'hasLocation',
+    header: 'Has Location',
+    cell: ({ row }) => (row.original.hasLocation ? 'Yes' : 'No')
   },
   {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: ({ row }) => {
-      return h('div', { class: 'flex items-center gap-3' }, [
-        h(UAvatar, {
-          ...row.original.avatar,
-          size: 'lg'
-        }),
-        h('div', undefined, [
-          h('p', { class: 'font-medium text-highlighted' }, row.original.name),
-          h('p', { class: '' }, `@${row.original.name}`)
-        ])
-      ])
-    }
+    accessorKey: 'hasMaintenance',
+    header: 'Has Maintenance',
+    cell: ({ row }) => (row.original.hasMaintenance ? 'Yes' : 'No')
   },
   {
-    accessorKey: 'email',
-    header: 'Email'
-  },
-  {
-    accessorKey: 'location',
-    header: 'Location',
-    cell: ({ row }) => row.original.location
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    filterFn: 'equals',
-    cell: ({ row }) => {
-      const color = {
-        subscribed: 'success' as const,
-        unsubscribed: 'error' as const,
-        bounced: 'warning' as const
-      }[row.original.status]
-
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
-        row.original.status
-      )
-    }
+    accessorKey: 'hasHolder',
+    header: 'Has Holder',
+    cell: ({ row }) => (row.original.hasHolder ? 'Yes' : 'No')
   },
   {
     id: 'actions',
@@ -97,12 +71,7 @@ const columns: TableColumn<User>[] = [
         { class: 'text-right' },
         h(
           UDropdownMenu,
-          {
-            content: {
-              align: 'end'
-            },
-            items: getRowItems(row)
-          },
+          { content: { align: 'end' }, items: getRowItems(row) },
           () =>
             h(UButton, {
               icon: 'i-lucide-ellipsis-vertical',
@@ -115,36 +84,15 @@ const columns: TableColumn<User>[] = [
     }
   }
 ]
-
-const statusFilter = ref('all')
-
-watch(() => statusFilter.value, (newVal) => {
-  if (!table?.value?.tableApi) return
-
-  const statusColumn = table.value.tableApi.getColumn('status')
-  if (!statusColumn) return
-
-  if (newVal === 'all') {
-    statusColumn.setFilterValue(undefined)
-  } else {
-    statusColumn.setFilterValue(newVal)
-  }
-})
-
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10
-})
 </script>
 
 <template>
-  <UDashboardPanel id="customers">
+  <UDashboardPanel id="categories">
     <template #header>
-      <UDashboardNavbar title="Sub Categories">
+      <UDashboardNavbar title="Categories">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-
         <template #right>
           <AssetAddModal />
         </template>
@@ -152,42 +100,25 @@ const pagination = ref({
     </template>
 
     <template #body>
+      <!-- Search -->
       <div class="flex flex-wrap items-center justify-between gap-1.5">
         <UInput
-          :model-value="(table?.tableApi?.getColumn('email')?.getFilterValue() as string)"
+          v-model="search"
           class="max-w-sm"
           icon="i-lucide-search"
-          placeholder="Filter emails..."
-          @update:model-value="table?.tableApi?.getColumn('email')?.setFilterValue($event)"
+          placeholder="Search categories..."
         />
-
-        <div class="flex flex-wrap items-center gap-1.5">
-          <USelect
-            v-model="statusFilter"
-            :items="[
-              { label: 'All', value: 'all' },
-              { label: 'Subscribed', value: 'subscribed' },
-              { label: 'Unsubscribed', value: 'unsubscribed' },
-              { label: 'Bounced', value: 'bounced' }
-            ]"
-            :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
-            placeholder="Filter status"
-            class="min-w-28"
-          />
-        </div>
       </div>
 
+      <!-- Table -->
       <UTable
         ref="table"
-        v-model:column-filters="columnFilters"
         v-model:pagination="pagination"
-        :pagination-options="{
-          getPaginationRowModel: getPaginationRowModel()
-        }"
-        class="shrink-0"
-        :data="data"
+        :data="categories"
         :columns="columns"
-        :loading="status === 'pending'"
+        :loading="loading"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
+        class="shrink-0"
         :ui="{
           base: 'table-fixed border-separate border-spacing-0',
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
@@ -197,13 +128,15 @@ const pagination = ref({
         }"
       />
 
+      <!-- Pagination -->
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="flex items-center gap-1.5">
           <UPagination
-            :default-page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-            :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-            :total="table?.tableApi?.getFilteredRowModel().rows.length"
-            @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
+            v-if="apiPagination"
+            :default-page="pagination.pageIndex + 1"
+            :items-per-page="pagination.pageSize"
+            :total="apiPagination.totalItems"
+            @update:page="handlePageChange"
           />
         </div>
       </div>
