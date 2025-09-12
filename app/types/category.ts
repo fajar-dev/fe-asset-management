@@ -1,9 +1,9 @@
 export interface Category {
   id: string
   name: string
-  description?: string
-  createdAt: string
-  updatedAt: string
+  hasLocation: boolean
+  hasMaintenance: boolean
+  hasHolder: boolean
 }
 
 export interface Pagination {
@@ -22,4 +22,22 @@ export interface CategoryResponse {
   meta: {
     pagination: Pagination
   }
+}
+
+export interface CategoryDetailResponse {
+  success: boolean
+  statusCode: number
+  message: string
+  data: Category
+}
+
+export interface CreateCategoryPayload {
+  name: string
+  hasLocation: boolean
+  hasMaintenance: boolean
+  hasHolder: boolean
+}
+
+export interface UpdateCategoryPayload extends Partial<CreateCategoryPayload> {
+  id?: string
 }

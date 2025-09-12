@@ -1,72 +1,94 @@
 <script setup lang="ts">
+import { ref, onMounted, watch, computed, h } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/table-core'
-import type { Row } from '@tanstack/table-core'
+import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useCategory } from '~/composables/useCategory'
 
+// komponen global
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-const toast = useToast()
 
+// state
 const search = ref('')
+const isDeleteModalOpen = ref(false)
+const deletingCategoryId = ref<string | null>(null)
+const isUpdateModalOpen = ref(false)
+const editingCategoryId = ref<string | null>(null)
 
-const { categories, apiPagination, pagination, loading, fetchCategories, deleteCategory }
-  = useCategory()
+// composable
+const { categories, apiPagination, pagination, loading, fetchCategories, deleteCategory } = useCategory()
 
-onMounted(() => {
-  fetchCategories(search.value, pagination.value.pageIndex + 1, pagination.value.pageSize)
-})
+// fetch wrapper
+function loadCategories(page = pagination.value.pageIndex + 1) {
+  fetchCategories(search.value, page, pagination.value.pageSize)
+}
 
-watch(search, () => {
-  pagination.value.pageIndex = 0
-  fetchCategories(search.value, 1, pagination.value.pageSize)
-})
+// lifecycle
+onMounted(() => loadCategories())
+watch(search, () => loadCategories(1))
 
+// pagination
 function handlePageChange(newPage: number) {
-  fetchCategories(search.value, newPage, pagination.value.pageSize)
+  loadCategories(newPage)
+}
+
+// info showing
+const showingFrom = computed(() =>
+  apiPagination.value
+    ? (apiPagination.value.currentPage - 1) * apiPagination.value.itemsPerPage + 1
+    : 0
+)
+
+const showingTo = computed(() =>
+  apiPagination.value
+    ? Math.min(apiPagination.value.currentPage * apiPagination.value.itemsPerPage, apiPagination.value.totalItems)
+    : 0
+)
+
+// actions
+async function confirmDelete() {
+  if (!deletingCategoryId.value) return
+  await deleteCategory(deletingCategoryId.value)
+  deletingCategoryId.value = null
+  loadCategories()
+  isDeleteModalOpen.value = false
 }
 
 function getRowItems(row: Row<any>) {
   return [
     { type: 'label', label: 'Actions' },
-    { label: 'Edit', icon: 'i-lucide-pencil' },
+    {
+      label: 'Edit',
+      icon: 'i-lucide-pencil',
+      onSelect: () => {
+        editingCategoryId.value = row.original.id
+        isUpdateModalOpen.value = true
+      }
+    },
     {
       label: 'Delete',
       icon: 'i-lucide-trash',
       color: 'error',
-      onSelect() {
-        deleteCategory(row.original.id)
-        toast.add({
-          title: 'Category deleted',
-          description: 'The category has been deleted.'
-        })
-        fetchCategories(search.value, pagination.value.pageIndex + 1, pagination.value.pageSize)
+      onSelect: () => {
+        deletingCategoryId.value = row.original.id
+        isDeleteModalOpen.value = true
       }
     }
   ]
 }
 
+// table columns
+const yesNo = (val: boolean) => (val ? 'Yes' : 'No')
+
 const columns: TableColumn<any>[] = [
   { accessorKey: 'name', header: 'Name' },
-  {
-    accessorKey: 'hasLocation',
-    header: 'Has Location',
-    cell: ({ row }) => (row.original.hasLocation ? 'Yes' : 'No')
-  },
-  {
-    accessorKey: 'hasMaintenance',
-    header: 'Has Maintenance',
-    cell: ({ row }) => (row.original.hasMaintenance ? 'Yes' : 'No')
-  },
-  {
-    accessorKey: 'hasHolder',
-    header: 'Has Holder',
-    cell: ({ row }) => (row.original.hasHolder ? 'Yes' : 'No')
-  },
+  { accessorKey: 'hasLocation', header: 'Has Location', cell: ({ row }) => yesNo(row.original.hasLocation) },
+  { accessorKey: 'hasMaintenance', header: 'Has Maintenance', cell: ({ row }) => yesNo(row.original.hasMaintenance) },
+  { accessorKey: 'hasHolder', header: 'Has Holder', cell: ({ row }) => yesNo(row.original.hasHolder) },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      return h(
+    cell: ({ row }) =>
+      h(
         'div',
         { class: 'text-right' },
         h(
@@ -81,27 +103,44 @@ const columns: TableColumn<any>[] = [
             })
         )
       )
-    }
   }
 ]
 </script>
 
 <template>
   <UDashboardPanel id="categories">
+    <!-- Header -->
     <template #header>
       <UDashboardNavbar title="Categories">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <AssetAddModal />
+          <CategoryAddModal @created="fetchCategories()" />
         </template>
       </UDashboardNavbar>
     </template>
 
+    <!-- Body -->
     <template #body>
+      <!-- Confirm Delete Modal -->
+      <ConfirmModal
+        v-model:open="isDeleteModalOpen"
+        title="Delete Category"
+        description="Are you sure? This action cannot be undone."
+        confirm-label="Delete"
+        :on-confirm="confirmDelete"
+      />
+
+      <!-- Update Modal -->
+      <CategoryUpdateModal
+        :id="editingCategoryId"
+        v-model:open="isUpdateModalOpen"
+        @updated="fetchCategories()"
+      />
+
       <!-- Search -->
-      <div class="flex flex-wrap items-center justify-between gap-1.5">
+      <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
         <UInput
           v-model="search"
           class="max-w-sm"
@@ -112,7 +151,6 @@ const columns: TableColumn<any>[] = [
 
       <!-- Table -->
       <UTable
-        ref="table"
         v-model:pagination="pagination"
         :data="categories"
         :columns="columns"
@@ -128,16 +166,18 @@ const columns: TableColumn<any>[] = [
         }"
       />
 
-      <!-- Pagination -->
-      <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
-        <div class="flex items-center gap-1.5">
-          <UPagination
-            v-if="apiPagination"
-            :default-page="pagination.pageIndex + 1"
-            :items-per-page="pagination.pageSize"
-            :total="apiPagination.totalItems"
-            @update:page="handlePageChange"
-          />
+      <!-- Pagination & Info -->
+      <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 border-t border-default pt-4 mt-auto">
+        <UPagination
+          v-if="apiPagination"
+          :default-page="pagination.pageIndex + 1"
+          :items-per-page="pagination.pageSize"
+          :total="apiPagination.totalItems"
+          @update:page="handlePageChange"
+        />
+
+        <div v-if="apiPagination" class="text-sm text-muted mb-2">
+          Showing {{ showingFrom }} to {{ showingTo }} of {{ apiPagination.totalItems }} results
         </div>
       </div>
     </template>
