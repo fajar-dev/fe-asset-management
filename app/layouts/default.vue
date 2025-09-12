@@ -40,7 +40,7 @@ const links = [[{
     }
   }, {
     label: 'Location',
-    to: '/master-data/security',
+    to: '/master-data/location',
     onSelect: () => {
       open.value = false
     }
