@@ -89,23 +89,6 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
   >
     <template #description>
       Don't have an account?
-      <NuxtLink
-        to="/register"
-        class="text-primary font-medium hover:underline"
-      >
-        Sign up
-      </NuxtLink>
-    </template>
-
-    <template #footer>
-      <div class="text-center">
-        <NuxtLink
-          to="/forgot-password"
-          class="text-sm text-gray-600 hover:text-primary hover:underline"
-        >
-          Forgot your password?
-        </NuxtLink>
-      </div>
     </template>
   </UAuthForm>
 </template>

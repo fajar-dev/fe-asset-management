@@ -9,11 +9,20 @@ export class CategoryService {
     return { Authorization: `Bearer ${token}` }
   }
 
-  // Fetch all categories with pagination
+  // Fetch paginate categories with pagination
   async getCategories(search = '', page = 1, limit = 10): Promise<CategoryResponse> {
     return await apiClient<CategoryResponse>(this.basePath, {
       method: 'GET',
       params: { search, page, limit },
+      headers: this.getAuthHeader()
+    })
+  }
+
+  // Fetch all categories with pagination
+  async getAllCategories(all = true): Promise<CategoryResponse> {
+    return await apiClient<CategoryResponse>(this.basePath, {
+      method: 'GET',
+      params: { all },
       headers: this.getAuthHeader()
     })
   }

@@ -16,6 +16,7 @@ interface CategoryState {
   createCategory: (payload: CreateCategoryPayload) => Promise<void>
   updateCategory: (id: string, payload: UpdateCategoryPayload) => Promise<void>
   deleteCategory: (id: string) => Promise<void>
+  getAllCategories: () => Promise<void>
 }
 
 export const useCategory = (): CategoryState => {
@@ -27,6 +28,21 @@ export const useCategory = (): CategoryState => {
   const toast = useToast()
 
   const pagination = ref({ pageIndex: 0, pageSize: 10 })
+
+  async function getAllCategories(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await categoryService.getAllCategories(true)
+      categories.value = res.data
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiError>
+      error.value = fetchError.data?.message ?? 'Failed to fetch categories'
+      toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
+    } finally {
+      loading.value = false
+    }
+  }
 
   async function fetchCategories(search = '', page = 1, limit = 10): Promise<void> {
     loading.value = true
@@ -132,6 +148,7 @@ export const useCategory = (): CategoryState => {
     getCategoryById,
     deleteCategory,
     createCategory,
-    updateCategory
+    updateCategory,
+    getAllCategories
   }
 }

@@ -1,108 +1,104 @@
 <script setup lang="ts">
+import { ref, onMounted, watch, computed, h } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/table-core'
-import type { Row } from '@tanstack/table-core'
-import type { User } from '~/types'
+import { getPaginationRowModel, type Row } from '@tanstack/table-core'
+import { useSubCategory } from '~/composables/useSubCategory'
 
-const UAvatar = resolveComponent('UAvatar')
+// komponen global
 const UButton = resolveComponent('UButton')
-const UBadge = resolveComponent('UBadge')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-const toast = useToast()
-const table = useTemplateRef('table')
 
-const columnFilters = ref([{
-  id: 'email',
-  value: ''
-}])
-const { data, status } = await useFetch<User[]>('/api/customers', {
-  lazy: true
-})
+// state
+const search = ref('')
+const isDeleteModalOpen = ref(false)
+const deletingSubCategoryId = ref<string | null>(null)
+const isUpdateModalOpen = ref(false)
+const editingSubCategoryId = ref<string | null>(null)
 
-function getRowItems(_row: Row<User>) {
+// composable
+const { subCategories, apiPagination, pagination, loading, fetchSubCategories, deleteSubCategory } = useSubCategory()
+
+// fetch wrapper
+function loadSubCategories(page = pagination.value.pageIndex + 1) {
+  fetchSubCategories(search.value, page, pagination.value.pageSize)
+}
+
+// lifecycle
+onMounted(() => loadSubCategories())
+watch(search, () => loadSubCategories(1))
+
+// pagination
+function handlePageChange(newPage: number) {
+  loadSubCategories(newPage)
+}
+
+// info showing
+const showingFrom = computed(() =>
+  apiPagination.value
+    ? (apiPagination.value.currentPage - 1) * apiPagination.value.itemsPerPage + 1
+    : 0
+)
+
+const showingTo = computed(() =>
+  apiPagination.value
+    ? Math.min(apiPagination.value.currentPage * apiPagination.value.itemsPerPage, apiPagination.value.totalItems)
+    : 0
+)
+
+// actions
+async function confirmDelete() {
+  if (!deletingSubCategoryId.value) return
+  await deleteSubCategory(deletingSubCategoryId.value)
+  deletingSubCategoryId.value = null
+  loadSubCategories()
+  isDeleteModalOpen.value = false
+}
+
+function getRowItems(row: Row<any>) {
   return [
-    {
-      type: 'label',
-      label: 'Actions'
-    },
+    { type: 'label', label: 'Actions' },
     {
       label: 'Edit',
-      icon: 'i-lucide-pencil'
+      icon: 'i-lucide-pencil',
+      onSelect: () => {
+        editingSubCategoryId.value = row.original.id
+        isUpdateModalOpen.value = true
+      }
     },
     {
       label: 'Delete',
       icon: 'i-lucide-trash',
       color: 'error',
-      onSelect() {
-        toast.add({
-          title: 'Customer deleted',
-          description: 'The customer has been deleted.'
-        })
+      onSelect: () => {
+        deletingSubCategoryId.value = row.original.id
+        isDeleteModalOpen.value = true
       }
     }
   ]
 }
 
-const columns: TableColumn<User>[] = [
+// table columns
+const columns: TableColumn<any>[] = [
+  { accessorKey: 'name', header: 'Name' },
   {
-    accessorKey: 'id',
-    header: 'ID'
+    accessorKey: 'category',
+    header: 'Category',
+    cell: ({ row }) => row.original.category?.name ?? '-'
   },
   {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: ({ row }) => {
-      return h('div', { class: 'flex items-center gap-3' }, [
-        h(UAvatar, {
-          ...row.original.avatar,
-          size: 'lg'
-        }),
-        h('div', undefined, [
-          h('p', { class: 'font-medium text-highlighted' }, row.original.name),
-          h('p', { class: '' }, `@${row.original.name}`)
-        ])
-      ])
-    }
-  },
-  {
-    accessorKey: 'email',
-    header: 'Email'
-  },
-  {
-    accessorKey: 'location',
-    header: 'Location',
-    cell: ({ row }) => row.original.location
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    filterFn: 'equals',
-    cell: ({ row }) => {
-      const color = {
-        subscribed: 'success' as const,
-        unsubscribed: 'error' as const,
-        bounced: 'warning' as const
-      }[row.original.status]
-
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
-        row.original.status
-      )
-    }
+    accessorKey: 'assetProperties',
+    header: 'Properties',
+    cell: ({ row }) => row.original.assetProperties.map((p: any) => p.name).join(', ')
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      return h(
+    cell: ({ row }) =>
+      h(
         'div',
         { class: 'text-right' },
         h(
           UDropdownMenu,
-          {
-            content: {
-              align: 'end'
-            },
-            items: getRowItems(row)
-          },
+          { content: { align: 'end' }, items: getRowItems(row) },
           () =>
             h(UButton, {
               icon: 'i-lucide-ellipsis-vertical',
@@ -112,82 +108,56 @@ const columns: TableColumn<User>[] = [
             })
         )
       )
-    }
   }
 ]
-
-const statusFilter = ref('all')
-
-watch(() => statusFilter.value, (newVal) => {
-  if (!table?.value?.tableApi) return
-
-  const statusColumn = table.value.tableApi.getColumn('status')
-  if (!statusColumn) return
-
-  if (newVal === 'all') {
-    statusColumn.setFilterValue(undefined)
-  } else {
-    statusColumn.setFilterValue(newVal)
-  }
-})
-
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10
-})
 </script>
 
 <template>
-  <UDashboardPanel id="customers">
+  <UDashboardPanel id="sub-categories">
+    <!-- Header -->
     <template #header>
       <UDashboardNavbar title="Sub Categories">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-
         <template #right>
-          <AssetAddModal />
+          <SubCategoryAddModal @created="fetchSubCategories()" />
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <div class="flex flex-wrap items-center justify-between gap-1.5">
+      <ConfirmModal
+        v-model:open="isDeleteModalOpen"
+        title="Delete Sub Category"
+        description="Are you sure? This action cannot be undone."
+        confirm-label="Delete"
+        :on-confirm="confirmDelete"
+      />
+
+      <SubCategoryUpdateModal
+        v-if="editingSubCategoryId"
+        :id="editingSubCategoryId"
+        v-model="isUpdateModalOpen"
+        @updated="fetchSubCategories()"
+      />
+
+      <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
         <UInput
-          :model-value="(table?.tableApi?.getColumn('email')?.getFilterValue() as string)"
+          v-model="search"
           class="max-w-sm"
           icon="i-lucide-search"
-          placeholder="Filter emails..."
-          @update:model-value="table?.tableApi?.getColumn('email')?.setFilterValue($event)"
+          placeholder="Search sub categories..."
         />
-
-        <div class="flex flex-wrap items-center gap-1.5">
-          <USelect
-            v-model="statusFilter"
-            :items="[
-              { label: 'All', value: 'all' },
-              { label: 'Subscribed', value: 'subscribed' },
-              { label: 'Unsubscribed', value: 'unsubscribed' },
-              { label: 'Bounced', value: 'bounced' }
-            ]"
-            :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
-            placeholder="Filter status"
-            class="min-w-28"
-          />
-        </div>
       </div>
 
       <UTable
-        ref="table"
-        v-model:column-filters="columnFilters"
         v-model:pagination="pagination"
-        :pagination-options="{
-          getPaginationRowModel: getPaginationRowModel()
-        }"
-        class="shrink-0"
-        :data="data"
+        :data="subCategories"
         :columns="columns"
-        :loading="status === 'pending'"
+        :loading="loading"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
+        class="shrink-0"
         :ui="{
           base: 'table-fixed border-separate border-spacing-0',
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
@@ -197,14 +167,19 @@ const pagination = ref({
         }"
       />
 
-      <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
-        <div class="flex items-center gap-1.5">
-          <UPagination
-            :default-page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-            :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-            :total="table?.tableApi?.getFilteredRowModel().rows.length"
-            @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
-          />
+      <div
+        class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 border-t border-default pt-4 mt-auto"
+      >
+        <UPagination
+          v-if="apiPagination"
+          :default-page="pagination.pageIndex + 1"
+          :items-per-page="pagination.pageSize"
+          :total="apiPagination.totalItems"
+          @update:page="handlePageChange"
+        />
+
+        <div v-if="apiPagination" class="text-sm text-muted mb-2">
+          Showing {{ showingFrom }} to {{ showingTo }} of {{ apiPagination.totalItems }} results
         </div>
       </div>
     </template>
