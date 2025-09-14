@@ -3,10 +3,17 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useSubCategory } from '~/composables/useSubCategory'
 import { useCategory } from '~/composables/useCategory'
+import { useProperty } from '~/composables/useProperty'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
-  categoryId: z.string().min(1, 'Category is required')
+  categoryId: z.string().min(1, 'Category is required'),
+  properties: z.array(
+    z.object({
+      name: z.string().min(1, 'Property name is required'),
+      dataType: z.enum(['string', 'number'], { message: 'Type is required' })
+    })
+  )
 })
 
 type Schema = z.output<typeof schema>
@@ -16,18 +23,17 @@ const open = ref(false)
 const saving = ref(false)
 const state = reactive<Partial<Schema>>({
   name: '',
-  categoryId: ''
+  categoryId: '',
+  properties: []
 })
 
-// composables
 const { createSubCategory } = useSubCategory()
 const { categories, getAllCategories } = useCategory()
+const { createProperty } = useProperty()
 
-// items untuk dropdown
 const items = ref<{ id: string, name: string }[]>([])
 const value = ref('')
 
-// watch value dropdown untuk set ke state
 watch(value, (v) => {
   state.categoryId = v
 })
@@ -36,24 +42,46 @@ function resetForm() {
   state.name = ''
   state.categoryId = ''
   value.value = ''
+  state.properties = []
 }
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  saving.value = true
-  await createSubCategory({
-    name: event.data.name,
-    categoryId: event.data.categoryId
-  })
-  resetForm()
-  open.value = false
-  emit('created')
-  saving.value = false
+  try {
+    saving.value = true
+    const subCategory = await createSubCategory({
+      name: event.data.name,
+      categoryId: event.data.categoryId
+    })
+    if (event.data.properties.length > 0) {
+      for (const property of event.data.properties) {
+        await createProperty(subCategory.data.id, {
+          name: property.name,
+          dataType: property.dataType
+        })
+      }
+    }
+    resetForm()
+    open.value = false
+    emit('created')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    saving.value = false
+  }
 }
 
 async function openModal() {
   open.value = true
   await getAllCategories()
   items.value = categories.value.map(c => ({ id: c.id, name: c.name }))
+}
+
+function addProperty() {
+  state.properties?.push({ name: '', dataType: 'string' })
+}
+
+function removeProperty(index: number) {
+  state.properties?.splice(index, 1)
 }
 </script>
 
@@ -82,6 +110,42 @@ async function openModal() {
             placeholder="Select category"
           />
         </UFormField>
+
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <label class="text-sm font-medium">Properties</label>
+            <UButton
+              label="Add Property"
+              icon="i-lucide-plus"
+              size="xs"
+              @click="addProperty"
+            />
+          </div>
+
+          <div v-for="(prop, i) in state.properties" :key="i" class="flex gap-3 py-1 items-start">
+            <UFormField :name="`properties.${i}.name`" class="flex-1">
+              <UInput v-model="prop.name" placeholder="Property name" class="w-full" />
+            </UFormField>
+
+            <UFormField :name="`properties.${i}.dataType`" class="w-30">
+              <USelectMenu
+                v-model="prop.dataType"
+                :items="['string', 'number']"
+                placeholder="Select type"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UButton
+              icon="i-lucide-x"
+              color="error"
+              variant="subtle"
+              class="mt-1"
+              size="xs"
+              @click="removeProperty(i)"
+            />
+          </div>
+        </div>
 
         <div class="flex justify-end gap-2">
           <UButton

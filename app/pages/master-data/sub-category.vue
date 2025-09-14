@@ -1,22 +1,34 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, h } from 'vue'
+import { ref, onMounted, watch, computed, h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useSubCategory } from '~/composables/useSubCategory'
+import AddPropertyModal from '~/components/subCategory/AddPropertyModal.vue'
 
-// komponen global
+// global components
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
+const UBadge = resolveComponent('UBadge')
 
 // state
 const search = ref('')
 const isDeleteModalOpen = ref(false)
 const deletingSubCategoryId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
+const isAddPropertyModalOpen = ref(false)
 const editingSubCategoryId = ref<string | null>(null)
+const AddPropertySubCategoryId = ref<string | null>(null)
+
+// expanded rows
+const expanded = ref<Record<number | string, boolean>>({})
+
+// property delete modal
+const isDeletePropertyModalOpen = ref(false)
+const deletingProperty = ref<{ subCategoryId: string, propertyId: string } | null>(null)
 
 // composable
 const { subCategories, apiPagination, pagination, loading, fetchSubCategories, deleteSubCategory } = useSubCategory()
+const { deleteProperty } = useProperty()
 
 // fetch wrapper
 function loadSubCategories(page = pagination.value.pageIndex + 1) {
@@ -27,7 +39,7 @@ function loadSubCategories(page = pagination.value.pageIndex + 1) {
 onMounted(() => loadSubCategories())
 watch(search, () => loadSubCategories(1))
 
-// pagination
+// pagination handler
 function handlePageChange(newPage: number) {
   loadSubCategories(newPage)
 }
@@ -45,7 +57,6 @@ const showingTo = computed(() =>
     : 0
 )
 
-// actions
 async function confirmDelete() {
   if (!deletingSubCategoryId.value) return
   await deleteSubCategory(deletingSubCategoryId.value)
@@ -57,6 +68,14 @@ async function confirmDelete() {
 function getRowItems(row: Row<any>) {
   return [
     { type: 'label', label: 'Actions' },
+    {
+      label: 'Add Property',
+      icon: 'i-lucide-plus',
+      onSelect: () => {
+        AddPropertySubCategoryId.value = row.original.id
+        isAddPropertyModalOpen.value = true
+      }
+    },
     {
       label: 'Edit',
       icon: 'i-lucide-pencil',
@@ -77,18 +96,41 @@ function getRowItems(row: Row<any>) {
   ]
 }
 
-// table columns
+async function confirmDeleteProperty() {
+  if (!deletingProperty.value) return
+  await deleteProperty(deletingProperty.value.subCategoryId, deletingProperty.value.propertyId)
+  deletingProperty.value = null
+  loadSubCategories()
+  isDeletePropertyModalOpen.value = false
+}
+
 const columns: TableColumn<any>[] = [
-  { accessorKey: 'name', header: 'Name' },
+  {
+    id: 'expand',
+    cell: ({ row }) =>
+      h(UButton, {
+        'color': 'neutral',
+        'variant': 'ghost',
+        'icon': 'i-lucide-chevron-right',
+        'square': true,
+        'aria-label': 'Expand',
+        'ui': {
+          leadingIcon: [
+            'transition-transform',
+            row.getIsExpanded() ? 'rotate-90 duration-200' : 'duration-200'
+          ]
+        },
+        'onClick': () => row.toggleExpanded()
+      })
+  },
+  {
+    accessorKey: 'name',
+    header: 'Name'
+  },
   {
     accessorKey: 'category',
     header: 'Category',
     cell: ({ row }) => row.original.category?.name ?? '-'
-  },
-  {
-    accessorKey: 'assetProperties',
-    header: 'Properties',
-    cell: ({ row }) => row.original.assetProperties.map((p: any) => p.name).join(', ')
   },
   {
     id: 'actions',
@@ -127,6 +169,7 @@ const columns: TableColumn<any>[] = [
     </template>
 
     <template #body>
+      <!-- Delete Sub Category Modal -->
       <ConfirmModal
         v-model:open="isDeleteModalOpen"
         title="Delete Sub Category"
@@ -135,6 +178,16 @@ const columns: TableColumn<any>[] = [
         :on-confirm="confirmDelete"
       />
 
+      <!-- Delete Property Modal -->
+      <ConfirmModal
+        v-model:open="isDeletePropertyModalOpen"
+        title="Delete Property"
+        description="Are you sure you want to delete this property? This action cannot be undone."
+        confirm-label="Delete"
+        :on-confirm="confirmDeleteProperty"
+      />
+
+      <!-- Update Sub Category Modal -->
       <SubCategoryUpdateModal
         v-if="editingSubCategoryId"
         :id="editingSubCategoryId"
@@ -142,6 +195,14 @@ const columns: TableColumn<any>[] = [
         @updated="fetchSubCategories()"
       />
 
+      <AddPropertyModal
+        v-if="AddPropertySubCategoryId"
+        :id="AddPropertySubCategoryId"
+        v-model="isAddPropertyModalOpen"
+        @updated="fetchSubCategories()"
+      />
+
+      <!-- Search -->
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
         <UInput
           v-model="search"
@@ -151,22 +212,81 @@ const columns: TableColumn<any>[] = [
         />
       </div>
 
+      <!-- Table -->
       <UTable
         v-model:pagination="pagination"
+        v-model:expanded="expanded"
         :data="subCategories"
         :columns="columns"
         :loading="loading"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-        class="shrink-0"
         :ui="{
           base: 'table-fixed border-separate border-spacing-0',
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
           tbody: '[&>tr]:last:[&>td]:border-b-0',
           th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-          td: 'border-b border-default'
+          td: 'border-b border-default',
+          tr: 'data-[expanded=true]:bg-elevated/30'
         }"
-      />
+        class="shrink-0"
+      >
+        <!-- expanded slot: render properties table -->
+        <template #expanded="{ row }">
+          <div class="p-0">
+            <div v-if="row.original.assetProperties && row.original.assetProperties.length">
+              <table class="w-full text-sm border border-default rounded-lg overflow-hidden">
+                <thead class="bg-elevated/50">
+                  <tr>
+                    <th class="px-3 py-2 text-left">
+                      Property Name
+                    </th>
+                    <th class="px-3 py-2 text-left">
+                      Type
+                    </th>
+                    <th class="px-3 py-2 text-right">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="prop in row.original.assetProperties"
+                    :key="prop.id"
+                    class="border-t border-default hover:bg-muted/30"
+                  >
+                    <td class="px-3 py-2">
+                      {{ prop.name }}
+                    </td>
+                    <td class="px-3 py-2 capitalize">
+                      <UBadge size="sm" variant="subtle" color="neutral">
+                        {{ prop.dataType }}
+                      </UBadge>
+                    </td>
+                    <td class="px-3 py-2 text-right">
+                      <UButton
+                        icon="i-lucide-trash"
+                        color="error"
+                        variant="subtle"
+                        size="sm"
+                        @click="() => {
+                          deletingProperty = { subCategoryId: row.original.id, propertyId: prop.id }
+                          isDeletePropertyModalOpen = true
+                        }"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
+            <div v-else class="text-sm text-muted italic">
+              No properties for this sub category.
+            </div>
+          </div>
+        </template>
+      </UTable>
+
+      <!-- Pagination -->
       <div
         class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 border-t border-default pt-4 mt-auto"
       >

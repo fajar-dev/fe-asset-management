@@ -5,10 +5,11 @@ export interface AssetProperty {
 }
 
 export interface SubCategory {
+  data: any
   id: string
   name: string
   category: Category | null
-  assetProperties: AssetProperty[] | null
+  assetProperties?: AssetProperty[] | null
 }
 
 export interface CreateSubCategoryPayload {

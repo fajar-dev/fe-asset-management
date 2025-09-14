@@ -98,10 +98,25 @@ onMounted(async () => {
       class="bg-elevated/25"
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
-      <template #header="">
-        <img src="https://mdn.nusa.net.id/wp-content/uploads/sites/2/2024/08/Nusanet-Logo-with-Subtitle-e1724455147320.png" alt="Nusanet Logo" style="width: 50%;">
+      <!-- Header Logo -->
+      <template #header="{ collapsed }">
+        <div class="flex items-center justify-center py-4">
+          <img
+            v-if="!collapsed"
+            src="https://mdn.nusa.net.id/wp-content/uploads/sites/2/2024/08/Nusanet-Logo-with-Subtitle-e1724455147320.png"
+            alt="Nusanet Logo"
+            class="max-w-[120px]"
+          >
+          <img
+            v-else
+            src="https://www.nusa.net.id/kb/favicon.png"
+            alt="Nusanet Icon"
+            class=""
+          >
+        </div>
       </template>
 
+      <!-- Content -->
       <template #default="{ collapsed }">
         <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
@@ -122,15 +137,14 @@ onMounted(async () => {
         />
       </template>
 
+      <!-- Footer -->
       <template #footer="{ collapsed }">
         <UserMenu :collapsed="collapsed" />
       </template>
     </UDashboardSidebar>
 
     <UDashboardSearch :groups="groups" />
-
     <slot />
-
     <NotificationsSlideover />
   </UDashboardGroup>
 </template>

@@ -19,7 +19,7 @@ interface SubCategoryState {
   fetchSubCategories: (search?: string, page?: number, limit?: number) => Promise<void>
   refreshSubCategories: () => Promise<void>
   getSubCategoryById: (id: string) => Promise<SubCategoryDetailResponse | null>
-  createSubCategory: (payload: CreateSubCategoryPayload) => Promise<void>
+  createSubCategory: (payload: CreateSubCategoryPayload) => Promise<SubCategory>
   updateSubCategory: (id: string, payload: UpdateSubCategoryPayload) => Promise<void>
   deleteSubCategory: (id: string) => Promise<void>
 }
@@ -54,17 +54,19 @@ export const useSubCategory = (): SubCategoryState => {
     await fetchSubCategories('', pagination.value.pageIndex + 1, pagination.value.pageSize)
   }
 
-  async function createSubCategory(payload: CreateSubCategoryPayload): Promise<void> {
+  async function createSubCategory(payload: CreateSubCategoryPayload): Promise<SubCategory> {
     loading.value = true
     error.value = null
     try {
-      await subCategoryService.createSubCategory(payload)
-      await refreshSubCategories()
+      const res = await subCategoryService.createSubCategory(payload)
       toast.add({ title: 'Created', description: 'Sub category created successfully', color: 'success' })
+      await refreshSubCategories()
+      return res
     } catch (err: unknown) {
       const fetchError = err as FetchError<ApiError>
       error.value = fetchError.data?.message ?? 'Failed to create sub category'
       toast.add({ title: 'Create failed', description: error.value, color: 'error' })
+      throw err
     } finally {
       loading.value = false
     }
