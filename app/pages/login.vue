@@ -46,6 +46,12 @@ const fields = [
   }
 ]
 
+const providers = [{
+  label: 'Google',
+  icon: 'i-simple-icons-google',
+  class: 'bg-white'
+}]
+
 const schema = z.object({
   email: z.string().email('Invalid email'),
   password: z.string().min(1, 'Password is required').min(8, 'Must be at least 8 characters'),
@@ -79,16 +85,23 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
 </script>
 
 <template>
-  <UAuthForm
-    :fields="fields"
-    :schema="schema"
-    :loading="loading"
-    title="Welcome back"
-    icon="i-lucide-lock"
-    @submit="onSubmit"
-  >
-    <template #description>
-      Don't have an account?
-    </template>
-  </UAuthForm>
+  <div class="flex flex-col items-center">
+    <div class="flex flex-col items-center">
+      <img
+        src="https://mdn.nusa.net.id/wp-content/uploads/sites/2/2024/08/Nusanet-Logo-with-Subtitle-e1724455147320.png"
+        alt="Company Logo"
+        class="h-10 object-contain mb-8"
+      >
+    </div>
+
+    <!-- Auth Form -->
+    <UAuthForm
+      :fields="fields"
+      :schema="schema"
+      :loading="loading"
+      :providers="providers"
+      class="w-full max-w-sm"
+      @submit="onSubmit"
+    />
+  </div>
 </template>

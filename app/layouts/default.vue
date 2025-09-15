@@ -13,13 +13,6 @@ const links = [[{
     open.value = false
   }
 }, {
-  label: 'Asset',
-  icon: 'i-lucide-library-big',
-  to: '/asset',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
   label: 'master data',
   to: '/master-data',
   icon: 'i-lucide-database',
@@ -44,11 +37,25 @@ const links = [[{
       open.value = false
     }
   }]
+}, {
+  label: 'Asset',
+  icon: 'i-lucide-library-big',
+  to: '/asset',
+  onSelect: () => {
+    open.value = false
+  }
+}, {
+  label: 'Label',
+  icon: 'i-lucide-tags',
+  to: '/label',
+  onSelect: () => {
+    open.value = false
+  }
 }],
 [{
   label: 'Feedback',
-  icon: 'i-lucide-message-circle',
-  to: 'https://github.com/nuxt-ui-templates/dashboard',
+  icon: 'i-lucide-message-square-warning',
+  to: '#',
   target: '_blank'
 }
 ]] satisfies NavigationMenuItem[][]

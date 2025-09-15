@@ -1,210 +1,365 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/table-core'
-import type { Row } from '@tanstack/table-core'
-import type { User } from '~/types'
+import { getPaginationRowModel, type Row } from '@tanstack/table-core'
+import { useAsset } from '~/composables/useAsset'
+import { useCategory } from '~/composables/useCategory'
 
-const UAvatar = resolveComponent('UAvatar')
+// global components
 const UButton = resolveComponent('UButton')
-const UBadge = resolveComponent('UBadge')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-const toast = useToast()
-const table = useTemplateRef('table')
+const UBadge = resolveComponent('UBadge')
+const ConfirmModal = resolveComponent('ConfirmModal')
+const AssetAddModal = resolveComponent('AssetAddModal')
+const AssetUpdateModal = resolveComponent('AssetUpdateModal')
 
-const columnFilters = ref([{
-  id: 'email',
-  value: ''
-}])
-const { data, status } = await useFetch<User[]>('/api/customers', {
-  lazy: true
+// state
+const search = ref('')
+const isDeleteModalOpen = ref(false)
+const deletingAssetId = ref<string | null>(null)
+const isUpdateModalOpen = ref(false)
+const editingAssetId = ref<string | null>(null)
+
+// expanded rows
+const expanded = ref<Record<number | string, boolean>>({})
+
+// composables
+const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset } = useAsset()
+const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
+
+// filter state - Fixed: Changed from string | null to string | undefined
+const selectedCategoryId = ref<string | undefined>(undefined)
+const selectedSubCategoryId = ref<string | undefined>(undefined)
+const selectedStatus = ref<string | undefined>(undefined)
+const statusOptions = ['active', 'in repair', 'disposed']
+
+// fetch categories on mount
+onMounted(async () => {
+  await getAllCategories()
+  loadAssets()
 })
 
-function getRowItems(_row: Row<User>) {
-  return [
+// watch category to fetch sub-categories
+watch(selectedCategoryId, async (newId) => {
+  if (newId) {
+    await getSubCategoriesByCategory(newId)
+    selectedSubCategoryId.value = undefined // Fixed: Changed from null to undefined
+  } else {
+    subCategories.value = []
+  }
+  loadAssets(1)
+})
+
+// watch other filters
+watch([selectedSubCategoryId, selectedStatus], () => loadAssets(1))
+watch(search, () => loadAssets(1))
+
+// fetch wrapper with filters
+function loadAssets(page = pagination.value.pageIndex + 1) {
+  fetchAssets({
+    search: search.value,
+    page,
+    limit: pagination.value.pageSize,
+    categoryId: selectedCategoryId.value,
+    subCategoryId: selectedSubCategoryId.value,
+    status: selectedStatus.value
+  })
+}
+
+function resetFilters() {
+  selectedCategoryId.value = undefined // Fixed: Changed from null to undefined
+  selectedSubCategoryId.value = undefined // Fixed: Changed from null to undefined
+  selectedStatus.value = undefined // Fixed: Changed from null to undefined
+  search.value = ''
+  subCategories.value = [] // clear sub-category options
+  loadAssets(1) // reload data
+}
+
+// pagination handler
+function handlePageChange(newPage: number) {
+  loadAssets(newPage)
+}
+
+// info showing
+const showingFrom = computed(() =>
+  apiPagination.value
+    ? (apiPagination.value.currentPage - 1) * apiPagination.value.itemsPerPage + 1
+    : 0
+)
+
+const showingTo = computed(() =>
+  apiPagination.value
+    ? Math.min(apiPagination.value.currentPage * apiPagination.value.itemsPerPage, apiPagination.value.totalItems)
+    : 0
+)
+
+async function confirmDelete() {
+  if (!deletingAssetId.value) return
+  await deleteAsset(deletingAssetId.value)
+  deletingAssetId.value = null
+  loadAssets()
+  isDeleteModalOpen.value = false
+}
+
+// action menu items berdasarkan boolean API
+function getRowItems(row: Row<any>) {
+  const category = row.original.subCategory?.category
+  if (!category) return []
+
+  const items: any[] = [{ type: 'label', label: 'Actions' }]
+
+  if (category.hasMaintenance) {
+    items.push({
+      label: 'Maintenance',
+      icon: 'i-lucide-calendar-cog',
+      onSelect: () => console.log('Maintenance for category:', category.id)
+    })
+  }
+
+  if (category.hasHolder) {
+    items.push({
+      label: 'Holder',
+      icon: 'i-lucide-users',
+      onSelect: () => console.log('Holder for category:', category.id)
+    })
+  }
+
+  if (category.hasLocation) {
+    items.push({
+      label: 'Location',
+      icon: 'i-lucide-map-pin',
+      onSelect: () => console.log('Location for category:', category.id)
+    })
+  }
+
+  items.push(
     {
-      type: 'label',
-      label: 'Actions'
+      label: 'Notes',
+      icon: 'i-lucide-notebook-pen',
+      onSelect: () => console.log('Notes for category:', category.id)
     },
+    { type: 'separator' },
     {
       label: 'Edit',
-      icon: 'i-lucide-pencil'
+      icon: 'i-lucide-pencil',
+      onSelect: () => {
+        editingAssetId.value = row.original.id
+        isUpdateModalOpen.value = true
+      }
     },
     {
       label: 'Delete',
       icon: 'i-lucide-trash',
       color: 'error',
-      onSelect() {
-        toast.add({
-          title: 'Customer deleted',
-          description: 'The customer has been deleted.'
-        })
+      onSelect: () => {
+        deletingAssetId.value = row.original.id
+        isDeleteModalOpen.value = true
       }
     }
-  ]
+  )
+
+  return items
 }
 
-const columns: TableColumn<User>[] = [
+// table columns
+const columns: TableColumn<any>[] = [
   {
-    accessorKey: 'id',
-    header: 'ID'
+    id: 'expand',
+    cell: ({ row }) =>
+      h(UButton, {
+        'color': 'neutral',
+        'variant': 'ghost',
+        'icon': 'i-lucide-chevron-right',
+        'square': true,
+        'aria-label': 'Expand',
+        'ui': { leadingIcon: [row.getIsExpanded() ? 'rotate-90 duration-200' : 'duration-200'] },
+        'onClick': () => row.toggleExpanded()
+      })
   },
   {
     accessorKey: 'name',
-    header: 'Name',
-    cell: ({ row }) => {
-      return h('div', { class: 'flex items-center gap-3' }, [
-        h(UAvatar, {
-          ...row.original.avatar,
-          size: 'lg'
-        }),
+    header: 'Asset',
+    cell: ({ row }) =>
+      h('div', { class: 'flex items-center gap-3' }, [
         h('div', undefined, [
           h('p', { class: 'font-medium text-highlighted' }, row.original.name),
-          h('p', { class: '' }, `@${row.original.name}`)
+          h('p', { class: 'text-xs' }, row.original.id)
         ])
       ])
-    }
   },
   {
-    accessorKey: 'email',
-    header: 'Email'
+    accessorKey: 'category',
+    header: 'Category',
+    cell: ({ row }) => row.original.subCategory?.category.name ?? '-'
   },
   {
-    accessorKey: 'location',
-    header: 'Location',
-    cell: ({ row }) => row.original.location
+    accessorKey: 'subCategory',
+    header: 'Sub Category',
+    cell: ({ row }) => row.original.subCategory?.name ?? '-'
+  },
+  {
+    accessorKey: 'brand',
+    header: 'Brand',
+    cell: ({ row }) => row.original.brand ?? '-'
+  },
+  {
+    accessorKey: 'model',
+    header: 'Model',
+    cell: ({ row }) => row.original.model ?? '-'
   },
   {
     accessorKey: 'status',
     header: 'Status',
     filterFn: 'equals',
     cell: ({ row }) => {
-      const color = {
-        subscribed: 'success' as const,
-        unsubscribed: 'error' as const,
-        bounced: 'warning' as const
-      }[row.original.status]
-
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
-        row.original.status
-      )
+      type AssetStatus = 'active' | 'disposed' | 'in repair'
+      const status = row.original.status as AssetStatus
+      const colorMap: Record<AssetStatus, 'success' | 'error' | 'warning'> = {
+        'active': 'success',
+        'disposed': 'error',
+        'in repair': 'warning'
+      }
+      const displayStatus = status.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
+      return h(UBadge, { class: 'capitalize', variant: 'subtle', color: colorMap[status] }, () => displayStatus)
     }
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      return h(
+    cell: ({ row }) =>
+      h(
         'div',
         { class: 'text-right' },
         h(
           UDropdownMenu,
-          {
-            content: {
-              align: 'end'
-            },
-            items: getRowItems(row)
-          },
-          () =>
-            h(UButton, {
-              icon: 'i-lucide-ellipsis-vertical',
-              color: 'neutral',
-              variant: 'ghost',
-              class: 'ml-auto'
-            })
+          { content: { align: 'end' }, items: getRowItems(row) },
+          () => h(UButton, { icon: 'i-lucide-ellipsis-vertical', color: 'neutral', variant: 'ghost', class: 'ml-auto' })
         )
       )
-    }
   }
 ]
-
-const statusFilter = ref('all')
-
-watch(() => statusFilter.value, (newVal) => {
-  if (!table?.value?.tableApi) return
-
-  const statusColumn = table.value.tableApi.getColumn('status')
-  if (!statusColumn) return
-
-  if (newVal === 'all') {
-    statusColumn.setFilterValue(undefined)
-  } else {
-    statusColumn.setFilterValue(newVal)
-  }
-})
-
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10
-})
 </script>
 
 <template>
-  <UDashboardPanel id="customers">
+  <UDashboardPanel id="assets">
     <template #header>
-      <UDashboardNavbar title="Sub Categories">
+      <UDashboardNavbar title="Assets">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-
         <template #right>
-          <AssetAddModal />
+          <AssetAddModal @created="loadAssets()" />
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <div class="flex flex-wrap items-center justify-between gap-1.5">
+      <ConfirmModal
+        v-model:open="isDeleteModalOpen"
+        title="Delete Asset"
+        description="Are you sure? This action cannot be undone."
+        confirm-label="Delete"
+        :on-confirm="confirmDelete"
+      />
+
+      <AssetUpdateModal
+        v-if="editingAssetId"
+        :id="editingAssetId"
+        v-model="isUpdateModalOpen"
+        @updated="loadAssets()"
+      />
+
+      <!-- Search + Filters -->
+      <div class="flex items-center justify-between gap-2 mb-2">
         <UInput
-          :model-value="(table?.tableApi?.getColumn('email')?.getFilterValue() as string)"
-          class="max-w-sm"
+          v-model="search"
+          class="max-w-lg"
           icon="i-lucide-search"
-          placeholder="Filter emails..."
-          @update:model-value="table?.tableApi?.getColumn('email')?.setFilterValue($event)"
+          placeholder="Search assets..."
         />
 
-        <div class="flex flex-wrap items-center gap-1.5">
+        <div class="flex gap-2">
           <USelect
-            v-model="statusFilter"
-            :items="[
-              { label: 'All', value: 'all' },
-              { label: 'Subscribed', value: 'subscribed' },
-              { label: 'Unsubscribed', value: 'unsubscribed' },
-              { label: 'Bounced', value: 'bounced' }
-            ]"
-            :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
-            placeholder="Filter status"
-            class="min-w-28"
+            v-model="selectedCategoryId"
+            placeholder="Filter by Category"
+            clearable
+            class="w-48"
+            :items="categories.map(c => ({ label: c.name, value: c.id }))"
           />
+
+          <USelect
+            v-model="selectedSubCategoryId"
+            placeholder="Filter by Sub Category"
+            clearable
+            class="w-48"
+            :items="subCategories.map(sc => ({ label: sc.name, value: sc.id }))"
+            :disabled="!selectedCategoryId"
+          />
+
+          <USelect
+            v-model="selectedStatus"
+            placeholder="Filter by Status"
+            clearable
+            class="w-48"
+            :items="statusOptions.map(s => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))"
+          />
+
+          <UButton
+            color="error"
+            variant="link"
+            icon="i-lucide-x-circle"
+            @click="resetFilters"
+          >
+            Reset Filter
+          </UButton>
         </div>
       </div>
 
+      <!-- Table -->
       <UTable
-        ref="table"
-        v-model:column-filters="columnFilters"
         v-model:pagination="pagination"
-        :pagination-options="{
-          getPaginationRowModel: getPaginationRowModel()
-        }"
-        class="shrink-0"
-        :data="data"
+        v-model:expanded="expanded"
+        :data="assets"
         :columns="columns"
-        :loading="status === 'pending'"
-        :ui="{
-          base: 'table-fixed border-separate border-spacing-0',
-          thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-          tbody: '[&>tr]:last:[&>td]:border-b-0',
-          th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-          td: 'border-b border-default'
-        }"
-      />
+        :loading="loading"
+        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
+        :ui="{ base: 'table-fixed border-separate border-spacing-0', thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none', tbody: '[&>tr]:last:[&>td]:border-b-0', th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r', td: 'border-b border-default', tr: 'data-[expanded=true]:bg-elevated/30' }"
+      >
+        <template #expanded="{ row }">
+          <div class="p-0">
+            <div v-if="row.original.properties?.length">
+              <table class="w-full text-sm border border-default rounded-lg overflow-hidden bg-muted">
+                <tbody>
+                  <tr v-for="prop in row.original.properties" :key="prop.id" class="border-t border-default hover:bg-muted/30">
+                    <td class="px-3 py-2 font-medium text-highlighted">
+                      {{ prop.property.name }}
+                    </td>
+                    <td class="px-3 py-2">
+                      :
+                    </td>
+                    <td class="px-3 py-2 capitalize">
+                      {{ prop.value }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="text-sm text-muted italic">
+              No properties for this asset.
+            </div>
+          </div>
+        </template>
+      </UTable>
 
-      <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
-        <div class="flex items-center gap-1.5">
-          <UPagination
-            :default-page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-            :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-            :total="table?.tableApi?.getFilteredRowModel().rows.length"
-            @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
-          />
+      <!-- Pagination -->
+      <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 border-t border-default pt-4 mt-auto">
+        <UPagination
+          v-if="apiPagination"
+          :default-page="pagination.pageIndex + 1"
+          :items-per-page="pagination.pageSize"
+          :total="apiPagination.totalItems"
+          @update:page="handlePageChange"
+        />
+        <div v-if="apiPagination" class="text-sm text-muted mb-2">
+          Showing {{ showingFrom }} to {{ showingTo }} of {{ apiPagination.totalItems }} results
         </div>
       </div>
     </template>

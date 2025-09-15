@@ -4,35 +4,28 @@ import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useLocation } from '~/composables/useLocation'
 
-// komponen global
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 
-// state
 const search = ref('')
 const isDeleteModalOpen = ref(false)
 const deletingLocationId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
 const editingLocationId = ref<string | null>(null)
 
-// composable
 const { locations, apiPagination, pagination, loading, fetchLocations, deleteLocation } = useLocation()
 
-// fetch wrapper
 function loadLocations(page = pagination.value.pageIndex + 1) {
   fetchLocations(search.value, page, pagination.value.pageSize)
 }
 
-// lifecycle
 onMounted(() => loadLocations())
 watch(search, () => loadLocations(1))
 
-// pagination
 function handlePageChange(newPage: number) {
   loadLocations(newPage)
 }
 
-// info showing
 const showingFrom = computed(() =>
   apiPagination.value
     ? (apiPagination.value.currentPage - 1) * apiPagination.value.itemsPerPage + 1
@@ -45,7 +38,6 @@ const showingTo = computed(() =>
     : 0
 )
 
-// actions
 async function confirmDelete() {
   if (!deletingLocationId.value) return
   await deleteLocation(deletingLocationId.value)
@@ -77,7 +69,6 @@ function getRowItems(row: Row<any>) {
   ]
 }
 
-// table columns
 const columns: TableColumn<any>[] = [
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'branch', header: 'Branch' },
@@ -105,7 +96,6 @@ const columns: TableColumn<any>[] = [
 
 <template>
   <UDashboardPanel id="locations">
-    <!-- Header -->
     <template #header>
       <UDashboardNavbar title="Locations">
         <template #leading>
@@ -117,9 +107,7 @@ const columns: TableColumn<any>[] = [
       </UDashboardNavbar>
     </template>
 
-    <!-- Body -->
     <template #body>
-      <!-- Confirm Delete Modal -->
       <ConfirmModal
         v-model:open="isDeleteModalOpen"
         title="Delete Location"
@@ -128,14 +116,12 @@ const columns: TableColumn<any>[] = [
         :on-confirm="confirmDelete"
       />
 
-      <!-- Update Modal -->
       <LocationUpdateModal
         :id="editingLocationId"
         v-model:open="isUpdateModalOpen"
         @updated="fetchLocations()"
       />
 
-      <!-- Search -->
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
         <UInput
           v-model="search"
@@ -145,24 +131,24 @@ const columns: TableColumn<any>[] = [
         />
       </div>
 
-      <!-- Table -->
-      <UTable
-        v-model:pagination="pagination"
-        :data="locations"
-        :columns="columns"
-        :loading="loading"
-        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-        class="shrink-0"
-        :ui="{
-          base: 'table-fixed border-separate border-spacing-0',
-          thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-          tbody: '[&>tr]:last:[&>td]:border-b-0',
-          th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-          td: 'border-b border-default'
-        }"
-      />
+      <div class="overflow-x-auto">
+        <UTable
+          v-model:pagination="pagination"
+          :data="locations"
+          :columns="columns"
+          :loading="loading"
+          :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
+          class="min-w-full"
+          :ui="{
+            base: 'table-fixed border-separate border-spacing-0',
+            thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+            tbody: '[&>tr]:last:[&>td]:border-b-0',
+            th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap',
+            td: 'border-b border-default whitespace-nowrap'
+          }"
+        />
+      </div>
 
-      <!-- Pagination & Info -->
       <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 border-t border-default pt-4 mt-auto">
         <UPagination
           v-if="apiPagination"

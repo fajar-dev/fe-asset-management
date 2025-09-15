@@ -228,7 +228,6 @@ const columns: TableColumn<any>[] = [
           td: 'border-b border-default',
           tr: 'data-[expanded=true]:bg-elevated/30'
         }"
-        class="shrink-0"
       >
         <!-- expanded slot: render properties table -->
         <template #expanded="{ row }">

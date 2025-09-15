@@ -7,6 +7,7 @@ import { useCategory } from '~/composables/useCategory'
 // komponen global
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
+const UIcon = resolveComponent('UIcon')
 
 // state
 const search = ref('')
@@ -77,14 +78,38 @@ function getRowItems(row: Row<any>) {
   ]
 }
 
-// table columns
-const yesNo = (val: boolean) => (val ? 'Yes' : 'No')
+// Boolean icon renderer
+const renderBooleanIcon = (value: boolean) => {
+  return h(
+    'div',
+    { class: 'flex justify-center' },
+    h(UIcon, {
+      name: value ? 'i-lucide-check-circle' : 'i-lucide-x-circle',
+      class: value
+        ? 'w-5 h-5 text-green-500'
+        : 'w-5 h-5 text-red-500'
+    })
+  )
+}
 
+// table columns
 const columns: TableColumn<any>[] = [
   { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'hasLocation', header: 'Has Location', cell: ({ row }) => yesNo(row.original.hasLocation) },
-  { accessorKey: 'hasMaintenance', header: 'Has Maintenance', cell: ({ row }) => yesNo(row.original.hasMaintenance) },
-  { accessorKey: 'hasHolder', header: 'Has Holder', cell: ({ row }) => yesNo(row.original.hasHolder) },
+  {
+    accessorKey: 'hasLocation',
+    header: 'Has Location',
+    cell: ({ row }) => renderBooleanIcon(row.original.hasLocation)
+  },
+  {
+    accessorKey: 'hasMaintenance',
+    header: 'Has Maintenance',
+    cell: ({ row }) => renderBooleanIcon(row.original.hasMaintenance)
+  },
+  {
+    accessorKey: 'hasHolder',
+    header: 'Has Holder',
+    cell: ({ row }) => renderBooleanIcon(row.original.hasHolder)
+  },
   {
     id: 'actions',
     cell: ({ row }) =>
@@ -108,8 +133,7 @@ const columns: TableColumn<any>[] = [
 </script>
 
 <template>
-  <UDashboardPanel id="categories">
-    <!-- Header -->
+  <UDashboardPanel id="locations">
     <template #header>
       <UDashboardNavbar title="Categories">
         <template #leading>
@@ -121,9 +145,7 @@ const columns: TableColumn<any>[] = [
       </UDashboardNavbar>
     </template>
 
-    <!-- Body -->
     <template #body>
-      <!-- Confirm Delete Modal -->
       <ConfirmModal
         v-model:open="isDeleteModalOpen"
         title="Delete Category"
@@ -139,35 +161,33 @@ const columns: TableColumn<any>[] = [
         @updated="fetchCategories()"
       />
 
-      <!-- Search -->
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
         <UInput
           v-model="search"
           class="max-w-sm"
           icon="i-lucide-search"
-          placeholder="Search categories..."
+          placeholder="Search locations..."
         />
       </div>
 
-      <!-- Table -->
-      <UTable
-        v-model:pagination="pagination"
-        :data="categories"
-        :columns="columns"
-        :loading="loading"
-        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-        class="shrink-0"
-        :ui="{
-          base: 'table-fixed border-separate border-spacing-0',
-          thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-          tbody: '[&>tr]:last:[&>td]:border-b-0',
-          th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-          td: 'border-b border-default',
-          tr: 'data-[expanded=true]:bg-elevated/50'
-        }"
-      />
+      <div class="overflow-x-auto">
+        <UTable
+          v-model:pagination="pagination"
+          :data="categories"
+          :columns="columns"
+          :loading="loading"
+          :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
+          class="shrink-0"
+          :ui="{
+            base: 'table-fixed border-separate border-spacing-0',
+            thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+            tbody: '[&>tr]:last:[&>td]:border-b-0',
+            th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap',
+            td: 'border-b border-default whitespace-nowrap'
+          }"
+        />
+      </div>
 
-      <!-- Pagination & Info -->
       <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 border-t border-default pt-4 mt-auto">
         <UPagination
           v-if="apiPagination"

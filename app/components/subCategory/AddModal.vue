@@ -23,7 +23,7 @@ const open = ref(false)
 const saving = ref(false)
 const state = reactive<Partial<Schema>>({
   name: '',
-  categoryId: '',
+  categoryId: undefined, // Fixed: changed to undefined
   properties: []
 })
 
@@ -32,7 +32,7 @@ const { categories, getAllCategories } = useCategory()
 const { createProperty } = useProperty()
 
 const items = ref<{ id: string, name: string }[]>([])
-const value = ref('')
+const value = ref<string | undefined>(undefined) // Fixed: added proper typing
 
 watch(value, (v) => {
   state.categoryId = v
@@ -40,8 +40,8 @@ watch(value, (v) => {
 
 function resetForm() {
   state.name = ''
-  state.categoryId = ''
-  value.value = ''
+  state.categoryId = undefined // Fixed: changed to undefined
+  value.value = undefined // Fixed: changed to undefined
   state.properties = []
 }
 
@@ -130,7 +130,12 @@ function removeProperty(index: number) {
             <UFormField :name="`properties.${i}.dataType`" class="w-30">
               <USelectMenu
                 v-model="prop.dataType"
-                :items="['string', 'number']"
+                :items="[
+                  { label: 'String', value: 'string' },
+                  { label: 'Number', value: 'number' }
+                ]"
+                value-key="value"
+                label-key="label"
                 placeholder="Select type"
                 class="w-full"
               />

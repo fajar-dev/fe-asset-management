@@ -124,7 +124,7 @@ export const useAuth = (): AuthState => {
         return
       }
       await refreshAccessToken()
-    }, 15 * 60 * 1000)
+    }, 60 * 60 * 1000)
 
     watch(isAuthenticated, (val) => {
       if (!val) clearInterval(refreshInterval)

@@ -1,5 +1,6 @@
 import { apiClient } from '~/services/apiClient'
 import type { Category, CategoryDetailResponse, CategoryResponse, CreateCategoryPayload, UpdateCategoryPayload } from '~/types/category'
+import type { SubCategoryResponse } from '~/types/subCategory'
 
 export class CategoryService {
   private basePath = '/v1/category'
@@ -23,6 +24,13 @@ export class CategoryService {
     return await apiClient<CategoryResponse>(this.basePath, {
       method: 'GET',
       params: { all },
+      headers: this.getAuthHeader()
+    })
+  }
+
+  async getSubCategoriesByCategory(id: string): Promise<SubCategoryResponse> {
+    return await apiClient<SubCategoryResponse>(`${this.basePath}/${id}/sub-category`, {
+      method: 'GET',
       headers: this.getAuthHeader()
     })
   }

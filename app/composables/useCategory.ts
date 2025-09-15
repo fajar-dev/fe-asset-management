@@ -1,11 +1,14 @@
 import { categoryService } from '~/services/CategoryService'
 import type { Category, CreateCategoryPayload, UpdateCategoryPayload, Pagination, CategoryDetailResponse } from '~/types/category'
+import type { SubCategory } from '~/types/subCategory'
+
 import type { ApiError } from '~/types/api'
 import type { FetchError } from 'ofetch'
 
 interface CategoryState {
   categories: Ref<Category[]>
   selectedCategory: Ref<Category | null>
+  subCategories: Ref<SubCategory[]>
   pagination: Ref<{ pageIndex: number, pageSize: number }>
   apiPagination: Ref<Pagination | null>
   loading: Ref<boolean>
@@ -13,6 +16,7 @@ interface CategoryState {
   fetchCategories: (search?: string, page?: number, limit?: number) => Promise<void>
   refreshCategories: () => Promise<void>
   getCategoryById: (id: string) => Promise<CategoryDetailResponse | null>
+  getSubCategoriesByCategory: (id: string) => Promise<void>
   createCategory: (payload: CreateCategoryPayload) => Promise<void>
   updateCategory: (id: string, payload: UpdateCategoryPayload) => Promise<void>
   deleteCategory: (id: string) => Promise<void>
@@ -22,6 +26,7 @@ interface CategoryState {
 export const useCategory = (): CategoryState => {
   const categories = ref<Category[]>([])
   const selectedCategory = ref<Category | null>(null)
+  const subCategories = ref<SubCategory[]>([])
   const apiPagination = ref<Pagination | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -98,6 +103,21 @@ export const useCategory = (): CategoryState => {
     }
   }
 
+  async function getSubCategoriesByCategory(id: string): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await categoryService.getSubCategoriesByCategory(id)
+      subCategories.value = res.data
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiError>
+      error.value = fetchError.data?.message ?? 'Failed to fetch sub-categories'
+      toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function updateCategory(id: string, payload: UpdateCategoryPayload): Promise<void> {
     loading.value = true
     error.value = null
@@ -139,6 +159,7 @@ export const useCategory = (): CategoryState => {
   return {
     categories,
     selectedCategory,
+    subCategories,
     apiPagination,
     pagination,
     loading,
@@ -146,6 +167,7 @@ export const useCategory = (): CategoryState => {
     fetchCategories,
     refreshCategories,
     getCategoryById,
+    getSubCategoriesByCategory,
     deleteCategory,
     createCategory,
     updateCategory,
