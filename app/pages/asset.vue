@@ -268,7 +268,7 @@ const columns: TableColumn<any>[] = [
       />
 
       <!-- Search + Filters -->
-      <div class="flex items-center justify-between gap-2 mb-2">
+      <div class="flex flex-col md:flex-row md:justify-between gap-2 mb-2">
         <UInput
           v-model="search"
           class="max-w-lg"
@@ -276,12 +276,12 @@ const columns: TableColumn<any>[] = [
           placeholder="Search assets..."
         />
 
-        <div class="flex gap-2">
+        <div class="flex flex-col md:flex-row gap-2">
           <USelect
             v-model="selectedCategoryId"
             placeholder="Filter by Category"
             clearable
-            class="w-48"
+            class="lg:w-48 md:w-20 w-full"
             :items="categories.map(c => ({ label: c.name, value: c.id }))"
           />
 
@@ -289,7 +289,7 @@ const columns: TableColumn<any>[] = [
             v-model="selectedSubCategoryId"
             placeholder="Filter by Sub Category"
             clearable
-            class="w-48"
+            class="lg:w-48 md:w-20 w-full"
             :items="subCategories.map(sc => ({ label: sc.name, value: sc.id }))"
             :disabled="!selectedCategoryId"
           />
@@ -298,7 +298,7 @@ const columns: TableColumn<any>[] = [
             v-model="selectedStatus"
             placeholder="Filter by Status"
             clearable
-            class="w-48"
+            class="lg:w-48 md:w-20 w-full"
             :items="statusOptions.map(s => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))"
           />
 
@@ -307,6 +307,7 @@ const columns: TableColumn<any>[] = [
             variant="link"
             icon="i-lucide-x-circle"
             @click="resetFilters"
+            class="justify-end"
           >
             Reset Filter
           </UButton>
