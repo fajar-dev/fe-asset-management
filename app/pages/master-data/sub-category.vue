@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useSubCategory } from '~/composables/useSubCategory'

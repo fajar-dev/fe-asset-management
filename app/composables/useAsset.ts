@@ -90,7 +90,7 @@ export const useAsset = (): AssetState => {
     } catch (err: unknown) {
       const fetchError = err as FetchError<ApiError>
       error.value = fetchError.data?.message ?? 'Failed to fetch asset detail'
-      toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
+      toast.add({ title: 'Failed', description: error.value, color: 'error' })
       return null
     } finally {
       loading.value = false

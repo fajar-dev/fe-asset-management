@@ -111,7 +111,7 @@ function getRowItems(row: Row<any>) {
     items.push({
       label: 'Maintenance',
       icon: 'i-lucide-calendar-cog',
-      onSelect: () => console.log('Maintenance for category:', category.id)
+      to: `/asset/${row.original.id}maintenace`
     })
   }
 
@@ -119,7 +119,7 @@ function getRowItems(row: Row<any>) {
     items.push({
       label: 'Holder',
       icon: 'i-lucide-users',
-      onSelect: () => console.log('Holder for category:', category.id)
+      to: `/asset/${row.original.id}/holder`
     })
   }
 
@@ -127,15 +127,15 @@ function getRowItems(row: Row<any>) {
     items.push({
       label: 'Location',
       icon: 'i-lucide-map-pin',
-      onSelect: () => console.log('Location for category:', category.id)
+      to: `/asset/${row.original.id}/location`
     })
   }
 
   items.push(
     {
-      label: 'Notes',
+      label: 'Detail',
       icon: 'i-lucide-notebook-pen',
-      onSelect: () => console.log('Notes for category:', category.id)
+      to: `/asset/${row.original.id}/detail`
     },
     { type: 'separator' },
     {
@@ -247,6 +247,7 @@ const columns: TableColumn<any>[] = [
         </template>
         <template #right>
           <AssetAddModal @created="loadAssets()" />
+          <AssetScanModal />
         </template>
       </UDashboardNavbar>
     </template>
@@ -268,7 +269,7 @@ const columns: TableColumn<any>[] = [
       />
 
       <!-- Search + Filters -->
-      <div class="flex flex-col md:flex-row md:justify-between gap-2 mb-2">
+      <div class="flex flex-col md:flex-row md:justify-between md:align-center gap-2 mb-2">
         <UInput
           v-model="search"
           class="max-w-lg"
@@ -306,8 +307,8 @@ const columns: TableColumn<any>[] = [
             color="error"
             variant="link"
             icon="i-lucide-x-circle"
-            @click="resetFilters"
             class="justify-end"
+            @click="resetFilters"
           >
             Reset Filter
           </UButton>
