@@ -208,6 +208,19 @@ const columns: TableColumn<any>[] = [
     cell: ({ row }) => row.original.model ?? '-'
   },
   {
+    accessorKey: 'lastLocation',
+    header: 'Last Location',
+    cell: ({ row }) => {
+      const loc = row.original.lastLocation
+      if (!loc) return h('span', { class: 'text-xs text-muted' }, '-')
+
+      return h('div', { class: 'flex flex-col' }, [
+        h('span', { class: 'text-highlighted font-medium text-xs' }, loc.branch),
+        h('span', { class: 'text-xs' }, loc.name)
+      ])
+    }
+  },
+  {
     accessorKey: 'employee',
     header: 'Active Holder',
     cell: ({ row }) => {

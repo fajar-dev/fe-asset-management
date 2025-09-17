@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import type { Row } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
 import { useAssetLocation } from '~/composables/useAssetLocation'
-
-// global komponen
-const UButton = resolveComponent('UButton')
 
 // router
 const router = useRouter()
@@ -24,7 +20,6 @@ const {
   locations,
   loading: locationLoading,
   fetchLocations,
-  createLocation,
   pagination,
   apiPagination
 } = useAssetLocation()
