@@ -17,6 +17,14 @@ export class LocationService {
     })
   }
 
+  async getAllLocations(all = true): Promise<LocationResponse> {
+    return await apiClient<LocationResponse>(this.basePath, {
+      method: 'GET',
+      params: { all },
+      headers: this.getAuthHeader()
+    })
+  }
+
   async getLocationById(id: string): Promise<LocationDetailResponse> {
     return await apiClient<LocationDetailResponse>(`${this.basePath}/${id}`, {
       method: 'GET',
