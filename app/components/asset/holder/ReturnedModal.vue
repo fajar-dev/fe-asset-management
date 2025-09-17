@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { useAssetMaintenance } from '~/composables/useAssetMaintenance'
+import { useAssetHolder } from '~/composables/useAssetHolder'
 
-const props = defineProps<{ assetId: string }>()
-const emit = defineEmits<{ (e: 'created'): void }>()
+const props = defineProps<{
+  assetId: string
+  holderId: string
+}>()
 
-// Schema validasi
+const emit = defineEmits<{ (e: 'returned'): void }>()
+
+// validation schema
 const schema = z.object({
-  maintenanceAt: z.string().min(1, 'Date is required'),
-  note: z.string().min(1, 'Note is required')
+  returnedAt: z.string().min(1, 'Returned date is required')
 })
 
 type Schema = z.output<typeof schema>
@@ -18,33 +21,39 @@ const open = ref(false)
 const saving = ref(false)
 
 const state = reactive<Partial<Schema>>({
-  maintenanceAt: '',
-  note: ''
+  returnedAt: ''
 })
 
-const { createMaintenance } = useAssetMaintenance()
+const { returnHolder } = useAssetHolder()
 
 function resetForm() {
-  state.maintenanceAt = ''
-  state.note = ''
+  state.returnedAt = ''
 }
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   saving.value = true
-  await createMaintenance(props.assetId, {
-    maintenanceAt: event.data.maintenanceAt,
-    note: event.data.note || ''
+  await returnHolder(props.assetId, props.holderId, {
+    returnedAt: event.data.returnedAt
   })
   resetForm()
   open.value = false
-  emit('created')
+  emit('returned')
   saving.value = false
 }
 </script>
 
 <template>
-  <UModal v-model:open="open" title="New Maintenance" description="Add a new maintenance record">
-    <UButton label="Add Maintenance" icon="i-lucide-plus" />
+  <UModal
+    v-model:open="open"
+    title="Return Asset"
+    description="Set the return date for this asset"
+  >
+    <UButton
+      label="Return Asset"
+      icon="i-lucide-rotate-ccw"
+      size="xs"
+      color="primary"
+    />
 
     <template #body>
       <UForm
@@ -53,18 +62,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Date" name="maintenanceAt">
+        <UFormField label="Returned At" name="returnedAt">
           <UInput
-            v-model="state.maintenanceAt"
+            v-model="state.returnedAt"
             type="date"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField label="Note" name="note">
-          <UTextarea
-            v-model="state.note"
-            placeholder="Note"
             class="w-full"
           />
         </UFormField>

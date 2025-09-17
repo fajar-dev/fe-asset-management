@@ -1,32 +1,121 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui'
+import { useAsset } from '~/composables/useAsset'
+import { useAssetHolder } from '~/composables/useAssetHolder'
+import AssetHolderReturnModal from '~/components/asset/holder/ReturnedModal.vue'
+
+const UAvatar = resolveComponent('UAvatar')
 const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
 
-// state untuk menampung detail asset
+// state asset detail
 const assetDetail = ref<any>(null)
 const loading = ref(false)
 
+// composable asset
 const { getAssetById } = useAsset()
 
+// composable holder
+const {
+  holders,
+  loading: holderLoading,
+  fetchHolders,
+  pagination,
+  apiPagination
+} = useAssetHolder()
+
+// fetch asset detail
 onMounted(async () => {
   loading.value = true
   const res = await getAssetById(assetId)
   if (res) {
     assetDetail.value = res.data
+    await loadHolders()
   } else {
-    await router.push(`/asset`)
+    await router.push('/asset')
   }
   loading.value = false
 })
+
+function loadHolders(page = pagination.value.pageIndex + 1) {
+  fetchHolders(assetId, '', page, pagination.value.pageSize)
+}
+
+function handlePageChange(newPage: number) {
+  loadHolders(newPage)
+}
+
+// showing info
+const showingFrom = computed(() =>
+  apiPagination.value
+    ? (apiPagination.value.currentPage - 1) * apiPagination.value.itemsPerPage + 1
+    : 0
+)
+
+const showingTo = computed(() =>
+  apiPagination.value
+    ? Math.min(apiPagination.value.currentPage * apiPagination.value.itemsPerPage, apiPagination.value.totalItems)
+    : 0
+)
+
+// cek apakah ada active holder
+const hasActiveHolder = computed(() =>
+  holders.value?.some(h => !h.returnedAt)
+)
+
+// columns
+const columns: TableColumn<any>[] = [
+  {
+    accessorKey: 'employeeId',
+    header: 'Employee',
+    cell: ({ row }) => {
+      return h('div', { class: 'flex items-center gap-3' }, [
+        h(UAvatar, {
+          src: 'https://www.austinchronicle.com/imager/b/newfeature/2496536/d47f/music_feature1.jpg',
+          size: 'lg'
+        }),
+        h('div', undefined, [
+          h('p', { class: 'font-medium text-highlighted text-xs' }, 'John Doe'),
+          h('p', { class: 'text-xs' }, row.original.employeeId)
+        ])
+      ])
+    }
+  },
+  { accessorKey: 'purpose', header: 'Purpose' },
+  { accessorKey: 'assignedAt', header: 'Assigned At' },
+  {
+    id: 'returnedAt',
+    header: 'Returned At',
+    cell: ({ row }) => {
+      const returnedAt = row.original.returnedAt
+      if (!returnedAt) {
+        return h(AssetHolderReturnModal, {
+          assetId,
+          holderId: row.original.id,
+          onReturned: () => loadHolders()
+        })
+      }
+      return row.original.returnedAt
+    }
+  }
+]
 </script>
 
 <template>
-  <UDashboardPanel id="detail">
+  <UDashboardPanel id="holders">
     <template #header>
       <UDashboardNavbar>
         <template #leading>
           <UDashboardSidebarCollapse />
+        </template>
+        <template #right>
+          <!-- disabled kalau masih ada active holder -->
+          <AssetHolderAssignedModal
+            :asset-id="assetId"
+            :disabled="hasActiveHolder"
+            @created="loadHolders()"
+          />
         </template>
 
         <template #title>
@@ -45,141 +134,37 @@ onMounted(async () => {
     </template>
 
     <template #body>
-      <div v-if="loading" class="p-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Loading state -->
-          <div class="lg:col-span-2">
-            <USkeleton class="h-64 w-full rounded-lg" />
-          </div>
-          <div>
-            <USkeleton class="h-40 w-full rounded-lg" />
-          </div>
-        </div>
+      <div class="overflow-x-auto">
+        <UTable
+          v-model:pagination="pagination"
+          :data="holders"
+          :columns="columns"
+          :loading="holderLoading"
+          class="shrink-0"
+          :ui="{
+            base: 'table-fixed border-separate border-spacing-0',
+            thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+            tbody: '[&>tr]:last:[&>td]:border-b-0',
+            th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap',
+            td: 'border-b border-default whitespace-nowrap'
+          }"
+        />
       </div>
 
-      <div v-else-if="assetDetail" class="p-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Main Information Card -->
-          <UCard class="lg:col-span-2" variant="subtle">
-            <template #header>
-              <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <UIcon name="i-lucide-info" class="w-5 h-5" />
-                  Asset Information
-                </h3>
-              </div>
-            </template>
+      <div
+        class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 border-t border-default pt-4 mt-auto"
+      >
+        <UPagination
+          v-if="apiPagination"
+          :default-page="pagination.pageIndex + 1"
+          :items-per-page="pagination.pageSize"
+          :total="apiPagination.totalItems"
+          @update:page="handlePageChange"
+        />
 
-            <div class="space-y-6">
-              <!-- Basic Details -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-3">
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Asset Name</label>
-                    <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ assetDetail.name }}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Brand</label>
-                    <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ assetDetail.brand ?? '-' }}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Category</label>
-                    <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ assetDetail.subCategory.category.name }} > {{ assetDetail.subCategory.name }}
-                    </p>
-                  </div>
-                </div>
-
-                <div class="space-y-3">
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Asset ID</label>
-                    <p class="text-gray-900 dark:text-white font-mono text-sm">
-                      {{ assetDetail.id }}
-                    </p>
-                  </div>
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Model</label>
-                    <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ assetDetail.model ?? '-' }}
-                    </p>
-                  </div>
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
-                    <div class="flex items-center gap-2">
-                      <UIcon
-                        :name="assetDetail.status === 'active'
-                          ? 'i-lucide-check-circle'
-                          : assetDetail.status === 'in_repair'
-                            ? 'i-lucide-wrench'
-                            : 'i-lucide-trash-2'"
-                        :class="assetDetail.status === 'active'
-                          ? 'text-green-500 text-sm'
-                          : assetDetail.status === 'in_repair'
-                            ? 'text-yellow-500 text-sm'
-                            : 'text-red-500 text-sm'"
-                        class="w-4 h-4"
-                      />
-                      <span class="text-gray-900 dark:text-white text-sm">{{ assetDetail.status }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Description -->
-              <div v-if="assetDetail.description">
-                <UDivider class="my-4" />
-                <div>
-                  <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Description</label>
-                  <p class="text-gray-900 dark:text-white mt-1 text-sm">
-                    {{ assetDetail.description }}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </UCard>
-
-          <!-- Properties Card -->
-          <UCard variant="subtle">
-            <template #header>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <UIcon name="i-lucide-settings" class="w-5 h-5" />
-                Properties
-              </h3>
-            </template>
-
-            <div class="space-y-4">
-              <div
-                v-for="prop in assetDetail.properties"
-                :key="prop.id"
-                class="p-3 bg-white dark:bg-gray-800/50 rounded-lg"
-              >
-                <div class="flex justify-between items-start">
-                  <div class="flex-1">
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {{ prop.property.name }}
-                    </label>
-                    <div class="mt-1">
-                      <span
-                        v-if="prop.property.dataType === 'number'"
-                        class="text-gray-900 dark:text-white font-semibold text-lg"
-                      >
-                        {{ prop.value.toLocaleString() }}
-                      </span>
-                      <span v-else class="text-gray-900 dark:text-white font-medium">
-                        {{ prop.value }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </UCard>
+        <div v-if="apiPagination" class="text-sm text-muted mb-2">
+          Showing {{ showingFrom }} to {{ showingTo }} of
+          {{ apiPagination.totalItems }} results
         </div>
       </div>
     </template>

@@ -110,15 +110,19 @@ const columns: TableColumn<any>[] = [
     id: 'actions',
     cell: ({ row }) =>
       h(
-        UDropdownMenu,
-        { content: { align: 'end' }, items: getRowItems(row) },
-        () =>
-          h(UButton, {
-            icon: 'i-lucide-ellipsis-vertical',
-            color: 'neutral',
-            variant: 'ghost',
-            class: 'ml-auto'
-          })
+        'div',
+        { class: 'text-right' },
+        h(
+          UDropdownMenu,
+          { content: { align: 'end' }, items: getRowItems(row) },
+          () =>
+            h(UButton, {
+              icon: 'i-lucide-ellipsis-vertical',
+              color: 'neutral',
+              variant: 'ghost',
+              class: 'ml-auto'
+            })
+        )
       )
   }
 ]

@@ -18,7 +18,7 @@ const emit = defineEmits<{
 // Validasi schema
 const schema = z.object({
   maintenanceAt: z.string().min(1, 'Date is required'),
-  note: z.string().optional()
+  note: z.string().min(1, 'Note is required')
 })
 type Schema = z.output<typeof schema>
 
@@ -115,7 +115,7 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
         <UFormField label="Note" name="note">
           <UTextarea
             v-model="formData.note"
-            placeholder="Optional note"
+            placeholder="Note"
             class="w-full"
           />
         </UFormField>

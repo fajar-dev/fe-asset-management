@@ -3,7 +3,8 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',
-    '@vueuse/nuxt'
+    '@vueuse/nuxt',
+    'nuxt-vue3-google-signin'
   ],
 
   devtools: {
@@ -27,5 +28,9 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  googleSignIn: {
+    clientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID
   }
 })

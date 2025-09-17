@@ -5,6 +5,7 @@ import { useAsset } from '~/composables/useAsset'
 import { useCategory } from '~/composables/useCategory'
 
 // global components
+const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UBadge = resolveComponent('UBadge')
@@ -111,7 +112,7 @@ function getRowItems(row: Row<any>) {
     items.push({
       label: 'Maintenance',
       icon: 'i-lucide-calendar-cog',
-      to: `/asset/${row.original.id}maintenace`
+      to: `/asset/${row.original.id}/maintenance`
     })
   }
 
@@ -205,6 +206,25 @@ const columns: TableColumn<any>[] = [
     accessorKey: 'model',
     header: 'Model',
     cell: ({ row }) => row.original.model ?? '-'
+  },
+  {
+    accessorKey: 'employee',
+    header: 'Active Holder',
+    cell: ({ row }) => {
+      const holder = row.original.activeHolder
+      if (!holder) return h('span', '-')
+      return h('div', { class: 'flex items-center gap-3' }, [
+        h(UAvatar, {
+          avatar: 'https://www.austinchronicle.com/imager/b/newfeature/2496536/d47f/music_feature1.jpg',
+          size: 'lg'
+        }),
+        h('div', undefined, [
+          // h('p', { class: 'font-medium text-highlighted' }, holder.name),
+          h('p', { class: 'font-medium text-highlighted text-xs' }, 'John Doe'),
+          h('p', { class: 'text-xs' }, holder.employeeId)
+        ])
+      ])
+    }
   },
   {
     accessorKey: 'status',
