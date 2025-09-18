@@ -38,6 +38,9 @@ importers:
       nuxt:
         specifier: ^4.0.3
         version: 4.0.3(@netlify/blobs@9.1.2)(@parcel/watcher@2.5.1)(@types/node@24.0.3)(@vue/compiler-sfc@3.5.18)(db0@0.3.2)(eslint@9.35.0(jiti@2.5.1))(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(optionator@0.9.4)(rollup@4.45.1)(terser@5.43.1)(typescript@5.9.2)(vite@7.1.2(@types/node@24.0.3)(jiti@2.5.1)(lightningcss@1.30.1)(terser@5.43.1)(yaml@2.8.0))(vue-tsc@3.0.6(typescript@5.9.2))(yaml@2.8.0)
+      nuxt-charts:
+        specifier: ^0.2.4
+        version: 0.2.4(magicast@0.3.5)(vue@3.5.18(typescript@5.9.2))
       nuxt-vue3-google-signin:
         specifier: ^0.0.11
         version: 0.0.11(magicast@0.3.5)(vue@3.5.18(typescript@5.9.2))
@@ -1927,10 +1930,19 @@ packages:
   '@unovis/ts@1.6.0':
     resolution: {integrity: sha512-icPFHSPHD1AwmLFAu++S4CNN9vgsul4Y4IpYA9aJ9IXnaRLh7+t9WV+UujDsLB/MeSO1sK/lgRem1tWnS+HtMA==}
 
+  '@unovis/ts@1.6.1':
+    resolution: {integrity: sha512-h6p9HFmgztlqy+6hn+eAXqjk598QCQ3OAWSYIb3Ii3ljVnzj6vrhunhUuktFRyS0sXC4SK57b/Yf3y+8hCukYg==}
+
   '@unovis/vue@1.6.0':
     resolution: {integrity: sha512-aic+luFHeeE8aWEJIfmZNZX32UDNgeflc0jZQh7qkghUQuavlnFnNxpL5NyDdW0D8ZuV8PkrocyoOM67moS6aw==}
     peerDependencies:
       '@unovis/ts': 1.6.0
+      vue: ^3
+
+  '@unovis/vue@1.6.1':
+    resolution: {integrity: sha512-HT5JXAmscEK6GaxLYU8lY/LarvmkLDdt0uZz49b/Pun/K/+y02073Lr+WhLAUTGBC+tDbvNN2EcwgAvIgwBzrw==}
+    peerDependencies:
+      '@unovis/ts': 1.6.1
       vue: ^3
 
   '@unrs/resolver-binding-android-arm-eabi@1.11.1':
@@ -4294,6 +4306,9 @@ packages:
   nth-check@2.1.1:
     resolution: {integrity: sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w==}
 
+  nuxt-charts@0.2.4:
+    resolution: {integrity: sha512-CCSK8mhbLcmsEt+nzBMiH/JAQ/L+e0Cmg87lOwLehjlJ23rMyBcajF2Fn9fqwx6nQv2PT1MFDlTVHoAsAMYnWA==}
+
   nuxt-vue3-google-signin@0.0.11:
     resolution: {integrity: sha512-GLXAGwOXFCaTg+Bvu76qDY5qxbm9S5zxxVKAAFb4f/jaUiCRVesD8NxToQvY9c9Xf83W0W1rYLjfTABF+pmqNA==}
     engines: {node: '>=16.0.0'}
@@ -5595,6 +5610,11 @@ packages:
 
   vue-bundle-renderer@2.1.2:
     resolution: {integrity: sha512-M4WRBO/O/7G9phGaGH9AOwOnYtY9ZpPoDVpBpRzR2jO5rFL9mgIlQIgums2ljCTC2HL1jDXFQc//CzWcAQHgAw==}
+
+  vue-chrts@0.2.4:
+    resolution: {integrity: sha512-rEShiyRTUaxGMli9wzv0mPmnwuZ5Wc0gF/fGGG/0Xk9oYjpOv3ZdaIMXFfUxVHOzeL42TSO3AibQ77ojxo3INA==}
+    peerDependencies:
+      vue: ^3.5.13
 
   vue-component-type-helpers@3.0.6:
     resolution: {integrity: sha512-6CRM8X7EJqWCJOiKPvSLQG+hJPb/Oy2gyJx3pLjUEhY7PuaCthQu3e0zAGI1lqUBobrrk9IT0K8sG2GsCluxoQ==}
@@ -7938,9 +7958,51 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@unovis/ts@1.6.1':
+    dependencies:
+      '@emotion/css': 11.13.5
+      '@juggle/resize-observer': 3.4.0
+      '@types/d3': 7.4.3
+      '@types/d3-collection': 1.0.13
+      '@types/d3-sankey': 0.11.2
+      '@types/dagre': 0.7.52
+      '@types/geojson': 7946.0.16
+      '@types/leaflet': 1.7.6
+      '@types/supercluster': 5.0.3
+      '@types/three': 0.135.0
+      '@types/throttle-debounce': 5.0.2
+      '@types/topojson': 3.2.6
+      '@types/topojson-client': 3.1.5
+      '@types/topojson-specification': 1.0.5
+      '@unovis/dagre-layout': 0.8.8-2
+      '@unovis/graphlibrary': 2.2.0-2
+      d3: 7.9.0
+      d3-collection: 1.0.7
+      d3-geo-projection: 4.0.0
+      d3-interpolate-path: 2.3.0
+      d3-sankey: 0.12.3
+      elkjs: 0.10.0
+      geojson: 0.5.0
+      leaflet: 1.7.1
+      maplibre-gl: 2.4.0
+      striptags: 3.2.0
+      supercluster: 7.1.5
+      three: 0.135.0
+      throttle-debounce: 5.0.2
+      to-px: 1.1.0
+      topojson-client: 3.1.0
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - supports-color
+
   '@unovis/vue@1.6.0(@unovis/ts@1.6.0)(vue@3.5.18(typescript@5.9.2))':
     dependencies:
       '@unovis/ts': 1.6.0
+      vue: 3.5.18(typescript@5.9.2)
+
+  '@unovis/vue@1.6.1(@unovis/ts@1.6.1)(vue@3.5.18(typescript@5.9.2))':
+    dependencies:
+      '@unovis/ts': 1.6.1
       vue: 3.5.18(typescript@5.9.2)
 
   '@unrs/resolver-binding-android-arm-eabi@1.11.1':
@@ -10455,6 +10517,17 @@ snapshots:
     dependencies:
       boolbase: 1.0.0
 
+  nuxt-charts@0.2.4(magicast@0.3.5)(vue@3.5.18(typescript@5.9.2)):
+    dependencies:
+      '@nuxt/kit': 3.19.1(magicast@0.3.5)
+      '@unovis/ts': 1.6.1
+      '@unovis/vue': 1.6.1(@unovis/ts@1.6.1)(vue@3.5.18(typescript@5.9.2))
+      vue-chrts: 0.2.4(vue@3.5.18(typescript@5.9.2))
+    transitivePeerDependencies:
+      - magicast
+      - supports-color
+      - vue
+
   nuxt-vue3-google-signin@0.0.11(magicast@0.3.5)(vue@3.5.18(typescript@5.9.2)):
     dependencies:
       '@nuxt/kit': 3.19.1(magicast@0.3.5)
@@ -11944,6 +12017,10 @@ snapshots:
   vue-bundle-renderer@2.1.2:
     dependencies:
       ufo: 1.6.1
+
+  vue-chrts@0.2.4(vue@3.5.18(typescript@5.9.2)):
+    dependencies:
+      vue: 3.5.18(typescript@5.9.2)
 
   vue-component-type-helpers@3.0.6: {}
 

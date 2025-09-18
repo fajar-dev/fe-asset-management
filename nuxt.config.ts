@@ -4,7 +4,8 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/ui',
     '@vueuse/nuxt',
-    'nuxt-vue3-google-signin'
+    'nuxt-vue3-google-signin',
+    'nuxt-charts'
   ],
 
   devtools: {
