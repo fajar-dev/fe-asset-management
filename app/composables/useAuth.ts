@@ -10,6 +10,7 @@ interface AuthState {
   user: Ref<User | null>
   isAuthenticated: ComputedRef<boolean>
   login: (email: string, password: string) => Promise<boolean>
+  google: (code: string,) => Promise<boolean>
   logout: () => void
   refreshAccessToken: () => Promise<boolean>
   getMe: () => Promise<boolean>
@@ -57,6 +58,24 @@ export const useAuth = (): AuthState => {
   async function login(email: string, password: string): Promise<boolean> {
     try {
       const res = await authService.login(email, password)
+      setTokens(res.data.accessToken, res.data.refreshToken)
+      await getMe()
+      toast.add({ title: 'Success', description: 'Logged in successfully' })
+      return true
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiError>
+      toast.add({
+        title: 'Login failed',
+        description: fetchError.data?.message || 'Something went wrong',
+        color: 'error'
+      })
+      return false
+    }
+  }
+
+  async function google(code: string): Promise<boolean> {
+    try {
+      const res = await authService.google(code)
       setTokens(res.data.accessToken, res.data.refreshToken)
       await getMe()
       toast.add({ title: 'Success', description: 'Logged in successfully' })
@@ -141,6 +160,7 @@ export const useAuth = (): AuthState => {
     user,
     isAuthenticated,
     login,
+    google,
     logout,
     refreshAccessToken,
     getMe

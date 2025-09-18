@@ -11,7 +11,7 @@ const items = [[{
   to: '/inbox'
 }, {
   label: 'New customer',
-  icon: 'i-lucide-user-plus',
+  icon: 'i-lucide-user-plus'
 }]] satisfies DropdownMenuItem[][]
 
 const range = shallowRef<Range>({

@@ -12,6 +12,11 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/main.css'],
+  runtimeConfig: {
+    public: {
+      googleClientId: process.env.NUXT_GOOGLE_CLIENT_ID
+    }
+  },
 
   routeRules: {
     '/api/**': {
@@ -28,9 +33,5 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
-  },
-
-  googleSignIn: {
-    clientId: process.env.NUXT_PUBLIC_GOOGLE_CLIENT_ID
   }
 })

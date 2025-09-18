@@ -11,6 +11,13 @@ export class AuthService {
     })
   }
 
+  async google(code: string) {
+    return await apiClient<{ data: LoginResponse }>(`${this.basePath}/google`, {
+      method: 'POST',
+      body: { code }
+    })
+  }
+
   async refreshToken(refreshToken: string) {
     return await apiClient<{ data: RefreshTokenResponse }>(`${this.basePath}/refresh-token`, {
       method: 'POST',
