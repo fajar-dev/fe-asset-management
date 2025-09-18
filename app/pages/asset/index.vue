@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { NuxtLink } from '#components'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
 import { useCategory } from '~/composables/useCategory'
@@ -27,7 +28,6 @@ const expanded = ref<Record<number | string, boolean>>({})
 const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset } = useAsset()
 const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
 
-// filter state - Fixed: Changed from string | null to string | undefined
 const selectedCategoryId = ref<string | undefined>(undefined)
 const selectedSubCategoryId = ref<string | undefined>(undefined)
 const selectedStatus = ref<string | undefined>(undefined)
@@ -43,7 +43,7 @@ onMounted(async () => {
 watch(selectedCategoryId, async (newId) => {
   if (newId) {
     await getSubCategoriesByCategory(newId)
-    selectedSubCategoryId.value = undefined // Fixed: Changed from null to undefined
+    selectedSubCategoryId.value = undefined
   } else {
     subCategories.value = []
   }
@@ -67,12 +67,12 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
 }
 
 function resetFilters() {
-  selectedCategoryId.value = undefined // Fixed: Changed from null to undefined
-  selectedSubCategoryId.value = undefined // Fixed: Changed from null to undefined
-  selectedStatus.value = undefined // Fixed: Changed from null to undefined
+  selectedCategoryId.value = undefined
+  selectedSubCategoryId.value = undefined
+  selectedStatus.value = undefined
   search.value = ''
-  subCategories.value = [] // clear sub-category options
-  loadAssets(1) // reload data
+  subCategories.value = []
+  loadAssets(1)
 }
 
 // pagination handler
@@ -180,12 +180,17 @@ const columns: TableColumn<any>[] = [
     accessorKey: 'name',
     header: 'Asset',
     cell: ({ row }) =>
-      h('div', { class: 'flex items-center gap-3' }, [
-        h('div', undefined, [
+      h(
+        NuxtLink,
+        {
+          to: `/asset/${row.original.id}/detail`,
+          class: 'flex flex-col hover:underline'
+        },
+        () => [
           h('p', { class: 'font-medium text-highlighted' }, row.original.name),
-          h('p', { class: 'text-xs' }, row.original.id)
-        ])
-      ])
+          h('p', { class: 'text-xs text-muted' }, row.original.id)
+        ]
+      )
   },
   {
     accessorKey: 'category',

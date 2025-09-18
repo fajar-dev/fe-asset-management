@@ -44,14 +44,16 @@ const links = [[{
   onSelect: () => {
     open.value = false
   }
-}, {
-  label: 'Label',
-  icon: 'i-lucide-tags',
-  to: '/label',
-  onSelect: () => {
-    open.value = false
-  }
-}],
+}
+// ,{
+//   label: 'Label',
+//   icon: 'i-lucide-tags',
+//   to: '/label',
+//   onSelect: () => {
+//     open.value = false
+//   }
+// }
+],
 [{
   label: 'Feedback',
   icon: 'i-lucide-message-square-warning',
@@ -152,6 +154,5 @@ onMounted(async () => {
 
     <UDashboardSearch :groups="groups" />
     <slot />
-    <NotificationsSlideover />
   </UDashboardGroup>
 </template>
