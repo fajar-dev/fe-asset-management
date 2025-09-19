@@ -5,7 +5,8 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@vueuse/nuxt',
     'nuxt-vue3-google-signin',
-    'nuxt-charts'
+    'nuxt-charts',
+    '@vite-pwa/nuxt'
   ],
 
   devtools: {
@@ -33,6 +34,36 @@ export default defineNuxtConfig({
         commaDangle: 'never',
         braceStyle: '1tbs'
       }
+    }
+  },
+
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'SIM-ASSET - Nusanet',
+      short_name: 'SIM-ASSET',
+      description: 'PT. Media Antar Nusa',
+      lang: 'en',
+      display: 'standalone',
+      background_color: '#ffffff',
+      theme_color: '#00C16A',
+      icons: [
+        {
+          src: '/icons/icon_64x64.png',
+          sizes: '64x64',
+          type: 'image/png'
+        },
+        {
+          src: '/icons/icon_144x144.png',
+          sizes: '144x144',
+          type: 'image/png'
+        },
+        {
+          src: '/icons/icon_192x192.png',
+          sizes: '192x192',
+          type: 'image/png'
+        }
+      ]
     }
   }
 })

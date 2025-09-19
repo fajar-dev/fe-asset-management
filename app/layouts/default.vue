@@ -14,7 +14,6 @@ const links = [[{
   }
 }, {
   label: 'master data',
-  to: '/master-data',
   icon: 'i-lucide-database',
   defaultOpen: true,
   type: 'trigger',
@@ -112,13 +111,13 @@ onMounted(async () => {
         <div class="flex items-center justify-center py-4">
           <img
             v-if="!collapsed"
-            src="https://mdn.nusa.net.id/wp-content/uploads/sites/2/2024/08/Nusanet-Logo-with-Subtitle-e1724455147320.png"
+            src="/logo-nusanet.png"
             alt="Nusanet Logo"
             class="max-w-[120px]"
           >
           <img
             v-else
-            src="https://www.nusa.net.id/kb/favicon.png"
+            src="/logo-n.png"
             alt="Nusanet Icon"
             class=""
           >
