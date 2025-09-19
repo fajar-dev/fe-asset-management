@@ -1,8 +1,7 @@
 <script lang="ts" setup>
 import { useStatistic } from '~/composables/useStatistic'
 
-// composable
-const { assetsByCategory, getAssetsByCategory, loading } = useStatistic()
+const { assetsByLocation, getAssetsByLocation, loading } = useStatistic()
 
 function getRandomColor(index: number): string {
   const hue = (index * 137.5) % 360
@@ -10,22 +9,22 @@ function getRandomColor(index: number): string {
 }
 
 const chartData = computed(() =>
-  assetsByCategory.value.map(item => item.value)
+  assetsByLocation.value.map(item => item.value)
 )
 
 const chartLabels = computed(() =>
-  assetsByCategory.value.map((item, idx) => ({
+  assetsByLocation.value.map((item, idx) => ({
     name: item.name,
     color: getRandomColor(idx)
   }))
 )
 
 const total = computed(() =>
-  assetsByCategory.value.reduce((acc, cur) => acc + cur.value, 0)
+  assetsByLocation.value.reduce((acc, cur) => acc + cur.value, 0)
 )
 
 onMounted(() => {
-  getAssetsByCategory()
+  getAssetsByLocation()
 })
 </script>
 
@@ -34,10 +33,10 @@ onMounted(() => {
     <template #header>
       <div>
         <p class="text-highlighted font-semibold">
-          Category
+          Location
         </p>
         <p class="text-xs text-muted mb-1.5">
-          Asset by Category
+          Asset by Location
         </p>
       </div>
     </template>
