@@ -1,4 +1,3 @@
-import { apiClient } from '~/services/apiClient'
 import type {
   CountResponse,
   AssetByCategoryResponse,
@@ -9,6 +8,11 @@ import type {
 export class StatisticService {
   private basePath = '/v1/statistic'
 
+  private get api() {
+    const { $api } = useNuxtApp()
+    return $api
+  }
+
   private getAuthHeader() {
     const token = localStorage.getItem('accessToken') || ''
     return { Authorization: `Bearer ${token}` }
@@ -16,7 +20,7 @@ export class StatisticService {
 
   // Get total counts
   async getCount(): Promise<CountResponse> {
-    return await apiClient<CountResponse>(`${this.basePath}/count`, {
+    return await this.api<CountResponse>(`${this.basePath}/count`, {
       method: 'GET',
       headers: this.getAuthHeader()
     })
@@ -24,7 +28,7 @@ export class StatisticService {
 
   // Get assets grouped by category
   async getAssetsByCategory(): Promise<AssetByCategoryResponse> {
-    return await apiClient<AssetByCategoryResponse>(`${this.basePath}/assets-by-category`, {
+    return await this.api<AssetByCategoryResponse>(`${this.basePath}/assets-by-category`, {
       method: 'GET',
       headers: this.getAuthHeader()
     })
@@ -32,7 +36,7 @@ export class StatisticService {
 
   // Get assets grouped by sub-category
   async getAssetsBySubCategory(): Promise<AssetBySubCategoryResponse> {
-    return await apiClient<AssetBySubCategoryResponse>(`${this.basePath}/assets-by-sub-category`, {
+    return await this.api<AssetBySubCategoryResponse>(`${this.basePath}/assets-by-sub-category`, {
       method: 'GET',
       headers: this.getAuthHeader()
     })
@@ -40,7 +44,7 @@ export class StatisticService {
 
   // Get assets grouped by location
   async getAssetsByLocation(): Promise<AssetByLocationResponse> {
-    return await apiClient<AssetByLocationResponse>(`${this.basePath}/assets-by-location`, {
+    return await this.api<AssetByLocationResponse>(`${this.basePath}/assets-by-location`, {
       method: 'GET',
       headers: this.getAuthHeader()
     })

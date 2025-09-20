@@ -1,5 +1,4 @@
 // ~/services/assetHolder.ts
-import { apiClient } from '~/services/apiClient'
 import type {
   AssetHolder,
   AssetHolderResponse,
@@ -10,6 +9,11 @@ import type {
 
 export class AssetHolderService {
   private basePath = '/v1/asset'
+
+  private get api() {
+    const { $api } = useNuxtApp()
+    return $api
+  }
 
   private getAuthHeader() {
     const token = localStorage.getItem('accessToken') || ''
@@ -31,7 +35,7 @@ export class AssetHolderService {
       limit?: number
     } = {}
   ): Promise<AssetHolderResponse> {
-    return await apiClient<AssetHolderResponse>(
+    return await this.api<AssetHolderResponse>(
       `${this.basePath}/${assetUuid}/holder`,
       {
         method: 'GET',
@@ -46,7 +50,7 @@ export class AssetHolderService {
     assetUuid: string,
     holderId: string
   ): Promise<AssetHolderDetailResponse> {
-    return await apiClient<AssetHolderDetailResponse>(
+    return await this.api<AssetHolderDetailResponse>(
       `${this.basePath}/${assetUuid}/holder/${holderId}`,
       {
         method: 'GET',
@@ -60,7 +64,7 @@ export class AssetHolderService {
     assetUuid: string,
     payload: AssignAssetHolderPayload
   ): Promise<AssetHolder> {
-    return await apiClient<AssetHolder>(
+    return await this.api<AssetHolder>(
       `${this.basePath}/${assetUuid}/holder`,
       {
         method: 'POST',
@@ -76,7 +80,7 @@ export class AssetHolderService {
     holderId: string,
     payload: ReturnAssetHolderPayload
   ): Promise<void> {
-    await apiClient(
+    await this.api(
       `${this.basePath}/${assetUuid}/holder/${holderId}`,
       {
         method: 'POST',

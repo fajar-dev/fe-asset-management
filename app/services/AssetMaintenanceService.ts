@@ -1,5 +1,4 @@
 // ~/services/assetMaintenance.ts
-import { apiClient } from '~/services/apiClient'
 import type {
   AssetMaintenance,
   AssetMaintenanceResponse,
@@ -10,6 +9,11 @@ import type {
 
 export class AssetMaintenanceService {
   private basePath = '/v1/asset'
+
+  private get api() {
+    const { $api } = useNuxtApp()
+    return $api
+  }
 
   private getAuthHeader() {
     const token = localStorage.getItem('accessToken') || ''
@@ -31,7 +35,7 @@ export class AssetMaintenanceService {
       limit?: number
     } = {}
   ): Promise<AssetMaintenanceResponse> {
-    return await apiClient<AssetMaintenanceResponse>(
+    return await this.api<AssetMaintenanceResponse>(
       `${this.basePath}/${assetUuid}/maintenance`,
       {
         method: 'GET',
@@ -46,7 +50,7 @@ export class AssetMaintenanceService {
     assetUuid: string,
     maintenanceId: string
   ): Promise<AssetMaintenanceDetailResponse> {
-    return await apiClient<AssetMaintenanceDetailResponse>(
+    return await this.api<AssetMaintenanceDetailResponse>(
       `${this.basePath}/${assetUuid}/maintenance/${maintenanceId}`,
       {
         method: 'GET',
@@ -60,7 +64,7 @@ export class AssetMaintenanceService {
     assetUuid: string,
     payload: CreateAssetMaintenancePayload
   ): Promise<AssetMaintenance> {
-    return await apiClient<AssetMaintenance>(
+    return await this.api<AssetMaintenance>(
       `${this.basePath}/${assetUuid}/maintenance`,
       {
         method: 'POST',
@@ -76,7 +80,7 @@ export class AssetMaintenanceService {
     maintenanceId: string,
     payload: UpdateAssetMaintenancePayload
   ): Promise<void> {
-    await apiClient(
+    await this.api(
       `${this.basePath}/${assetUuid}/maintenance/${maintenanceId}`,
       {
         method: 'PUT',
@@ -91,7 +95,7 @@ export class AssetMaintenanceService {
     assetUuid: string,
     maintenanceId: string
   ): Promise<void> {
-    await apiClient(
+    await this.api(
       `${this.basePath}/${assetUuid}/maintenance/${maintenanceId}`,
       {
         method: 'DELETE',

@@ -1,4 +1,3 @@
-import { apiClient } from '~/services/apiClient'
 import type {
   Property,
   PropertyDetailResponse,
@@ -9,6 +8,11 @@ import type {
 
 export class PropertyService {
   private basePath = '/v1/sub-category'
+
+  private get api() {
+    const { $api } = useNuxtApp()
+    return $api
+  }
 
   private getAuthHeader() {
     const token = localStorage.getItem('accessToken') || ''
@@ -22,7 +26,7 @@ export class PropertyService {
     page = 1,
     limit = 10
   ): Promise<PropertyResponse> {
-    return await apiClient<PropertyResponse>(`${this.basePath}/${subCategoryId}/property`, {
+    return await this.api<PropertyResponse>(`${this.basePath}/${subCategoryId}/property`, {
       method: 'GET',
       params: { search, page, limit },
       headers: this.getAuthHeader()
@@ -31,7 +35,7 @@ export class PropertyService {
 
   // Fetch all properties (without pagination, optional all flag)
   async getAllProperties(subCategoryId: string, all = true): Promise<PropertyResponse> {
-    return await apiClient<PropertyResponse>(`${this.basePath}/${subCategoryId}/property`, {
+    return await this.api<PropertyResponse>(`${this.basePath}/${subCategoryId}/property`, {
       method: 'GET',
       params: { all },
       headers: this.getAuthHeader()
@@ -40,7 +44,7 @@ export class PropertyService {
 
   // Fetch single property by ID
   async getPropertyById(subCategoryId: string, propertyId: string): Promise<PropertyDetailResponse> {
-    return await apiClient<PropertyDetailResponse>(`${this.basePath}/${subCategoryId}/property/${propertyId}`, {
+    return await this.api<PropertyDetailResponse>(`${this.basePath}/${subCategoryId}/property/${propertyId}`, {
       method: 'GET',
       headers: this.getAuthHeader()
     })
@@ -48,7 +52,7 @@ export class PropertyService {
 
   // Create a new property
   async createProperty(subCategoryId: string, payload: CreatePropertyPayload): Promise<Property> {
-    return await apiClient<Property>(`${this.basePath}/${subCategoryId}/property`, {
+    return await this.api<Property>(`${this.basePath}/${subCategoryId}/property`, {
       method: 'POST',
       body: payload,
       headers: this.getAuthHeader()
@@ -61,7 +65,7 @@ export class PropertyService {
     propertyId: string,
     payload: UpdatePropertyPayload
   ): Promise<void> {
-    await apiClient(`${this.basePath}/${subCategoryId}/property/${propertyId}`, {
+    await this.api(`${this.basePath}/${subCategoryId}/property/${propertyId}`, {
       method: 'PUT',
       body: payload,
       headers: this.getAuthHeader()
@@ -70,7 +74,7 @@ export class PropertyService {
 
   // Delete a property
   async deleteProperty(subCategoryId: string, propertyId: string): Promise<void> {
-    await apiClient(`${this.basePath}/${subCategoryId}/property/${propertyId}`, {
+    await this.api(`${this.basePath}/${subCategoryId}/property/${propertyId}`, {
       method: 'DELETE',
       headers: this.getAuthHeader()
     })

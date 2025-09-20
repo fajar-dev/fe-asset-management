@@ -1,5 +1,4 @@
 // ~/services/assetLocation.ts
-import { apiClient } from '~/services/apiClient'
 import type {
   AssetLocation,
   AssetLocationResponse,
@@ -8,6 +7,11 @@ import type {
 
 export class AssetLocationService {
   private basePath = '/v1/asset'
+
+  private get api() {
+    const { $api } = useNuxtApp()
+    return $api
+  }
 
   private getAuthHeader() {
     const token = localStorage.getItem('accessToken') || ''
@@ -23,7 +27,7 @@ export class AssetLocationService {
       limit?: number
     } = {}
   ): Promise<AssetLocationResponse> {
-    return await apiClient<AssetLocationResponse>(
+    return await this.api<AssetLocationResponse>(
       `${this.basePath}/${assetUuid}/location`,
       {
         method: 'GET',
@@ -38,7 +42,7 @@ export class AssetLocationService {
     assetUuid: string,
     payload: CreateAssetLocationPayload
   ): Promise<AssetLocation> {
-    return await apiClient<AssetLocation>(
+    return await this.api<AssetLocation>(
       `${this.basePath}/${assetUuid}/location`,
       {
         method: 'POST',

@@ -1,4 +1,3 @@
-import { apiClient } from '~/services/apiClient'
 import type {
   Asset,
   AssetDetailResponse,
@@ -9,6 +8,11 @@ import type {
 
 export class AssetService {
   private basePath = '/v1/asset'
+
+  private get api() {
+    const { $api } = useNuxtApp()
+    return $api
+  }
 
   private getAuthHeader() {
     const token = localStorage.getItem('accessToken') || ''
@@ -28,7 +32,7 @@ export class AssetService {
     if (subCategoryId) params.subCategoryId = subCategoryId
     if (status) params.status = status
 
-    return await apiClient<AssetResponse>(this.basePath, {
+    return await this.api<AssetResponse>(this.basePath, {
       method: 'GET',
       params,
       headers: this.getAuthHeader()
@@ -36,7 +40,7 @@ export class AssetService {
   }
 
   async getAllAssets(all = true): Promise<AssetResponse> {
-    return await apiClient<AssetResponse>(this.basePath, {
+    return await this.api<AssetResponse>(this.basePath, {
       method: 'GET',
       params: { all },
       headers: this.getAuthHeader()
@@ -44,14 +48,14 @@ export class AssetService {
   }
 
   async getAssetById(id: string): Promise<AssetDetailResponse> {
-    return await apiClient<AssetDetailResponse>(`${this.basePath}/${id}`, {
+    return await this.api<AssetDetailResponse>(`${this.basePath}/${id}`, {
       method: 'GET',
       headers: this.getAuthHeader()
     })
   }
 
   async createAsset(payload: CreateAssetPayload): Promise<Asset> {
-    return await apiClient<Asset>(this.basePath, {
+    return await this.api<Asset>(this.basePath, {
       method: 'POST',
       body: payload,
       headers: this.getAuthHeader()
@@ -59,7 +63,7 @@ export class AssetService {
   }
 
   async updateAsset(id: string, payload: UpdateAssetPayload): Promise<void> {
-    await apiClient(`${this.basePath}/${id}`, {
+    await this.api(`${this.basePath}/${id}`, {
       method: 'PUT',
       body: payload,
       headers: this.getAuthHeader()
@@ -67,7 +71,7 @@ export class AssetService {
   }
 
   async deleteAsset(id: string): Promise<void> {
-    await apiClient(`${this.basePath}/${id}`, {
+    await this.api(`${this.basePath}/${id}`, {
       method: 'DELETE',
       headers: this.getAuthHeader()
     })
