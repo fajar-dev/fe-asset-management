@@ -220,8 +220,8 @@ const columns: TableColumn<any>[] = [
       if (!loc) return h('span', { class: 'text-xs text-muted' }, '-')
 
       return h('div', { class: 'flex flex-col' }, [
-        h('span', { class: 'text-highlighted font-medium text-xs' }, loc.branch),
-        h('span', { class: 'text-xs' }, loc.name)
+        h('span', { class: 'text-highlighted font-medium text-xs' }, loc.name),
+        h('span', { class: 'text-xs' }, loc.branch)
       ])
     }
   },

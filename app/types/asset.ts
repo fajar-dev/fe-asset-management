@@ -16,6 +16,7 @@ export interface CreateAssetPayload {
 export interface UpdateAssetPayload extends CreateAssetPayload {}
 
 export interface Asset {
+  data: any
   id: string
   name: string
   description?: string

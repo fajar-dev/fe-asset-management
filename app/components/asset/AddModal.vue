@@ -243,7 +243,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       properties: processedProperties
     }
 
-    await createAsset(payload)
+    const asset = await createAsset(payload)
+    if (event.data.locationId) {
+      await createLocation(asset?.data.id, { locationId: event.data.locationId })
+    }
     resetForm()
     open.value = false
     emit('created')
