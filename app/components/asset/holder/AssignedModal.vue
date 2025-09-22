@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
-import type { FormSubmitEvent } from '@nuxt/ui'
 import { useAssetHolder } from '~/composables/useAssetHolder'
+import { useEmployee } from '~/composables/useEmployee'
 
 const props = defineProps<{
   assetId: string
@@ -12,30 +12,34 @@ const emit = defineEmits<{ (e: 'created'): void }>()
 // Validation schema
 const schema = z.object({
   assignedAt: z.string().min(1, 'Assigned date is required'),
-  employeeId: z.string().min(1, 'Employee ID is required'),
+  employeeId: z.string().min(1, 'Employee is required'),
   purpose: z.string().min(1, 'Purpose is required')
 })
-
 type Schema = z.output<typeof schema>
 
 const open = ref(false)
 const saving = ref(false)
 
-const state = reactive<Partial<Schema>>({
-  assignedAt: '',
-  employeeId: '',
-  purpose: ''
+const state = reactive({
+  assignedAt: '' as string,
+  employeeId: '' as string,
+  purpose: '' as string
 })
 
 const { assignHolder } = useAssetHolder()
+const { employees, fetchEmployees } = useEmployee()
+
+const items = shallowRef<any[]>([])
+const selectedEmployee = shallowRef<any>(null)
 
 function resetForm() {
   state.assignedAt = ''
   state.employeeId = ''
   state.purpose = ''
+  selectedEmployee.value = null
 }
 
-async function onSubmit(event: FormSubmitEvent<Schema>) {
+async function onSubmit(event: { data: Schema }) {
   saving.value = true
   await assignHolder(props.assetId, {
     purpose: event.data.purpose,
@@ -46,6 +50,16 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   open.value = false
   emit('created')
   saving.value = false
+}
+
+async function openModal() {
+  open.value = true
+  await fetchEmployees()
+  items.value = employees.value.map(e => ({
+    label: `${e.employeeId} - ${e.fullName}`,
+    value: e.employeeId,
+    avatar: e.photoProfile ? { src: e.photoProfile, alt: e.fullName } : undefined
+  }))
 }
 </script>
 
@@ -59,7 +73,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       label="Assign Holder"
       icon="i-lucide-plus"
       :disabled="props.disabled"
-      @click="open = true"
+      @click="openModal"
     />
 
     <template #body>
@@ -77,11 +91,13 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           />
         </UFormField>
 
-        <UFormField label="Employee ID" name="employeeId">
-          <UInput
-            v-model="state.employeeId"
-            placeholder="Enter employee ID"
+        <UFormField label="Employee" name="employeeId">
+          <UInputMenu
+            v-model="selectedEmployee"
             class="w-full"
+            :items="items"
+            placeholder="Select employee"
+            @update:model-value="val => state.employeeId = val?.value ?? ''"
           />
         </UFormField>
 

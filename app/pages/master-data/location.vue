@@ -70,7 +70,13 @@ function getRowItems(row: Row<any>) {
 
 const columns: TableColumn<any>[] = [
   { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'branch', header: 'Branch' },
+  {
+    header: 'Branch',
+    cell: ({ row }) => {
+      const branch = row.original.branch
+      return `${branch.branchId} - ${branch.name}`
+    }
+  },
   {
     id: 'actions',
     cell: ({ row }) =>

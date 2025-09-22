@@ -1,11 +1,13 @@
 // ~/types/assetHolder.ts
 
+import type { Employee } from './employee'
+
 export interface AssetHolder {
   id: string
-  employeeId: string
+  employee: Employee
   purpose: string
-  assignedAt: string // ISO date string
-  returnedAt?: string // ISO date string (nullable)
+  assignedAt: string
+  returnedAt?: string
   assetUuid?: string
   createdAt?: string
   updatedAt?: string

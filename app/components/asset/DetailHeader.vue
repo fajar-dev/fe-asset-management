@@ -2,7 +2,7 @@
   <USkeleton v-if="loading" class="h-6 w-40 rounded" />
   <div v-else-if="assetDetail" class="flex flex-col">
     <span>{{ assetDetail.name }}</span>
-    <span class="text-muted font-medium text-xs">{{ assetDetail.id }}</span>
+    <span class="text-muted font-medium text-xs">{{ assetDetail.code }}</span>
   </div>
 </template>
 

@@ -8,6 +8,7 @@ import { useLocation } from '~/composables/useLocation'
 import { useAssetLocation } from '~/composables/useAssetLocation'
 
 const schema = z.object({
+  code: z.string().min(1, 'Asset code is required'),
   name: z.string().min(1, 'Asset name is required'),
   description: z.string().optional(),
   brand: z.string().optional(),
@@ -15,6 +16,7 @@ const schema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   subCategoryId: z.string().min(1, 'Sub category is required'),
   locationId: z.string().optional(),
+  status: z.enum(['active', 'in repair', 'disposed']).default('active'),
   properties: z.array(
     z.object({
       id: z.string(),
@@ -31,6 +33,7 @@ const emit = defineEmits<{ (e: 'created'): void }>()
 const open = ref(false)
 const saving = ref(false)
 const state = reactive<Partial<Schema>>({
+  code: '',
   name: '',
   description: '',
   brand: '',
@@ -38,6 +41,7 @@ const state = reactive<Partial<Schema>>({
   categoryId: '',
   subCategoryId: '',
   locationId: '',
+  status: 'active',
   properties: []
 })
 
@@ -56,14 +60,12 @@ const showLocationField = ref(false)
 
 watch(() => state.categoryId, async (catId) => {
   if (catId) {
-    // Get category details to check hasLocation
     const categoryDetail = await getCategoryById(catId)
     showLocationField.value = categoryDetail?.data?.hasLocation || false
 
-    // Load locations if category has location
     if (showLocationField.value) {
       await getAllLocations()
-      locationItems.value = locations.value.map(l => ({ id: l.id, name: l.name }))
+      locationItems.value = locations.value.map(l => ({ id: l.id, name: l.name + ' - ' + l.branch.name }))
     } else {
       locationItems.value = []
       state.locationId = ''
@@ -109,6 +111,7 @@ watch(() => state.subCategoryId, async (subCatId) => {
 })
 
 function resetForm() {
+  state.code = ''
   state.name = ''
   state.description = ''
   state.brand = ''
@@ -116,6 +119,7 @@ function resetForm() {
   state.categoryId = ''
   state.subCategoryId = ''
   state.locationId = ''
+  state.status = 'active'
   state.properties = []
   availableProperties.value = []
   categoryItems.value = []
@@ -199,7 +203,6 @@ const hasValidationErrors = computed(() => {
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   try {
     saving.value = true
-
     propertyErrors.value = {}
     let hasErrors = false
 
@@ -215,37 +218,31 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       }
     }
 
-    if (hasErrors) {
-      return
-    }
+    if (hasErrors) return
 
     const processedProperties = event.data.properties?.map((prop) => {
       const property = availableProperties.value.find(p => p.id === prop.id)
       if (property?.dataType === 'number') {
-        return {
-          id: prop.id,
-          value: Number(prop.value)
-        }
+        return { id: prop.id, value: Number(prop.value) }
       }
-      return {
-        id: prop.id,
-        value: prop.value?.toString() || ''
-      }
+      return { id: prop.id, value: prop.value?.toString() || '' }
     }).filter(prop => prop.value !== '') || []
 
     const payload = {
+      code: event.data.code,
       subCategoryId: event.data.subCategoryId,
       name: event.data.name,
       description: event.data.description,
       brand: event.data.brand,
       model: event.data.model,
       locationId: event.data.locationId || undefined,
+      status: event.data.status || 'active',
       properties: processedProperties
     }
 
     const asset = await createAsset(payload)
     if (event.data.locationId) {
-      await createLocation(asset?.data.id, { locationId: event.data.locationId })
+      await createLocation(asset.data.id, { locationId: event.data.locationId })
     }
     resetForm()
     open.value = false
@@ -267,23 +264,33 @@ async function openModal() {
 <template>
   <UButton label="New Asset" icon="i-lucide-plus" @click="openModal" />
 
-  <UModal v-model:open="open" title="New Asset" description="Add a new asset">
+  <UModal
+    v-model:open="open"
+    title="New Asset"
+    description="Add a new asset"
+    :ui="{ content: 'max-w-5xl' }"
+  >
     <template #body>
       <UForm
         :schema="schema"
         :state="state"
-        class="space-y-4"
+        class="md:grid md:grid-cols-2 gap-6"
         @submit="onSubmit"
       >
-        <UFormField label="Name" name="name">
-          <UInput v-model="state.name" class="w-full" placeholder="Asset name" />
-        </UFormField>
+        <!-- Kolom kiri -->
+        <div class="space-y-2">
+          <UFormField label="Serial ID" name="code">
+            <UInput v-model="state.code" class="w-full" placeholder="Serial ID" />
+          </UFormField>
 
-        <UFormField label="Description" name="description">
-          <UTextarea v-model="state.description" class="w-full" placeholder="Asset description (optional)" />
-        </UFormField>
+          <UFormField label="Name" name="name">
+            <UInput v-model="state.name" class="w-full" placeholder="Asset name" />
+          </UFormField>
 
-        <div class="grid grid-cols-2 gap-4">
+          <UFormField label="Description" name="description">
+            <UTextarea v-model="state.description" class="w-full" placeholder="Asset description (optional)" />
+          </UFormField>
+
           <UFormField label="Brand" name="brand">
             <UInput v-model="state.brand" class="w-full" placeholder="Brand (optional)" />
           </UFormField>
@@ -291,70 +298,89 @@ async function openModal() {
           <UFormField label="Model" name="model">
             <UInput v-model="state.model" class="w-full" placeholder="Model (optional)" />
           </UFormField>
+
+          <UFormField label="Status" name="status">
+            <USelectMenu
+              v-model="state.status"
+              :items="[
+                { id: 'active', name: 'Active' },
+                { id: 'in repair', name: 'In Repair' },
+                { id: 'disposed', name: 'Disposed' }
+              ]"
+              value-key="id"
+              label-key="name"
+              placeholder="Select status"
+              class="w-full"
+            />
+          </UFormField>
         </div>
 
-        <UFormField label="Category" name="categoryId">
-          <USelectMenu
-            v-model="state.categoryId"
-            :items="categoryItems"
-            value-key="id"
-            label-key="name"
-            placeholder="Select category"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField label="Sub Category" name="subCategoryId">
-          <USelectMenu
-            v-model="state.subCategoryId"
-            :items="subCategoryItems"
-            value-key="id"
-            label-key="name"
-            placeholder="Select sub category"
-            :disabled="!state.categoryId"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField v-if="showLocationField" label="Location" name="locationId">
-          <USelectMenu
-            v-model="state.locationId"
-            :items="locationItems"
-            value-key="id"
-            label-key="name"
-            placeholder="Select location (optional)"
-            class="w-full"
-          />
-        </UFormField>
-
-        <div v-if="state.properties?.length" class="space-y-3">
-          <div
-            v-for="(prop, i) in state.properties"
-            :key="prop.id"
-            class="space-y-1"
-          >
-            <label class="block text-sm font-medium text-gray-700">
-              {{ getPropertyName(prop.id) }}
-              <span class="text-red-500">*</span>
-              <span v-if="getPropertyDataType(prop.id) === 'number'" class="text-xs text-gray-500 ml-1">(Number)</span>
-            </label>
-
-            <UInput
-              :model-value="prop.value?.toString() || ''"
+        <!-- Kolom kanan -->
+        <div class="space-y-4">
+          <UFormField label="Category" name="categoryId">
+            <USelectMenu
+              v-model="state.categoryId"
+              :items="categoryItems"
+              value-key="id"
+              label-key="name"
+              placeholder="Select category"
               class="w-full"
-              :placeholder="`Enter ${getPropertyName(prop.id).toLowerCase()}${getPropertyDataType(prop.id) === 'number' ? ' (number)' : ''}`"
-              :type="getPropertyDataType(prop.id) === 'number' ? 'number' : 'text'"
-              :class="{ 'border-red-500 focus:border-red-500': propertyErrors[prop.id] }"
-              @update:model-value="(value) => handlePropertyChange(i, value)"
             />
+          </UFormField>
 
-            <p v-if="propertyErrors[prop.id]" class="text-red-500 text-xs mt-1">
-              {{ propertyErrors[prop.id] }}
-            </p>
+          <UFormField label="Sub Category" name="subCategoryId">
+            <USelectMenu
+              v-model="state.subCategoryId"
+              :items="subCategoryItems"
+              value-key="id"
+              label-key="name"
+              placeholder="Select sub category"
+              :disabled="!state.categoryId"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField v-if="showLocationField" label="Location" name="locationId">
+            <USelectMenu
+              v-model="state.locationId"
+              :items="locationItems"
+              value-key="id"
+              label-key="name"
+              placeholder="Select location (optional)"
+              class="w-full"
+            />
+          </UFormField>
+
+          <div v-if="state.properties?.length" class="space-y-3">
+            <div
+              v-for="(prop, i) in state.properties"
+              :key="prop.id"
+              class="space-y-1"
+            >
+              <label class="block text-sm font-medium text-gray-700">
+                {{ getPropertyName(prop.id) }}
+                <span class="text-red-500">*</span>
+                <span v-if="getPropertyDataType(prop.id) === 'number'" class="text-xs text-gray-500 ml-1">(Number)</span>
+              </label>
+
+              <UInput
+                :model-value="prop.value?.toString() || ''"
+                class="w-full"
+                :placeholder="`Enter ${getPropertyName(prop.id).toLowerCase()}${getPropertyDataType(prop.id) === 'number' ? ' (number)' : ''}`"
+                :type="getPropertyDataType(prop.id) === 'number' ? 'number' : 'text'"
+                :class="{ 'border-red-500 focus:border-red-500': propertyErrors[prop.id] }"
+                @update:model-value="(value) => handlePropertyChange(i, value)"
+              />
+
+              <p v-if="propertyErrors[prop.id]" class="text-red-500 text-xs mt-1">
+                {{ propertyErrors[prop.id] }}
+              </p>
+            </div>
           </div>
         </div>
 
-        <div class="flex justify-end gap-2">
+        <!-- Tombol aksi full width -->
+        <div class="col-span-2 flex justify-end gap-2 pt-4">
           <UButton
             label="Cancel"
             color="neutral"

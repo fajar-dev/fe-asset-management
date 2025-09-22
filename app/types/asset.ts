@@ -5,6 +5,7 @@ export interface AssetPropertyPayload {
 
 export interface CreateAssetPayload {
   subCategoryId: string
+  code: string
   name: string
   description?: string
   brand?: string
@@ -18,6 +19,7 @@ export interface UpdateAssetPayload extends CreateAssetPayload {}
 export interface Asset {
   data: any
   id: string
+  code: string
   name: string
   description?: string
   brand?: string

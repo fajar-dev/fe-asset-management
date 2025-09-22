@@ -61,7 +61,13 @@ const showingTo = computed(() =>
 // columns
 const columns: TableColumn<any>[] = [
   { accessorKey: 'location.name', header: 'Location Name' },
-  { accessorKey: 'location.branch', header: 'Branch' }
+  {
+    header: 'Branch',
+    cell: ({ row }) => {
+      const branch = row.original.location.branch
+      return `${branch.branchId} - ${branch.name}`
+    }
+  }
 ]
 </script>
 

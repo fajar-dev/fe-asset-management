@@ -32,7 +32,7 @@ watch(value, (v) => {
 async function openModal() {
   open.value = true
   await getAllLocations()
-  items.value = allLocations.value.map(l => ({ id: l.id, name: l.name }))
+  items.value = allLocations.value.map(l => ({ id: l.id, name: l.name + ' - ' + l.branch.name }))
 }
 
 function resetForm() {

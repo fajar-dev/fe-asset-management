@@ -4,6 +4,8 @@ import { NuxtLink } from '#components'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
 import { useCategory } from '~/composables/useCategory'
+import { useEmployee } from '~/composables/useEmployee'
+import { useLocation } from '~/composables/useLocation'
 
 // global components
 const UAvatar = resolveComponent('UAvatar')
@@ -27,15 +29,26 @@ const expanded = ref<Record<number | string, boolean>>({})
 // composables
 const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset } = useAsset()
 const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
+const { employees, fetchEmployees } = useEmployee()
+const { locations: allLocations, getAllLocations } = useLocation()
 
+// filters
 const selectedCategoryId = ref<string | undefined>(undefined)
 const selectedSubCategoryId = ref<string | undefined>(undefined)
 const selectedStatus = ref<string | undefined>(undefined)
+const selectedEmployee = ref<string | undefined>(undefined)
+const selectedLocation = ref<string | undefined>(undefined)
 const statusOptions = ['active', 'in repair', 'disposed']
 
-// fetch categories on mount
+// fetch categories, employees, locations on mount
 onMounted(async () => {
   await getAllCategories()
+  await fetchEmployees()
+  await getAllLocations()
+  allLocations.value = allLocations.value.map(l => ({
+    ...l,
+    id: String(l.id)
+  }))
   loadAssets()
 })
 
@@ -51,8 +64,7 @@ watch(selectedCategoryId, async (newId) => {
 })
 
 // watch other filters
-watch([selectedSubCategoryId, selectedStatus], () => loadAssets(1))
-watch(search, () => loadAssets(1))
+watch([selectedSubCategoryId, selectedStatus, selectedEmployee, selectedLocation, search], () => loadAssets(1))
 
 // fetch wrapper with filters
 function loadAssets(page = pagination.value.pageIndex + 1) {
@@ -62,14 +74,19 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     limit: pagination.value.pageSize,
     categoryId: selectedCategoryId.value,
     subCategoryId: selectedSubCategoryId.value,
-    status: selectedStatus.value
+    status: selectedStatus.value,
+    employeeId: selectedEmployee.value,
+    locationId: selectedLocation.value
   })
 }
 
+// reset filters
 function resetFilters() {
   selectedCategoryId.value = undefined
   selectedSubCategoryId.value = undefined
   selectedStatus.value = undefined
+  selectedEmployee.value = undefined
+  selectedLocation.value = undefined
   search.value = ''
   subCategories.value = []
   loadAssets(1)
@@ -93,6 +110,7 @@ const showingTo = computed(() =>
     : 0
 )
 
+// confirm delete
 async function confirmDelete() {
   if (!deletingAssetId.value) return
   await deleteAsset(deletingAssetId.value)
@@ -101,7 +119,7 @@ async function confirmDelete() {
   isDeleteModalOpen.value = false
 }
 
-// action menu items berdasarkan boolean API
+// action menu items
 function getRowItems(row: Row<any>) {
   const category = row.original.subCategory?.category
   if (!category) return []
@@ -188,7 +206,7 @@ const columns: TableColumn<any>[] = [
         },
         () => [
           h('p', { class: 'font-medium text-highlighted' }, row.original.name),
-          h('p', { class: 'text-xs text-muted' }, row.original.id)
+          h('p', { class: 'text-xs text-muted' }, row.original.code)
         ]
       )
   },
@@ -221,7 +239,7 @@ const columns: TableColumn<any>[] = [
 
       return h('div', { class: 'flex flex-col' }, [
         h('span', { class: 'text-highlighted font-medium text-xs' }, loc.name),
-        h('span', { class: 'text-xs' }, loc.branch)
+        h('span', { class: 'text-xs' }, loc.branch?.name ?? '-')
       ])
     }
   },
@@ -233,13 +251,12 @@ const columns: TableColumn<any>[] = [
       if (!holder) return h('span', '-')
       return h('div', { class: 'flex items-center gap-3' }, [
         h(UAvatar, {
-          avatar: 'https://www.austinchronicle.com/imager/b/newfeature/2496536/d47f/music_feature1.jpg',
+          src: holder.employee.photoProfile,
           size: 'lg'
         }),
         h('div', undefined, [
-          // h('p', { class: 'font-medium text-highlighted' }, holder.name),
-          h('p', { class: 'font-medium text-highlighted text-xs' }, 'John Doe'),
-          h('p', { class: 'text-xs' }, holder.employeeId)
+          h('p', { class: 'font-medium text-highlighted text-xs' }, holder.employee.fullName),
+          h('p', { class: 'text-xs' }, holder.employee.employeeId)
         ])
       ])
     }
@@ -316,30 +333,52 @@ const columns: TableColumn<any>[] = [
         />
 
         <div class="flex flex-col md:flex-row gap-2">
-          <USelect
-            v-model="selectedCategoryId"
-            placeholder="Filter by Category"
-            clearable
-            class="lg:w-48 md:w-20 w-full"
-            :items="categories.map(c => ({ label: c.name, value: c.id }))"
-          />
+          <div>
+            <div class="flex flex-col md:flex-row gap-2">
+              <USelect
+                v-model="selectedCategoryId"
+                placeholder="Filter by Category"
+                clearable
+                class="lg:w-48 md:w-20 w-full"
+                :items="categories.map(c => ({ label: c.name, value: c.id }))"
+              />
 
-          <USelect
-            v-model="selectedSubCategoryId"
-            placeholder="Filter by Sub Category"
-            clearable
-            class="lg:w-48 md:w-20 w-full"
-            :items="subCategories.map(sc => ({ label: sc.name, value: sc.id }))"
-            :disabled="!selectedCategoryId"
-          />
+              <USelect
+                v-model="selectedSubCategoryId"
+                placeholder="Filter by Sub Category"
+                clearable
+                class="lg:w-48 md:w-20 w-full"
+                :items="subCategories.map(sc => ({ label: sc.name, value: sc.id }))"
+                :disabled="!selectedCategoryId"
+              />
 
-          <USelect
-            v-model="selectedStatus"
-            placeholder="Filter by Status"
-            clearable
-            class="lg:w-48 md:w-20 w-full"
-            :items="statusOptions.map(s => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))"
-          />
+              <USelect
+                v-model="selectedStatus"
+                placeholder="Filter by Status"
+                clearable
+                class="lg:w-48 md:w-20 w-full"
+                :items="statusOptions.map(s => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))"
+              />
+            </div>
+            <div class="flex flex-col md:flex-row gap-2 pt-2">
+              <USelect
+                v-model="selectedEmployee"
+                :items="employees.map(e => ({ label: e.fullName, value: e.employeeId }))"
+                placeholder="Filter by Active Holder"
+                clearable
+                class="lg:w-73 md:w-31 w-full"
+              />
+
+              <USelect
+                :key="allLocations.length"
+                v-model="selectedLocation"
+                :items="allLocations.map(l => ({ label: `${l.name} - ${l.branch.name}`, value: l.id }))"
+                placeholder="Filter by Last Location"
+                clearable
+                class="lg:w-73 md:w-31 w-full"
+              />
+            </div>
+          </div>
 
           <UButton
             color="error"

@@ -2,8 +2,7 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { reactive, ref, watch } from 'vue'
-import { useLocation } from '~/composables/useLocation'
-import { useBranch } from '~/composables/useBranch'
+import { useCategory } from '~/composables/useCategory'
 
 const props = defineProps<{
   id: string | null
@@ -15,46 +14,42 @@ const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
 
-// ✅ schema pakai branchId, sama seperti add
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
-  branchId: z.string().min(1, 'Branch is required')
+  hasLocation: z.boolean().default(false),
+  hasMaintenance: z.boolean().default(false),
+  hasHolder: z.boolean().default(false)
 })
 type Schema = z.output<typeof schema>
 
 const formData = reactive<Schema>({
   name: '',
-  branchId: ''
+  hasLocation: false,
+  hasMaintenance: false,
+  hasHolder: false
 })
 
 const saving = ref(false)
 const loading = ref(false)
-const items = ref<{ id: string, name: string }[]>([])
 
-const { getLocationById, updateLocation } = useLocation()
-const { branches, fetchBranches } = useBranch()
+const { getCategoryById, updateCategory } = useCategory()
 
-async function loadLocationData() {
+async function loadCategoryData() {
   if (!props.id) return
 
   loading.value = true
   try {
-    // load detail lokasi
-    const response = await getLocationById(props.id)
+    const response = await getCategoryById(props.id)
     if (response?.data) {
       Object.assign(formData, {
         name: response.data.name,
-        branchId: response.data.branch.branchId
+        hasLocation: response.data.hasLocation,
+        hasMaintenance: response.data.hasMaintenance,
+        hasHolder: response.data.hasHolder
       })
     }
-    // load daftar branch
-    await fetchBranches()
-    items.value = branches.value.map(b => ({
-      id: b.branchId,
-      name: `${b.branchId} - ${b.name}`
-    }))
   } catch (error) {
-    console.error('Failed to load location:', error)
+    console.error('Failed to load category:', error)
   } finally {
     loading.value = false
   }
@@ -64,7 +59,7 @@ watch(
   () => props.open,
   async (isOpen) => {
     if (isOpen && props.id) {
-      await loadLocationData()
+      await loadCategoryData()
     } else {
       resetForm()
     }
@@ -76,7 +71,9 @@ watch(
 function resetForm() {
   Object.assign(formData, {
     name: '',
-    branchId: ''
+    hasLocation: false,
+    hasMaintenance: false,
+    hasHolder: false
   })
 }
 
@@ -86,12 +83,12 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
 
   saving.value = true
   try {
-    await updateLocation(props.id, { ...formData })
+    await updateCategory(props.id, { ...formData })
     emit('updated')
     emit('update:open', false)
     resetForm()
   } catch (error) {
-    console.error('Failed to update location:', error)
+    console.error('Failed to update category:', error)
   } finally {
     saving.value = false
   }
@@ -101,8 +98,8 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
 <template>
   <UModal
     :open="props.open"
-    title="Edit Location"
-    description="Update location details"
+    title="Edit Category"
+    description="Update category details"
     @update:open="emit('update:open', $event)"
   >
     <template #body>
@@ -116,19 +113,20 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
           <UInput
             v-model="formData.name"
             class="w-full"
-            placeholder="Location name"
+            placeholder="Category name"
           />
         </UFormField>
 
-        <UFormField label="Branch" name="branchId" required>
-          <UInputMenu
-            v-model="formData.branchId"
-            class="w-full"
-            value-key="id"
-            label-key="name"
-            :items="items"
-            placeholder="Select branch"
-          />
+        <UFormField name="hasLocation">
+          <USwitch v-model="formData.hasLocation" label="Has Location" />
+        </UFormField>
+
+        <UFormField name="hasMaintenance">
+          <USwitch v-model="formData.hasMaintenance" label="Has Maintenance" />
+        </UFormField>
+
+        <UFormField name="hasHolder">
+          <USwitch v-model="formData.hasHolder" label="Has Holder" />
         </UFormField>
 
         <div class="flex justify-end gap-2">

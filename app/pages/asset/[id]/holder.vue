@@ -72,12 +72,12 @@ const columns: TableColumn<any>[] = [
     cell: ({ row }) => {
       return h('div', { class: 'flex items-center gap-3' }, [
         h(UAvatar, {
-          src: 'https://www.austinchronicle.com/imager/b/newfeature/2496536/d47f/music_feature1.jpg',
+          src: row.original.employee.photoProfile,
           size: 'lg'
         }),
         h('div', undefined, [
-          h('p', { class: 'font-medium text-highlighted text-xs' }, 'John Doe'),
-          h('p', { class: 'text-xs' }, row.original.employeeId)
+          h('p', { class: 'font-medium text-highlighted text-xs' }, row.original.employee.fullName),
+          h('p', { class: 'text-xs' }, row.original.employee.employeeId)
         ])
       ])
     }
@@ -110,7 +110,6 @@ const columns: TableColumn<any>[] = [
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <!-- disabled kalau masih ada active holder -->
           <AssetHolderAssignedModal
             :asset-id="assetId"
             :disabled="hasActiveHolder"

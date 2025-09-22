@@ -23,7 +23,7 @@ const open = ref(false)
 const saving = ref(false)
 const state = reactive<Partial<Schema>>({
   name: '',
-  categoryId: undefined, // Fixed: changed to undefined
+  categoryId: undefined,
   properties: []
 })
 
@@ -32,7 +32,7 @@ const { categories, getAllCategories } = useCategory()
 const { createProperty } = useProperty()
 
 const items = ref<{ id: string, name: string }[]>([])
-const value = ref<string | undefined>(undefined) // Fixed: added proper typing
+const value = ref<string | undefined>(undefined)
 
 watch(value, (v) => {
   state.categoryId = v
@@ -40,8 +40,8 @@ watch(value, (v) => {
 
 function resetForm() {
   state.name = ''
-  state.categoryId = undefined // Fixed: changed to undefined
-  value.value = undefined // Fixed: changed to undefined
+  state.categoryId = undefined
+  value.value = undefined
   state.properties = []
 }
 

@@ -23,6 +23,8 @@ interface AssetState {
     categoryId?: string | null
     subCategoryId?: string | null
     status?: string | null
+    employeeId?: string | null
+    locationId?: string | null
   }) => Promise<void>
   refreshAssets: () => Promise<void>
   getAssetById: (id: string) => Promise<AssetDetailResponse | null>
@@ -50,6 +52,8 @@ export const useAsset = (): AssetState => {
     categoryId?: string | null
     subCategoryId?: string | null
     status?: string | null
+    employeeId?: string | null
+    locationId?: string | null
   }): Promise<void> {
     loading.value = true
     error.value = null
@@ -60,10 +64,12 @@ export const useAsset = (): AssetState => {
         limit = pagination.value.pageSize,
         categoryId = null,
         subCategoryId = null,
-        status = null
+        status = null,
+        employeeId = null,
+        locationId = null
       } = options || {}
 
-      const res = await assetService.getAssets(search, page, limit, categoryId, subCategoryId, status)
+      const res = await assetService.getAssets(search, page, limit, categoryId, subCategoryId, status, employeeId, locationId)
       assets.value = res.data
       apiPagination.value = res.meta?.pagination ?? null
     } catch (err: unknown) {

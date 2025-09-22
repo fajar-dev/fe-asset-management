@@ -98,9 +98,9 @@ onMounted(async () => {
 
                 <div class="space-y-3">
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Asset ID</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Serial ID</label>
                     <p class="text-gray-900 dark:text-white font-mono text-sm">
-                      {{ assetDetail.id }}
+                      {{ assetDetail.code }}
                     </p>
                   </div>
                   <div>
