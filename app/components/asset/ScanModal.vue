@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { QrcodeStream } from 'vue-qrcode-reader'
+import { BrowserMultiFormatReader } from '@zxing/library'
 
 const open = ref(false)
 const loading = ref(false)
@@ -7,42 +7,75 @@ const showLoadingModal = ref(false)
 const error = ref<string>('')
 const cameraError = ref<string>('')
 const scannedResult = ref<string>('')
+const videoRef = ref<HTMLVideoElement>()
+const codeReader = ref<BrowserMultiFormatReader>()
+const scanning = ref(false)
+
 const toast = useToast()
 const router = useRouter()
-const { getAssetById } = useAsset()
+const { getAssetByCode } = useAsset()
 
-const onDetect = async (detectedCodes: any[]) => {
-  if (detectedCodes.length > 0) {
-    const result = detectedCodes[0].rawValue
-    scannedResult.value = result
+onMounted(() => {
+  codeReader.value = new BrowserMultiFormatReader()
+})
 
-    open.value = false
+const startScanning = async () => {
+  if (!codeReader.value || !videoRef.value) return
 
-    showLoadingModal.value = true
+  try {
+    loading.value = true
+    cameraError.value = ''
 
-    try {
-      const data = await getAssetById(result)
+    const videoInputDevices = await codeReader.value.listVideoInputDevices()
 
-      if (data) {
-        toast.add({
-          title: 'QR Code Scanned Successfully',
-          description: `Asset ID: ${result}`,
-          color: 'success'
-        })
-        showLoadingModal.value = false
-        await router.push(`/asset/${result}/detail`)
-      } else {
-        handleScanError('Asset not found or invalid QR code')
-      }
-    } catch (err) {
-      console.error('API Error:', err)
-      handleScanError('Failed to fetch asset data. Please try again.')
+    if (videoInputDevices.length === 0) {
+      throw new Error('No camera found on this device')
     }
+
+    const selectedDeviceId = videoInputDevices[0]?.deviceId
+
+    const result = await codeReader.value.decodeOnceFromVideoDevice(selectedDeviceId, videoRef.value)
+
+    if (result) {
+      await handleScanSuccess(result.getText())
+    }
+  } catch (err: any) {
+    console.error('Barcode Scanner Error:', err)
+    handleCameraError(err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleScanSuccess = async (result: string) => {
+  scannedResult.value = result
+  scanning.value = false
+  open.value = false
+  showLoadingModal.value = true
+
+  try {
+    const data = await getAssetByCode(result)
+
+    if (data) {
+      toast.add({
+        title: 'Barcode Scanned Successfully',
+        description: `Serial ID: ${result}`,
+        color: 'success'
+      })
+      showLoadingModal.value = false
+      await router.push(`/asset/${data.data.id}/detail`)
+    } else {
+      handleScanError('Asset not found or invalid barcode')
+    }
+  } catch (err) {
+    console.error('API Error:', err)
+    handleScanError('Failed to fetch asset data. Please try again.')
   }
 }
 
 const handleScanError = (errorMessage: string) => {
   showLoadingModal.value = false
+  scanning.value = false
 
   toast.add({
     title: 'Scan Failed',
@@ -55,12 +88,12 @@ const handleScanError = (errorMessage: string) => {
   }, 1000)
 }
 
-const onError = (err: any) => {
-  console.error('QR Scanner Error:', err)
+const handleCameraError = (err: any) => {
+  scanning.value = false
 
-  if (err.name === 'NotAllowedError') {
+  if (err.name === 'NotAllowedError' || err.message?.includes('Permission denied')) {
     cameraError.value = 'Camera access denied. Please allow camera permissions and try again.'
-  } else if (err.name === 'NotFoundError') {
+  } else if (err.name === 'NotFoundError' || err.message?.includes('No camera found')) {
     cameraError.value = 'No camera found on this device.'
   } else if (err.name === 'NotSupportedError') {
     cameraError.value = 'Camera not supported on this device.'
@@ -73,85 +106,136 @@ const onError = (err: any) => {
   }
 }
 
-const onCameraOn = () => {
-  loading.value = false
-  error.value = ''
-  cameraError.value = ''
-}
-
-const onCameraOff = () => {
-  loading.value = true
-}
-
 const closeModal = () => {
+  stopScanning()
   open.value = false
   error.value = ''
   cameraError.value = ''
   loading.value = false
 }
 
-const openModal = () => {
+const openModal = async () => {
   loading.value = true
   cameraError.value = ''
   error.value = ''
   open.value = true
+
+  await nextTick()
+  await startScanning()
 }
 
-const retryCamera = () => {
+const retryCamera = async () => {
   cameraError.value = ''
   loading.value = true
+  await startScanning()
 }
+
+const stopScanning = () => {
+  if (codeReader.value) {
+    codeReader.value.reset()
+  }
+  scanning.value = false
+}
+
+const continuousScanning = async () => {
+  if (!codeReader.value || !videoRef.value) return
+
+  try {
+    scanning.value = true
+    loading.value = false
+    cameraError.value = ''
+
+    const videoInputDevices = await codeReader.value.listVideoInputDevices()
+
+    if (videoInputDevices.length === 0) {
+      throw new Error('No camera found on this device')
+    }
+
+    const selectedDeviceId = videoInputDevices[0]?.deviceId
+
+    codeReader.value.decodeFromVideoDevice(
+      selectedDeviceId ?? null,
+      videoRef.value,
+      (result, error) => {
+        if (result && scanning.value) {
+          handleScanSuccess(result.getText())
+        }
+
+        if (error && !scanning.value) {
+          console.warn('Scanning stopped or error occurred:', error)
+        }
+      }
+    )
+  } catch (err: any) {
+    console.error('Continuous Barcode Scanner Error:', err)
+    handleCameraError(err)
+  }
+}
+
+watch(open, (newValue) => {
+  if (newValue) {
+    nextTick(() => {
+      continuousScanning()
+    })
+  } else {
+    stopScanning()
+  }
+})
+
+onUnmounted(() => {
+  stopScanning()
+})
 </script>
 
 <template>
   <UModal
     v-model:open="open"
-    title="Scan Asset QR Code"
-    description="Point your camera at the QR code to scan asset information"
+    title="Scan Asset Barcode"
+    description="Point your camera at the barcode to scan asset information"
     @close="closeModal"
   >
     <UButton
       label="Scan Asset"
       variant="soft"
-      icon="i-lucide-scan-qr-code"
+      icon="i-lucide-scan-barcode"
       @click="openModal"
     />
 
     <template #body>
       <div class="space-y-4">
         <div class="relative bg-gray-100 rounded-lg overflow-hidden" style="aspect-ratio: 4/3;">
-          <QrcodeStream
+          <video
             v-if="open"
-            class="w-full h-full"
-            @detect="onDetect"
-            @error="onError"
-            @camera-on="onCameraOn"
-            @camera-off="onCameraOff"
-          >
-            <div
-              v-if="loading"
-              class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50"
-            >
-              <div class="text-center text-white">
-                <UIcon name="i-lucide-camera" class="w-12 h-12 mx-auto mb-2 animate-pulse" />
-                <p class="text-sm">
-                  Starting camera...
-                </p>
-              </div>
-            </div>
+            ref="videoRef"
+            class="w-full h-full object-cover"
+            autoplay
+            muted
+            playsinline
+          />
 
-            <div
-              v-if="!loading && !cameraError"
-              class="absolute inset-0 flex items-center justify-center pointer-events-none"
-            >
-              <div class="border-2 border-white border-dashed rounded-lg w-48 h-48 flex items-center justify-center animate-pulse">
-                <div class="text-white text-sm text-center">
-                  <UIcon name="i-lucide-scan-qr-code" class="w-8 h-8 mx-auto mb-2" />
-                  <p>Position QR code here</p>
-                </div>
+          <div
+            v-if="loading"
+            class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50"
+          >
+            <div class="text-center text-white">
+              <UIcon name="i-lucide-camera" class="w-12 h-12 mx-auto mb-2 animate-pulse" />
+              <p class="text-sm">
+                Starting camera...
+              </p>
+            </div>
+          </div>
+
+          <div
+            v-if="!loading && !cameraError && scanning"
+            class="absolute inset-0 flex items-center justify-center pointer-events-none"
+          >
+            <div class="border-2 border-red-500 border-dashed rounded-lg w-64 h-24 flex items-center justify-center animate-pulse">
+              <div class="text-white text-sm text-center bg-black bg-opacity-50 px-3 py-2 rounded">
+                <UIcon name="i-lucide-scan-barcode" class="w-8 h-8 mx-auto mb-2" />
+                <p>Position barcode here</p>
               </div>
             </div>
-          </QrcodeStream>
+          </div>
 
           <div
             v-if="cameraError"
@@ -180,13 +264,14 @@ const retryCamera = () => {
             <UIcon name="i-lucide-info" class="w-5 h-5 text-green-500 mt-0.5" />
             <div class="text-sm text-green-700">
               <p class="font-medium mb-1">
-                How to scan:
+                How to scan barcode:
               </p>
               <ul class="text-xs space-y-1">
                 <li>• Hold your device steady</li>
-                <li>• Point camera at the QR code</li>
-                <li>• Wait for automatic detection</li>
-                <li>• Ensure good lighting for best results</li>
+                <li>• Point camera at the barcode</li>
+                <li>• Align barcode within the red frame</li>
+                <li>• Ensure good lighting and focus</li>
+                <li>• Supports: Code128, EAN-13, UPC-A, Code39, etc.</li>
               </ul>
             </div>
           </div>
@@ -231,14 +316,7 @@ const retryCamera = () => {
 </template>
 
 <style scoped>
-.qrcode-stream-camera {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-:deep(.qrcode-stream-camera) {
-  width: 100% !important;
-  height: 100% !important;
+video {
+  transform: scaleX(-1);
 }
 </style>

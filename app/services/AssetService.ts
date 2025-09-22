@@ -57,6 +57,13 @@ export class AssetService {
     })
   }
 
+  async getAssetByCode(code: string): Promise<AssetDetailResponse> {
+    return await this.api<AssetDetailResponse>(`${this.basePath}/${code}/by-code`, {
+      method: 'GET',
+      headers: this.getAuthHeader()
+    })
+  }
+
   async createAsset(payload: CreateAssetPayload): Promise<Asset> {
     return await this.api<Asset>(this.basePath, {
       method: 'POST',

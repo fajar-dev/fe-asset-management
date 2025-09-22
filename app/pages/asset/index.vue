@@ -339,6 +339,8 @@ const columns: TableColumn<any>[] = [
                 v-model="selectedCategoryId"
                 placeholder="Filter by Category"
                 clearable
+                searchable
+                searchable-placeholder="Cari kategori..."
                 class="lg:w-48 md:w-20 w-full"
                 :items="categories.map(c => ({ label: c.name, value: c.id }))"
               />
@@ -347,6 +349,8 @@ const columns: TableColumn<any>[] = [
                 v-model="selectedSubCategoryId"
                 placeholder="Filter by Sub Category"
                 clearable
+                searchable
+                searchable-placeholder="Cari sub kategori..."
                 class="lg:w-48 md:w-20 w-full"
                 :items="subCategories.map(sc => ({ label: sc.name, value: sc.id }))"
                 :disabled="!selectedCategoryId"
@@ -356,6 +360,7 @@ const columns: TableColumn<any>[] = [
                 v-model="selectedStatus"
                 placeholder="Filter by Status"
                 clearable
+                searchable
                 class="lg:w-48 md:w-20 w-full"
                 :items="statusOptions.map(s => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))"
               />
@@ -366,6 +371,7 @@ const columns: TableColumn<any>[] = [
                 :items="employees.map(e => ({ label: e.fullName, value: e.employeeId }))"
                 placeholder="Filter by Active Holder"
                 clearable
+                searchable
                 class="lg:w-73 md:w-31 w-full"
               />
 
@@ -375,6 +381,7 @@ const columns: TableColumn<any>[] = [
                 :items="allLocations.map(l => ({ label: `${l.name} - ${l.branch.name}`, value: l.id }))"
                 placeholder="Filter by Last Location"
                 clearable
+                searchable
                 class="lg:w-73 md:w-31 w-full"
               />
             </div>
