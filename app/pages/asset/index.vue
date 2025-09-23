@@ -21,7 +21,7 @@ const search = ref('')
 const isDeleteModalOpen = ref(false)
 const deletingAssetId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
-const editingAssetId = ref<string | null>(null)
+const editingAssetId = ref<string>('')
 
 // expanded rows
 const expanded = ref<Record<number | string, boolean>>({})
@@ -117,6 +117,11 @@ async function confirmDelete() {
   deletingAssetId.value = null
   loadAssets()
   isDeleteModalOpen.value = false
+}
+
+// handle update success
+function handleUpdated() {
+  loadAssets()
 }
 
 // action menu items
@@ -308,6 +313,7 @@ const columns: TableColumn<any>[] = [
     </template>
 
     <template #body>
+      <!-- Delete Confirmation Modal -->
       <ConfirmModal
         v-model:open="isDeleteModalOpen"
         title="Delete Asset"
@@ -316,11 +322,12 @@ const columns: TableColumn<any>[] = [
         :on-confirm="confirmDelete"
       />
 
+      <!-- Update Asset Modal -->
       <AssetUpdateModal
         v-if="editingAssetId"
-        :id="editingAssetId"
         v-model="isUpdateModalOpen"
-        @updated="loadAssets()"
+        :asset-id="editingAssetId"
+        @updated="handleUpdated"
       />
 
       <!-- Search + Filters -->
