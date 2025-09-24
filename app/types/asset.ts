@@ -21,6 +21,7 @@ export interface Asset {
   id: string
   code: string
   name: string
+  imageUrl?: string
   description?: string
   brand?: string
   model?: string

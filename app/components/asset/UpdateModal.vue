@@ -14,6 +14,7 @@ const schema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   subCategoryId: z.string().min(1, 'Sub category is required'),
   status: z.enum(['active', 'in repair', 'disposed']).default('active'),
+  image: z.any().optional(), // Image file
   properties: z.array(
     z.object({
       id: z.string(),
@@ -48,6 +49,7 @@ const state = reactive<Partial<Schema>>({
   categoryId: '',
   subCategoryId: '',
   status: 'active',
+  image: null,
   properties: []
 })
 
@@ -59,6 +61,12 @@ const categoryItems = ref<{ id: string, name: string }[]>([])
 const subCategoryItems = ref<{ id: string, name: string }[]>([])
 const availableProperties = ref<any[]>([])
 const propertyErrors = ref<Record<string, string>>({})
+
+// Image upload related refs
+const fileInput = ref<HTMLInputElement | null>(null)
+const imagePreview = ref<string | null>(null)
+const existingImageUrl = ref<string | null>(null)
+const hasImageChanged = ref(false)
 
 watch(() => state.categoryId, async (catId) => {
   if (isInitialLoad.value) return
@@ -124,6 +132,12 @@ async function loadAssetData() {
       state.model = asset.model || ''
       state.status = asset.status
       state.categoryId = asset.subCategory.category.id
+
+      // Load existing image
+      if (asset.imageUrl) {
+        existingImageUrl.value = asset.imageUrl
+        imagePreview.value = asset.imageUrl
+      }
 
       // Load subcategories berdasarkan category
       await getSubCategoriesByCategory(asset.subCategory.category.id)
@@ -208,6 +222,60 @@ function handlePropertyChange(index: number, value: string) {
   }
 }
 
+// Image upload functions
+function triggerFileUpload() {
+  fileInput.value?.click()
+}
+
+function handleFileChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (file) {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please select a valid image file (JPEG, PNG, WebP)')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+    if (file.size > maxSize) {
+      alert('File size must be less than 5MB')
+      return
+    }
+
+    state.image = file
+    hasImageChanged.value = true
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      imagePreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+function removeImage() {
+  state.image = null
+  hasImageChanged.value = true
+  imagePreview.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+
+function resetImageToOriginal() {
+  state.image = null
+  hasImageChanged.value = false
+  imagePreview.value = existingImageUrl.value
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+
 const hasValidationErrors = computed(() => {
   if (Object.keys(propertyErrors.value).length > 0) {
     return true
@@ -253,22 +321,57 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       return { id: prop.id, value: prop.value?.toString() || '' }
     }).filter(prop => prop.value !== '') || []
 
-    const payload = {
-      code: event.data.code,
-      subCategoryId: event.data.subCategoryId,
-      name: event.data.name,
-      description: event.data.description,
-      brand: event.data.brand,
-      model: event.data.model,
-      status: event.data.status || 'active',
-      properties: processedProperties
+    // Create FormData if image has changed, otherwise use JSON payload
+    if (hasImageChanged.value) {
+      const formData = new FormData()
+
+      // Add all asset data fields
+      formData.append('code', event.data.code)
+      formData.append('subCategoryId', event.data.subCategoryId)
+      formData.append('name', event.data.name)
+
+      if (event.data.description) {
+        formData.append('description', event.data.description)
+      }
+      if (event.data.brand) {
+        formData.append('brand', event.data.brand)
+      }
+      if (event.data.model) {
+        formData.append('model', event.data.model)
+      }
+
+      formData.append('status', event.data.status || 'active')
+      formData.append('properties', JSON.stringify(processedProperties))
+
+      // Add image file if present, or indicate removal
+      if (state.image) {
+        formData.append('image', state.image)
+      } else {
+        formData.append('removeImage', 'true')
+      }
+
+      await updateAsset(props.assetId, formData)
+    } else {
+      // Use JSON payload if no image changes
+      const payload = {
+        code: event.data.code,
+        subCategoryId: event.data.subCategoryId,
+        name: event.data.name,
+        description: event.data.description,
+        brand: event.data.brand,
+        model: event.data.model,
+        status: event.data.status || 'active',
+        properties: processedProperties
+      }
+
+      await updateAsset(props.assetId, payload)
     }
 
-    await updateAsset(props.assetId, payload)
     open.value = false
     emit('updated')
   } catch (err) {
     console.error(err)
+    alert('Failed to update asset. Please try again.')
   } finally {
     saving.value = false
   }
@@ -284,6 +387,11 @@ watch(open, (isOpen) => {
   if (isOpen) {
     openModal()
   } else {
+    // Reset image state when closing modal
+    hasImageChanged.value = false
+    existingImageUrl.value = null
+    imagePreview.value = null
+    state.image = null
     isInitialLoad.value = false
   }
 })
@@ -294,7 +402,7 @@ watch(open, (isOpen) => {
     v-model:open="open"
     title="Edit Asset"
     description="Update asset information"
-    :ui="{ content: 'max-w-5xl' }"
+    :ui="{ content: 'max-w-6xl' }"
   >
     <template #body>
       <div v-if="loading" class="flex justify-center items-center py-8">
@@ -342,6 +450,86 @@ watch(open, (isOpen) => {
               placeholder="Select status"
               class="w-full"
             />
+          </UFormField>
+
+          <!-- Image Upload Section -->
+          <UFormField label="Asset Image" name="image">
+            <div class="space-y-3">
+              <!-- Image Upload Buttons -->
+              <div class="flex items-center gap-3">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-upload"
+                  :disabled="saving"
+                  @click="triggerFileUpload"
+                >
+                  {{ imagePreview ? 'Change Image' : 'Upload Image' }}
+                </UButton>
+
+                <UButton
+                  v-if="imagePreview && hasImageChanged"
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-lucide-undo-2"
+                  size="sm"
+                  :disabled="saving"
+                  @click="resetImageToOriginal"
+                >
+                  Reset
+                </UButton>
+
+                <UButton
+                  v-if="imagePreview"
+                  variant="ghost"
+                  icon="i-lucide-trash-2"
+                  size="sm"
+                  :disabled="saving"
+                  @click="removeImage"
+                >
+                  Remove
+                </UButton>
+              </div>
+
+              <!-- Hidden File Input -->
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                class="hidden"
+                @change="handleFileChange"
+              >
+
+              <!-- Image Preview -->
+              <div v-if="imagePreview" class="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                <div class="text-center">
+                  <img
+                    :src="imagePreview"
+                    alt="Asset preview"
+                    class="mx-auto max-h-48 rounded-lg shadow-md"
+                  >
+                  <div class="mt-2">
+                    <p v-if="hasImageChanged && state.image" class="text-sm text-gray-500">
+                      {{ state.image?.name }}
+                      <span class="text-xs text-gray-400">
+                        ({{ Math.round((state.image?.size || 0) / 1024) }} KB)
+                      </span>
+                      <span class="ml-2 text-xs text-blue-600 font-medium">New Image</span>
+                    </p>
+                    <p v-else-if="existingImageUrl && !hasImageChanged" class="text-sm text-gray-500">
+                      <span class="text-xs text-green-600 font-medium">Current Image</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Upload Guidelines -->
+              <div class="text-xs text-gray-500 mt-2">
+                <p>• Supported formats: JPEG, PNG, WebP</p>
+                <p>• Maximum file size: 5MB</p>
+                <p>• Recommended size: 800x600 pixels or larger</p>
+              </div>
+            </div>
           </UFormField>
         </div>
 

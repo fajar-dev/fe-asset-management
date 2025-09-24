@@ -17,6 +17,7 @@ const schema = z.object({
   subCategoryId: z.string().min(1, 'Sub category is required'),
   locationId: z.string().optional(),
   status: z.enum(['active', 'in repair', 'disposed']).default('active'),
+  image: z.any(),
   properties: z.array(
     z.object({
       id: z.string(),
@@ -42,6 +43,7 @@ const state = reactive<Partial<Schema>>({
   subCategoryId: '',
   locationId: '',
   status: 'active',
+  image: null,
   properties: []
 })
 
@@ -57,6 +59,10 @@ const locationItems = ref<{ id: string, name: string }[]>([])
 const availableProperties = ref<any[]>([])
 const propertyErrors = ref<Record<string, string>>({})
 const showLocationField = ref(false)
+
+// Image upload related refs
+const fileInput = ref<HTMLInputElement | null>(null)
+const imagePreview = ref<string | null>(null)
 
 watch(() => state.categoryId, async (catId) => {
   if (catId) {
@@ -120,6 +126,7 @@ function resetForm() {
   state.subCategoryId = ''
   state.locationId = ''
   state.status = 'active'
+  state.image = null
   state.properties = []
   availableProperties.value = []
   categoryItems.value = []
@@ -127,6 +134,10 @@ function resetForm() {
   locationItems.value = []
   propertyErrors.value = {}
   showLocationField.value = false
+  imagePreview.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
 }
 
 function getPropertyInfo(propertyId: string) {
@@ -183,6 +194,49 @@ function handlePropertyChange(index: number, value: string) {
   }
 }
 
+// Image upload functions
+function triggerFileUpload() {
+  fileInput.value?.click()
+}
+
+function handleFileChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (file) {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please select a valid image file (JPEG, PNG, WebP)')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+    if (file.size > maxSize) {
+      alert('File size must be less than 5MB')
+      return
+    }
+
+    state.image = file
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      imagePreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+function removeImage() {
+  state.image = null
+  imagePreview.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+
 const hasValidationErrors = computed(() => {
   if (Object.keys(propertyErrors.value).length > 0) {
     return true
@@ -228,27 +282,47 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       return { id: prop.id, value: prop.value?.toString() || '' }
     }).filter(prop => prop.value !== '') || []
 
-    const payload = {
-      code: event.data.code,
-      subCategoryId: event.data.subCategoryId,
-      name: event.data.name,
-      description: event.data.description,
-      brand: event.data.brand,
-      model: event.data.model,
-      locationId: event.data.locationId || undefined,
-      status: event.data.status || 'active',
-      properties: processedProperties
+    // Create FormData to include the image file
+    const formData = new FormData()
+
+    // Add all asset data fields
+    formData.append('code', event.data.code)
+    formData.append('subCategoryId', event.data.subCategoryId)
+    formData.append('name', event.data.name)
+
+    if (event.data.description) {
+      formData.append('description', event.data.description)
+    }
+    if (event.data.brand) {
+      formData.append('brand', event.data.brand)
+    }
+    if (event.data.model) {
+      formData.append('model', event.data.model)
+    }
+    if (event.data.locationId) {
+      formData.append('locationId', event.data.locationId)
     }
 
-    const asset = await createAsset(payload)
+    formData.append('status', event.data.status || 'active')
+    formData.append('properties', JSON.stringify(processedProperties))
+
+    // Add image file if present
+    if (state.image) {
+      formData.append('image', state.image)
+    }
+
+    const asset = await createAsset(formData)
+
     if (event.data.locationId) {
       await createLocation(asset.data.id, { locationId: event.data.locationId })
     }
+
     resetForm()
     open.value = false
     emit('created')
   } catch (err) {
     console.error(err)
+    alert('Failed to create asset. Please try again.')
   } finally {
     saving.value = false
   }
@@ -268,7 +342,7 @@ async function openModal() {
     v-model:open="open"
     title="New Asset"
     description="Add a new asset"
-    :ui="{ content: 'max-w-5xl' }"
+    :ui="{ content: 'max-w-6xl' }"
   >
     <template #body>
       <UForm
@@ -312,6 +386,69 @@ async function openModal() {
               placeholder="Select status"
               class="w-full"
             />
+          </UFormField>
+
+          <!-- Image Upload Section -->
+          <UFormField label="Asset Image" name="image">
+            <div class="space-y-3">
+              <!-- Image Upload Button -->
+              <div class="flex items-center gap-3">
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-upload"
+                  :disabled="saving"
+                  @click="triggerFileUpload"
+                >
+                  {{ imagePreview ? 'Change Image' : 'Upload Image' }}
+                </UButton>
+
+                <UButton
+                  v-if="imagePreview"
+                  color="error"
+                  variant="ghost"
+                  icon="i-lucide-trash-2"
+                  size="sm"
+                  :disabled="saving"
+                  @click="removeImage"
+                >
+                  Remove
+                </UButton>
+              </div>
+
+              <!-- Hidden File Input -->
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                class="hidden"
+                @change="handleFileChange"
+              >
+
+              <!-- Image Preview -->
+              <div v-if="imagePreview" class="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                <div class="text-center">
+                  <img
+                    :src="imagePreview"
+                    alt="Asset preview"
+                    class="mx-auto max-h-48 rounded-lg shadow-md"
+                  >
+                  <p class="mt-2 text-sm text-gray-500">
+                    {{ state.image?.name }}
+                    <span class="text-xs text-gray-400">
+                      ({{ Math.round((state.image?.size || 0) / 1024) }} KB)
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Upload Guidelines -->
+              <div class="text-xs text-gray-500 mt-2">
+                <p>• Supported formats: JPEG, PNG, WebP</p>
+                <p>• Maximum file size: 5MB</p>
+                <p>• Recommended size: 800x600 pixels or larger</p>
+              </div>
+            </div>
           </UFormField>
         </div>
 
