@@ -8,9 +8,11 @@ export interface CreateAssetPayload {
   code: string
   name: string
   description?: string
+  status: 'active' | 'in repair' | 'disposed'
   brand?: string
   model?: string
   properties?: AssetPropertyPayload[] // opsional
+  image?: File | null
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

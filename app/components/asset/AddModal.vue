@@ -17,7 +17,9 @@ const schema = z.object({
   subCategoryId: z.string().min(1, 'Sub category is required'),
   locationId: z.string().optional(),
   status: z.enum(['active', 'in repair', 'disposed']).default('active'),
-  image: z.any(),
+  image: z.any().refine(file => file !== null && file !== undefined, {
+    message: 'Asset image is required'
+  }),
   properties: z.array(
     z.object({
       id: z.string(),
@@ -60,9 +62,10 @@ const availableProperties = ref<any[]>([])
 const propertyErrors = ref<Record<string, string>>({})
 const showLocationField = ref(false)
 
-// Image upload related refs
 const fileInput = ref<HTMLInputElement | null>(null)
 const imagePreview = ref<string | null>(null)
+const imageError = ref<string>('')
+const imageInteracted = ref(false)
 
 watch(() => state.categoryId, async (catId) => {
   if (catId) {
@@ -135,6 +138,8 @@ function resetForm() {
   propertyErrors.value = {}
   showLocationField.value = false
   imagePreview.value = null
+  imageError.value = ''
+  imageInteracted.value = false
   if (fileInput.value) {
     fileInput.value.value = ''
   }
@@ -194,8 +199,18 @@ function handlePropertyChange(index: number, value: string) {
   }
 }
 
-// Image upload functions
+function validateImage(): string {
+  if (!imageInteracted.value) {
+    return ''
+  }
+  if (!state.image) {
+    return 'Asset image is required'
+  }
+  return ''
+}
+
 function triggerFileUpload() {
+  imageInteracted.value = true
   fileInput.value?.click()
 }
 
@@ -204,23 +219,21 @@ function handleFileChange(event: Event) {
   const file = target.files?.[0]
 
   if (file) {
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      alert('Please select a valid image file (JPEG, PNG, WebP)')
+      imageError.value = 'Please select a valid image file (JPEG, PNG, WebP)'
       return
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+    const maxSize = 5 * 1024 * 1024
     if (file.size > maxSize) {
-      alert('File size must be less than 5MB')
+      imageError.value = 'File size must be less than 5MB'
       return
     }
 
     state.image = file
+    imageError.value = ''
 
-    // Create preview
     const reader = new FileReader()
     reader.onload = (e) => {
       imagePreview.value = e.target?.result as string
@@ -232,12 +245,18 @@ function handleFileChange(event: Event) {
 function removeImage() {
   state.image = null
   imagePreview.value = null
+  imageInteracted.value = true
+  imageError.value = validateImage()
   if (fileInput.value) {
     fileInput.value.value = ''
   }
 }
 
 const hasValidationErrors = computed(() => {
+  if (!state.image) {
+    return true
+  }
+
   if (Object.keys(propertyErrors.value).length > 0) {
     return true
   }
@@ -258,7 +277,13 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   try {
     saving.value = true
     propertyErrors.value = {}
+    imageError.value = validateImage()
     let hasErrors = false
+
+    if (!state.image) {
+      hasErrors = true
+      return
+    }
 
     if (availableProperties.value.length > 0) {
       for (const property of availableProperties.value) {
@@ -282,10 +307,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       return { id: prop.id, value: prop.value?.toString() || '' }
     }).filter(prop => prop.value !== '') || []
 
-    // Create FormData to include the image file
     const formData = new FormData()
 
-    // Add all asset data fields
     formData.append('code', event.data.code)
     formData.append('subCategoryId', event.data.subCategoryId)
     formData.append('name', event.data.name)
@@ -306,10 +329,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     formData.append('status', event.data.status || 'active')
     formData.append('properties', JSON.stringify(processedProperties))
 
-    // Add image file if present
-    if (state.image) {
-      formData.append('image', state.image)
-    }
+    formData.append('image', state.image)
 
     const asset = await createAsset(formData)
 
@@ -330,6 +350,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
 async function openModal() {
   open.value = true
+  imageError.value = validateImage()
   await getAllCategories()
   categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
 }
@@ -351,7 +372,6 @@ async function openModal() {
         class="md:grid md:grid-cols-2 gap-6"
         @submit="onSubmit"
       >
-        <!-- Kolom kiri -->
         <div class="space-y-2">
           <UFormField label="Serial ID" name="code">
             <UInput v-model="state.code" class="w-full" placeholder="Serial ID" />
@@ -388,16 +408,15 @@ async function openModal() {
             />
           </UFormField>
 
-          <!-- Image Upload Section -->
-          <UFormField label="Asset Image" name="image">
+          <UFormField label="Asset Image" name="image" required>
             <div class="space-y-3">
-              <!-- Image Upload Button -->
               <div class="flex items-center gap-3">
                 <UButton
                   color="neutral"
                   variant="outline"
                   icon="i-lucide-upload"
                   :disabled="saving"
+                  :class="{ 'border-red-500': imageError }"
                   @click="triggerFileUpload"
                 >
                   {{ imagePreview ? 'Change Image' : 'Upload Image' }}
@@ -416,7 +435,10 @@ async function openModal() {
                 </UButton>
               </div>
 
-              <!-- Hidden File Input -->
+              <p v-if="imageError" class="text-red-500 text-sm">
+                {{ imageError }}
+              </p>
+
               <input
                 ref="fileInput"
                 type="file"
@@ -425,7 +447,6 @@ async function openModal() {
                 @change="handleFileChange"
               >
 
-              <!-- Image Preview -->
               <div v-if="imagePreview" class="border-2 border-dashed border-gray-300 rounded-lg p-4">
                 <div class="text-center">
                   <img
@@ -433,26 +454,24 @@ async function openModal() {
                     alt="Asset preview"
                     class="mx-auto max-h-48 rounded-lg shadow-md"
                   >
-                  <p class="mt-2 text-sm text-gray-500">
+                  <p class="mt-2 text-sm text-gray-700">
                     {{ state.image?.name }}
-                    <span class="text-xs text-gray-400">
+                    <span class="text-xs text-gray-500">
                       ({{ Math.round((state.image?.size || 0) / 1024) }} KB)
                     </span>
                   </p>
                 </div>
               </div>
 
-              <!-- Upload Guidelines -->
               <div class="text-xs text-gray-500 mt-2">
+                <p>• <strong>Required field:</strong> You must upload an image</p>
                 <p>• Supported formats: JPEG, PNG, WebP</p>
-                <p>• Maximum file size: 5MB</p>
-                <p>• Recommended size: 800x600 pixels or larger</p>
+                <p>• Maximum file size: 2MB</p>
               </div>
             </div>
           </UFormField>
         </div>
 
-        <!-- Kolom kanan -->
         <div class="space-y-4">
           <UFormField label="Category" name="categoryId">
             <USelectMenu
@@ -516,7 +535,6 @@ async function openModal() {
           </div>
         </div>
 
-        <!-- Tombol aksi full width -->
         <div class="col-span-2 flex justify-end gap-2 pt-4">
           <UButton
             label="Cancel"

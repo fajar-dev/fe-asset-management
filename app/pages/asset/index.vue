@@ -40,7 +40,6 @@ const selectedEmployee = ref<string | undefined>(undefined)
 const selectedLocation = ref<string | undefined>(undefined)
 const statusOptions = ['active', 'in repair', 'disposed']
 
-// fetch categories, employees, locations on mount
 onMounted(async () => {
   await getAllCategories()
   await fetchEmployees()
@@ -52,7 +51,6 @@ onMounted(async () => {
   loadAssets()
 })
 
-// watch category to fetch sub-categories
 watch(selectedCategoryId, async (newId) => {
   if (newId) {
     await getSubCategoriesByCategory(newId)
@@ -63,10 +61,8 @@ watch(selectedCategoryId, async (newId) => {
   loadAssets(1)
 })
 
-// watch other filters
 watch([selectedSubCategoryId, selectedStatus, selectedEmployee, selectedLocation, search], () => loadAssets(1))
 
-// fetch wrapper with filters
 function loadAssets(page = pagination.value.pageIndex + 1) {
   fetchAssets({
     search: search.value,
@@ -80,7 +76,6 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
   })
 }
 
-// reset filters
 function resetFilters() {
   selectedCategoryId.value = undefined
   selectedSubCategoryId.value = undefined
@@ -92,12 +87,10 @@ function resetFilters() {
   loadAssets(1)
 }
 
-// pagination handler
 function handlePageChange(newPage: number) {
   loadAssets(newPage)
 }
 
-// info showing
 const showingFrom = computed(() =>
   apiPagination.value
     ? (apiPagination.value.currentPage - 1) * apiPagination.value.itemsPerPage + 1
@@ -110,7 +103,6 @@ const showingTo = computed(() =>
     : 0
 )
 
-// confirm delete
 async function confirmDelete() {
   if (!deletingAssetId.value) return
   await deleteAsset(deletingAssetId.value)
@@ -119,7 +111,6 @@ async function confirmDelete() {
   isDeleteModalOpen.value = false
 }
 
-// handle update success
 function handleUpdated() {
   loadAssets()
 }
@@ -184,7 +175,6 @@ function getRowItems(row: Row<any>) {
   return items
 }
 
-// table columns
 const columns: TableColumn<any>[] = [
   {
     id: 'expand',
@@ -207,11 +197,18 @@ const columns: TableColumn<any>[] = [
         NuxtLink,
         {
           to: `/asset/${row.original.id}/detail`,
-          class: 'flex flex-col hover:underline'
+          class: 'flex items-center gap-3 hover:underline'
         },
         () => [
-          h('p', { class: 'font-medium text-highlighted' }, row.original.name),
-          h('p', { class: 'text-xs text-muted' }, row.original.code)
+          h('img', {
+            src: row.original.imageUrl || '/placeholder-asset.png',
+            alt: row.original.name || 'Asset image',
+            class: 'w-10 h-10 object-cover rounded'
+          }),
+          h('div', { class: 'flex flex-col' }, [
+            h('p', { class: 'font-medium text-highlighted' }, row.original.name),
+            h('p', { class: 'text-xs text-muted' }, row.original.code)
+          ])
         ]
       )
   },
@@ -313,7 +310,6 @@ const columns: TableColumn<any>[] = [
     </template>
 
     <template #body>
-      <!-- Delete Confirmation Modal -->
       <ConfirmModal
         v-model:open="isDeleteModalOpen"
         title="Delete Asset"
@@ -322,7 +318,6 @@ const columns: TableColumn<any>[] = [
         :on-confirm="confirmDelete"
       />
 
-      <!-- Update Asset Modal -->
       <AssetUpdateModal
         v-if="editingAssetId"
         v-model="isUpdateModalOpen"
@@ -330,7 +325,6 @@ const columns: TableColumn<any>[] = [
         @updated="handleUpdated"
       />
 
-      <!-- Search + Filters -->
       <div class="flex flex-col md:flex-row md:justify-between md:align-center gap-2 mb-2">
         <UInput
           v-model="search"
@@ -406,7 +400,6 @@ const columns: TableColumn<any>[] = [
         </div>
       </div>
 
-      <!-- Table -->
       <UTable
         v-model:pagination="pagination"
         v-model:expanded="expanded"
@@ -442,7 +435,6 @@ const columns: TableColumn<any>[] = [
         </template>
       </UTable>
 
-      <!-- Pagination -->
       <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 border-t border-default pt-4 mt-auto">
         <UPagination
           v-if="apiPagination"

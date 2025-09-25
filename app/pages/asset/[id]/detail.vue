@@ -47,7 +47,6 @@ onMounted(async () => {
     <template #body>
       <div v-if="loading">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Loading state -->
           <div class="lg:col-span-2">
             <USkeleton class="h-64 w-full rounded-lg" />
           </div>
@@ -59,8 +58,7 @@ onMounted(async () => {
 
       <div v-else-if="assetDetail">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Main Information Card -->
-          <UCard class="lg:col-span-2" variant="subtle">
+          <UCard class="lg:col-span-2">
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -70,62 +68,61 @@ onMounted(async () => {
               </div>
             </template>
 
-            <div class="space-y-6">
+            <div class="space-y-6 mt-4">
               <!-- Basic Details -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-3">
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Asset Name</label>
-                    <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ assetDetail.name }}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Brand</label>
-                    <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ assetDetail.brand ?? '-' }}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Category</label>
-                    <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ assetDetail.subCategory.category.name }} > {{ assetDetail.subCategory.name }}
-                    </p>
-                  </div>
+              <div class="flex flex-col md:flex-row md:items-start md:gap-6">
+                <div v-if="assetDetail.imageUrl" class="flex justify-center md:justify-start mb-4 md:mb-0">
+                  <img
+                    :src="assetDetail.imageUrl"
+                    :alt="assetDetail.name"
+                    class="w-100 h-50 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                  >
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                  <div class="space-y-3">
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Asset Name</label>
+                      <p class="text-gray-900 dark:text-white font-medium text-sm">
+                        {{ assetDetail.name }}
+                      </p>
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Brand</label>
+                      <p class="text-gray-900 dark:text-white font-medium text-sm">
+                        {{ assetDetail.brand ?? '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Category</label>
+                      <p class="text-gray-900 dark:text-white font-medium text-sm">
+                        {{ assetDetail.subCategory.category.name }} > {{ assetDetail.subCategory.name }}
+                      </p>
+                    </div>
+                  </div>
 
-                <div class="space-y-3">
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Serial ID</label>
-                    <p class="text-gray-900 dark:text-white font-mono text-sm">
-                      {{ assetDetail.code }}
-                    </p>
-                  </div>
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Model</label>
-                    <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ assetDetail.model ?? '-' }}
-                    </p>
-                  </div>
-                  <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
-                    <div class="flex items-center gap-2">
-                      <UIcon
-                        :name="assetDetail.status === 'active'
-                          ? 'i-lucide-check-circle'
-                          : assetDetail.status === 'in_repair'
-                            ? 'i-lucide-wrench'
-                            : 'i-lucide-trash-2'"
-                        :class="assetDetail.status === 'active'
-                          ? 'text-green-500 text-sm'
-                          : assetDetail.status === 'in_repair'
-                            ? 'text-yellow-500 text-sm'
-                            : 'text-red-500 text-sm'"
-                        class="w-4 h-4"
-                      />
-                      <span class="text-gray-900 dark:text-white text-sm">{{ assetDetail.status }}</span>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Serial ID</label>
+                      <p class="text-gray-900 dark:text-white font-mono text-sm">
+                        {{ assetDetail.code }}
+                      </p>
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Model</label>
+                      <p class="text-gray-900 dark:text-white font-medium text-sm">
+                        {{ assetDetail.model ?? '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
+                      <div class="flex items-center gap-2 mt-1">
+                        <UIcon
+                          :name="assetDetail.status === 'active' ? 'i-lucide-check-circle' : assetDetail.status === 'in_repair' ? 'i-lucide-wrench' : 'i-lucide-trash-2'"
+                          :class="assetDetail.status === 'active' ? 'text-green-500 text-sm' : assetDetail.status === 'in_repair' ? 'text-yellow-500 text-sm' : 'text-red-500 text-sm'"
+                          class="w-4 h-4"
+                        />
+                        <span class="text-gray-900 dark:text-white text-sm capitalize">{{ assetDetail.status.replace('_', ' ') }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -136,7 +133,7 @@ onMounted(async () => {
                 <UDivider class="my-4" />
                 <div>
                   <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Description</label>
-                  <p class="text-gray-900 dark:text-white mt-1 text-sm">
+                  <p class="text-gray-900 dark:text-white mt-1 text-sm whitespace-pre-wrap">
                     {{ assetDetail.description }}
                   </p>
                 </div>
@@ -145,7 +142,7 @@ onMounted(async () => {
           </UCard>
 
           <!-- Properties Card -->
-          <UCard variant="subtle">
+          <UCard>
             <template #header>
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <UIcon name="i-lucide-settings" class="w-5 h-5" />
@@ -153,29 +150,18 @@ onMounted(async () => {
               </h3>
             </template>
 
-            <div class="space-y-4">
+            <div class="space-y-4 mt-4">
               <div
                 v-for="prop in assetDetail.properties"
                 :key="prop.id"
-                class="p-3 bg-white dark:bg-gray-800/50 rounded-lg"
+                class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
               >
-                <div class="flex justify-between items-start">
-                  <div class="flex-1">
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {{ prop.property.name }}
-                    </label>
-                    <div class="mt-1">
-                      <span
-                        v-if="prop.property.dataType === 'number'"
-                        class="text-gray-900 dark:text-white font-semibold text-lg"
-                      >
-                        {{ prop.value.toLocaleString() }}
-                      </span>
-                      <span v-else class="text-gray-900 dark:text-white font-medium">
-                        {{ prop.value }}
-                      </span>
-                    </div>
-                  </div>
+                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ prop.property.name }}</label>
+                <div class="mt-1">
+                  <span v-if="prop.property.dataType === 'number'" class="text-gray-900 dark:text-white font-semibold text-lg">
+                    {{ prop.value.toLocaleString() }}
+                  </span>
+                  <span v-else class="text-gray-900 dark:text-white font-medium">{{ prop.value }}</span>
                 </div>
               </div>
             </div>

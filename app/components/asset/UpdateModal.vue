@@ -14,7 +14,7 @@ const schema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   subCategoryId: z.string().min(1, 'Sub category is required'),
   status: z.enum(['active', 'in repair', 'disposed']).default('active'),
-  image: z.any().optional(), // Image file
+  image: z.any().optional(),
   properties: z.array(
     z.object({
       id: z.string(),
@@ -62,7 +62,6 @@ const subCategoryItems = ref<{ id: string, name: string }[]>([])
 const availableProperties = ref<any[]>([])
 const propertyErrors = ref<Record<string, string>>({})
 
-// Image upload related refs
 const fileInput = ref<HTMLInputElement | null>(null)
 const imagePreview = ref<string | null>(null)
 const existingImageUrl = ref<string | null>(null)
@@ -133,17 +132,14 @@ async function loadAssetData() {
       state.status = asset.status
       state.categoryId = asset.subCategory.category.id
 
-      // Load existing image
       if (asset.imageUrl) {
         existingImageUrl.value = asset.imageUrl
         imagePreview.value = asset.imageUrl
       }
 
-      // Load subcategories berdasarkan category
       await getSubCategoriesByCategory(asset.subCategory.category.id)
       subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
 
-      // Set subcategory setelah subcategories dimuat
       state.subCategoryId = asset.subCategory.id
 
       if (asset.properties && asset.properties.length > 0) {
@@ -222,7 +218,6 @@ function handlePropertyChange(index: number, value: string) {
   }
 }
 
-// Image upload functions
 function triggerFileUpload() {
   fileInput.value?.click()
 }
@@ -232,15 +227,13 @@ function handleFileChange(event: Event) {
   const file = target.files?.[0]
 
   if (file) {
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
       alert('Please select a valid image file (JPEG, PNG, WebP)')
       return
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+    const maxSize = 5 * 1024 * 1024
     if (file.size > maxSize) {
       alert('File size must be less than 5MB')
       return
@@ -249,21 +242,11 @@ function handleFileChange(event: Event) {
     state.image = file
     hasImageChanged.value = true
 
-    // Create preview
     const reader = new FileReader()
     reader.onload = (e) => {
       imagePreview.value = e.target?.result as string
     }
     reader.readAsDataURL(file)
-  }
-}
-
-function removeImage() {
-  state.image = null
-  hasImageChanged.value = true
-  imagePreview.value = null
-  if (fileInput.value) {
-    fileInput.value.value = ''
   }
 }
 
@@ -321,11 +304,9 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       return { id: prop.id, value: prop.value?.toString() || '' }
     }).filter(prop => prop.value !== '') || []
 
-    // Create FormData if image has changed, otherwise use JSON payload
     if (hasImageChanged.value) {
       const formData = new FormData()
 
-      // Add all asset data fields
       formData.append('code', event.data.code)
       formData.append('subCategoryId', event.data.subCategoryId)
       formData.append('name', event.data.name)
@@ -343,16 +324,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       formData.append('status', event.data.status || 'active')
       formData.append('properties', JSON.stringify(processedProperties))
 
-      // Add image file if present, or indicate removal
       if (state.image) {
         formData.append('image', state.image)
-      } else {
-        formData.append('removeImage', 'true')
       }
-
       await updateAsset(props.assetId, formData)
     } else {
-      // Use JSON payload if no image changes
       const payload = {
         code: event.data.code,
         subCategoryId: event.data.subCategoryId,
@@ -387,7 +363,6 @@ watch(open, (isOpen) => {
   if (isOpen) {
     openModal()
   } else {
-    // Reset image state when closing modal
     hasImageChanged.value = false
     existingImageUrl.value = null
     imagePreview.value = null
@@ -452,10 +427,8 @@ watch(open, (isOpen) => {
             />
           </UFormField>
 
-          <!-- Image Upload Section -->
           <UFormField label="Asset Image" name="image">
             <div class="space-y-3">
-              <!-- Image Upload Buttons -->
               <div class="flex items-center gap-3">
                 <UButton
                   color="neutral"
@@ -478,20 +451,8 @@ watch(open, (isOpen) => {
                 >
                   Reset
                 </UButton>
-
-                <UButton
-                  v-if="imagePreview"
-                  variant="ghost"
-                  icon="i-lucide-trash-2"
-                  size="sm"
-                  :disabled="saving"
-                  @click="removeImage"
-                >
-                  Remove
-                </UButton>
               </div>
 
-              <!-- Hidden File Input -->
               <input
                 ref="fileInput"
                 type="file"
@@ -500,7 +461,6 @@ watch(open, (isOpen) => {
                 @change="handleFileChange"
               >
 
-              <!-- Image Preview -->
               <div v-if="imagePreview" class="border-2 border-dashed border-gray-300 rounded-lg p-4">
                 <div class="text-center">
                   <img
@@ -514,20 +474,14 @@ watch(open, (isOpen) => {
                       <span class="text-xs text-gray-400">
                         ({{ Math.round((state.image?.size || 0) / 1024) }} KB)
                       </span>
-                      <span class="ml-2 text-xs text-blue-600 font-medium">New Image</span>
-                    </p>
-                    <p v-else-if="existingImageUrl && !hasImageChanged" class="text-sm text-gray-500">
-                      <span class="text-xs text-green-600 font-medium">Current Image</span>
                     </p>
                   </div>
                 </div>
               </div>
 
-              <!-- Upload Guidelines -->
               <div class="text-xs text-gray-500 mt-2">
                 <p>• Supported formats: JPEG, PNG, WebP</p>
                 <p>• Maximum file size: 5MB</p>
-                <p>• Recommended size: 800x600 pixels or larger</p>
               </div>
             </div>
           </UFormField>
