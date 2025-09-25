@@ -41,9 +41,9 @@ export default defineNuxtConfig({
   pwa: {
     registerType: 'autoUpdate',
     manifest: {
-      name: 'SIM-ASSET - Nusanet',
-      short_name: 'SIM-ASSET',
-      description: 'PT. Media Antar Nusa',
+      name: 'SIMAS - Nusanet',
+      short_name: 'SIMAS',
+      description: 'Sistem Informasi Asset Manajemen PT. Media Antar Nusa',
       lang: 'en',
       display: 'standalone',
       background_color: '#ffffff',
