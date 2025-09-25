@@ -20,6 +20,7 @@ export interface MeResponse {
   lastLoginAt?: string
   lastLoginIp?: string
   phoneNumber?: string
+  role: 'admin' | 'user'
 }
 
 // ==== User Model ====

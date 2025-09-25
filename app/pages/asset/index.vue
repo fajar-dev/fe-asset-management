@@ -6,6 +6,7 @@ import { useAsset } from '~/composables/useAsset'
 import { useCategory } from '~/composables/useCategory'
 import { useEmployee } from '~/composables/useEmployee'
 import { useLocation } from '~/composables/useLocation'
+import { useRole } from '~/composables/useRole'
 
 // global components
 const UAvatar = resolveComponent('UAvatar')
@@ -31,6 +32,7 @@ const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset } =
 const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
 const { employees, fetchEmployees } = useEmployee()
 const { locations: allLocations, getAllLocations } = useLocation()
+const { isAdmin } = useRole()
 
 // filters
 const selectedCategoryId = ref<string | undefined>(undefined)
@@ -151,26 +153,31 @@ function getRowItems(row: Row<any>) {
       label: 'Detail',
       icon: 'i-lucide-notebook-pen',
       to: `/asset/${row.original.id}/detail`
-    },
-    { type: 'separator' },
-    {
-      label: 'Edit',
-      icon: 'i-lucide-pencil',
-      onSelect: () => {
-        editingAssetId.value = row.original.id
-        isUpdateModalOpen.value = true
-      }
-    },
-    {
-      label: 'Delete',
-      icon: 'i-lucide-trash',
-      color: 'error',
-      onSelect: () => {
-        deletingAssetId.value = row.original.id
-        isDeleteModalOpen.value = true
-      }
     }
   )
+
+  if (isAdmin.value) {
+    items.push(
+      { type: 'separator' },
+      {
+        label: 'Edit',
+        icon: 'i-lucide-pencil',
+        onSelect: () => {
+          editingAssetId.value = row.original.id
+          isUpdateModalOpen.value = true
+        }
+      },
+      {
+        label: 'Delete',
+        icon: 'i-lucide-trash',
+        color: 'error',
+        onSelect: () => {
+          deletingAssetId.value = row.original.id
+          isDeleteModalOpen.value = true
+        }
+      }
+    )
+  }
 
   return items
 }
@@ -303,27 +310,30 @@ const columns: TableColumn<any>[] = [
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <AssetAddModal @created="loadAssets()" />
+          <RoleWrapper role="admin">
+            <AssetAddModal @created="loadAssets()" />
+          </RoleWrapper>
           <AssetScanModal />
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <ConfirmModal
-        v-model:open="isDeleteModalOpen"
-        title="Delete Asset"
-        description="Are you sure? This action cannot be undone."
-        confirm-label="Delete"
-        :on-confirm="confirmDelete"
-      />
-
-      <AssetUpdateModal
-        v-if="editingAssetId"
-        v-model="isUpdateModalOpen"
-        :asset-id="editingAssetId"
-        @updated="handleUpdated"
-      />
+      <RoleWrapper role="admin">
+        <ConfirmModal
+          v-model:open="isDeleteModalOpen"
+          title="Delete Asset"
+          description="Are you sure? This action cannot be undone."
+          confirm-label="Delete"
+          :on-confirm="confirmDelete"
+        />
+        <AssetUpdateModal
+          v-if="editingAssetId"
+          v-model="isUpdateModalOpen"
+          :asset-id="editingAssetId"
+          @updated="handleUpdated"
+        />
+      </RoleWrapper>
 
       <div class="flex flex-col md:flex-row md:justify-between md:align-center gap-2 mb-2">
         <UInput

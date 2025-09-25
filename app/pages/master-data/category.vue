@@ -2,6 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useCategory } from '~/composables/useCategory'
+import { useRole } from '~/composables/useRole'
 
 // komponen global
 const UButton = resolveComponent('UButton')
@@ -17,6 +18,7 @@ const editingCategoryId = ref<string | null>(null)
 
 // composable
 const { categories, apiPagination, pagination, loading, fetchCategories, deleteCategory } = useCategory()
+const { isAdmin } = useRole()
 
 // fetch wrapper
 function loadCategories(page = pagination.value.pageIndex + 1) {
@@ -91,28 +93,28 @@ const renderBooleanIcon = (value: boolean) => {
   )
 }
 
-// table columns
 const columns: TableColumn<any>[] = [
   { accessorKey: 'name', header: 'Name' },
   {
     accessorKey: 'hasLocation',
-    header: 'Has Location',
+    header: () => h('div', { class: 'text-center' }, 'Has Location'),
     cell: ({ row }) => renderBooleanIcon(row.original.hasLocation)
   },
   {
     accessorKey: 'hasMaintenance',
-    header: 'Has Maintenance',
+    header: () => h('div', { class: 'text-center' }, 'Has Maintenance'),
     cell: ({ row }) => renderBooleanIcon(row.original.hasMaintenance)
   },
   {
     accessorKey: 'hasHolder',
-    header: 'Has Holder',
+    header: () => h('div', { class: 'text-center' }, 'Has Holder'),
     cell: ({ row }) => renderBooleanIcon(row.original.hasHolder)
   },
   {
     id: 'actions',
-    cell: ({ row }) =>
-      h(
+    cell: ({ row }) => {
+      if (!isAdmin.value) return null
+      return h(
         'div',
         { class: 'text-right' },
         h(
@@ -127,6 +129,7 @@ const columns: TableColumn<any>[] = [
             })
         )
       )
+    }
   }
 ]
 </script>
@@ -139,26 +142,28 @@ const columns: TableColumn<any>[] = [
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <CategoryAddModal @created="fetchCategories()" />
+          <RoleWrapper role="admin">
+            <CategoryAddModal @created="fetchCategories()" />
+          </RoleWrapper>
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <ConfirmModal
-        v-model:open="isDeleteModalOpen"
-        title="Delete Category"
-        description="Are you sure? This action cannot be undone."
-        confirm-label="Delete"
-        :on-confirm="confirmDelete"
-      />
-
-      <!-- Update Modal -->
-      <CategoryUpdateModal
-        :id="editingCategoryId"
-        v-model:open="isUpdateModalOpen"
-        @updated="fetchCategories()"
-      />
+      <RoleWrapper role="admin">
+        <ConfirmModal
+          v-model:open="isDeleteModalOpen"
+          title="Delete Category"
+          description="Are you sure? This action cannot be undone."
+          confirm-label="Delete"
+          :on-confirm="confirmDelete"
+        />
+        <CategoryUpdateModal
+          :id="editingCategoryId"
+          v-model:open="isUpdateModalOpen"
+          @updated="fetchCategories()"
+        />
+      </RoleWrapper>
 
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
         <UInput

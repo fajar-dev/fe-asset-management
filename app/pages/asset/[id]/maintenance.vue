@@ -3,6 +3,7 @@ import type { TableColumn } from '@nuxt/ui'
 import type { Row } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
 import { useAssetMaintenance } from '~/composables/useAssetMaintenance'
+import { useRole } from '~/composables/useRole'
 
 // global komponen
 const UButton = resolveComponent('UButton')
@@ -13,14 +14,13 @@ const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
 
-// state asset detail
 const assetDetail = ref<any>(null)
 const loading = ref(false)
 
 // composable asset
 const { getAssetById } = useAsset()
+const { isAdmin } = useRole()
 
-// composable maintenance
 const {
   maintenances,
   loading: maintenanceLoading,
@@ -30,13 +30,11 @@ const {
   apiPagination
 } = useAssetMaintenance()
 
-// modal state
 const isDeleteModalOpen = ref(false)
 const deletingMaintenanceId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
 const editingMaintenanceId = ref<string | null>(null)
 
-// fetch asset detail
 onMounted(async () => {
   loading.value = true
   const res = await getAssetById(assetId)
@@ -57,7 +55,6 @@ function handlePageChange(newPage: number) {
   loadMaintenances(newPage)
 }
 
-// showing info
 const showingFrom = computed(() =>
   apiPagination.value
     ? (apiPagination.value.currentPage - 1) * apiPagination.value.itemsPerPage + 1
@@ -70,7 +67,6 @@ const showingTo = computed(() =>
     : 0
 )
 
-// actions
 async function confirmDelete() {
   if (!deletingMaintenanceId.value) return
   await deleteMaintenance(assetId, deletingMaintenanceId.value)
@@ -108,8 +104,9 @@ const columns: TableColumn<any>[] = [
   { accessorKey: 'note', header: 'Note' },
   {
     id: 'actions',
-    cell: ({ row }) =>
-      h(
+    cell: ({ row }) => {
+      if (!isAdmin.value) return null
+      return h(
         'div',
         { class: 'text-right' },
         h(
@@ -124,6 +121,7 @@ const columns: TableColumn<any>[] = [
             })
         )
       )
+    }
   }
 ]
 </script>
@@ -136,10 +134,12 @@ const columns: TableColumn<any>[] = [
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <AssetMaintenanceAddModal
-            :asset-id="assetId"
-            @created="loadMaintenances()"
-          />
+          <RoleWrapper role="admin">
+            <AssetMaintenanceAddModal
+              :asset-id="assetId"
+              @created="loadMaintenances()"
+            />
+          </RoleWrapper>
         </template>
 
         <template #title>
@@ -159,21 +159,22 @@ const columns: TableColumn<any>[] = [
 
     <template #body>
       <!-- Modal Delete & Update -->
-      <ConfirmModal
-        v-model:open="isDeleteModalOpen"
-        title="Delete Maintenance"
-        description="Are you sure? This action cannot be undone."
-        confirm-label="Delete"
-        :on-confirm="confirmDelete"
-      />
-
-      <AssetMaintenanceUpdateModal
-        v-if="editingMaintenanceId"
-        v-model:open="isUpdateModalOpen"
-        :asset-id="assetId"
-        :maintenance-id="editingMaintenanceId"
-        @updated="loadMaintenances()"
-      />
+      <RoleWrapper role="admin">
+        <ConfirmModal
+          v-model:open="isDeleteModalOpen"
+          title="Delete Maintenance"
+          description="Are you sure? This action cannot be undone."
+          confirm-label="Delete"
+          :on-confirm="confirmDelete"
+        />
+        <AssetMaintenanceUpdateModal
+          v-if="editingMaintenanceId"
+          v-model:open="isUpdateModalOpen"
+          :asset-id="assetId"
+          :maintenance-id="editingMaintenanceId"
+          @updated="loadMaintenances()"
+        />
+      </RoleWrapper>
 
       <div class="overflow-x-auto">
         <UTable

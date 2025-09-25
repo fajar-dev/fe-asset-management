@@ -2,6 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useLocation } from '~/composables/useLocation'
+import { useRole } from '~/composables/useRole'
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
@@ -13,6 +14,7 @@ const isUpdateModalOpen = ref(false)
 const editingLocationId = ref<string | null>(null)
 
 const { locations, apiPagination, pagination, loading, fetchLocations, deleteLocation } = useLocation()
+const { isAdmin } = useRole()
 
 function loadLocations(page = pagination.value.pageIndex + 1) {
   fetchLocations(search.value, page, pagination.value.pageSize)
@@ -79,8 +81,9 @@ const columns: TableColumn<any>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) =>
-      h(
+    cell: ({ row }) => {
+      if (!isAdmin.value) return null
+      return h(
         'div',
         { class: 'text-right' },
         h(
@@ -95,6 +98,7 @@ const columns: TableColumn<any>[] = [
             })
         )
       )
+    }
   }
 ]
 </script>
@@ -107,26 +111,28 @@ const columns: TableColumn<any>[] = [
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <LocationAddModal @created="fetchLocations()" />
+          <RoleWrapper role="admin">
+            <LocationAddModal @created="fetchLocations()" />
+          </RoleWrapper>
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <ConfirmModal
-        v-model:open="isDeleteModalOpen"
-        title="Delete Location"
-        description="Are you sure? This action cannot be undone."
-        confirm-label="Delete"
-        :on-confirm="confirmDelete"
-      />
-
-      <LocationUpdateModal
-        :id="editingLocationId"
-        v-model:open="isUpdateModalOpen"
-        @updated="fetchLocations()"
-      />
-
+      <RoleWrapper role="admin">
+        <ConfirmModal
+          v-model:open="isDeleteModalOpen"
+          title="Delete Location"
+          description="Are you sure? This action cannot be undone."
+          confirm-label="Delete"
+          :on-confirm="confirmDelete"
+        />
+        <LocationUpdateModal
+          :id="editingLocationId"
+          v-model:open="isUpdateModalOpen"
+          @updated="fetchLocations()"
+        />
+      </RoleWrapper>
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
         <UInput
           v-model="search"

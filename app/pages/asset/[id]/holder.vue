@@ -3,6 +3,7 @@ import type { TableColumn } from '@nuxt/ui'
 import { useAsset } from '~/composables/useAsset'
 import { useAssetHolder } from '~/composables/useAssetHolder'
 import AssetHolderReturnModal from '~/components/asset/holder/ReturnedModal.vue'
+import { useRole } from '~/composables/useRole'
 
 const UAvatar = resolveComponent('UAvatar')
 const router = useRouter()
@@ -15,8 +16,8 @@ const loading = ref(false)
 
 // composable asset
 const { getAssetById } = useAsset()
+const { isAdmin } = useRole()
 
-// composable holder
 const {
   holders,
   loading: holderLoading,
@@ -25,7 +26,6 @@ const {
   apiPagination
 } = useAssetHolder()
 
-// fetch asset detail
 onMounted(async () => {
   loading.value = true
   const res = await getAssetById(assetId)
@@ -46,7 +46,6 @@ function handlePageChange(newPage: number) {
   loadHolders(newPage)
 }
 
-// showing info
 const showingFrom = computed(() =>
   apiPagination.value
     ? (apiPagination.value.currentPage - 1) * apiPagination.value.itemsPerPage + 1
@@ -59,12 +58,10 @@ const showingTo = computed(() =>
     : 0
 )
 
-// cek apakah ada active holder
 const hasActiveHolder = computed(() =>
   holders.value?.some(h => !h.returnedAt)
 )
 
-// columns
 const columns: TableColumn<any>[] = [
   {
     accessorKey: 'employeeId',
@@ -90,6 +87,7 @@ const columns: TableColumn<any>[] = [
     cell: ({ row }) => {
       const returnedAt = row.original.returnedAt
       if (!returnedAt) {
+        if (!isAdmin.value) return null
         return h(AssetHolderReturnModal, {
           assetId,
           holderId: row.original.id,
@@ -110,11 +108,13 @@ const columns: TableColumn<any>[] = [
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <AssetHolderAssignedModal
-            :asset-id="assetId"
-            :disabled="hasActiveHolder"
-            @created="loadHolders()"
-          />
+          <RoleWrapper role="admin">
+            <AssetHolderAssignedModal
+              :asset-id="assetId"
+              :disabled="hasActiveHolder"
+              @created="loadHolders()"
+            />
+          </RoleWrapper>
         </template>
 
         <template #title>

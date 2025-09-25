@@ -60,6 +60,16 @@ const showingTo = computed(() =>
 
 // columns
 const columns: TableColumn<any>[] = [
+  {
+    accessorKey: 'createdAt',
+    header: 'Date',
+    cell: ({ row }) => {
+      const date = new Date(row.original.createdAt)
+      // Convert ke GMT+7
+      const gmt7 = new Date(date.getTime() + 7 * 60 * 60 * 1000)
+      return gmt7.toISOString().replace('T', ' ').substring(0, 19) // format YYYY-MM-DD HH:MM:SS
+    }
+  },
   { accessorKey: 'location.name', header: 'Location Name' },
   {
     header: 'Branch',
@@ -79,10 +89,12 @@ const columns: TableColumn<any>[] = [
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <AssetLocationAddModal
-            :asset-id="assetId"
-            @created="loadLocations()"
-          />
+          <RoleWrapper role="admin">
+            <AssetLocationAddModal
+              :asset-id="assetId"
+              @created="loadLocations()"
+            />
+          </RoleWrapper>
         </template>
 
         <template #title>

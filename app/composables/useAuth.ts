@@ -1,4 +1,4 @@
-// composables/useAuth.ts
+import type { Ref, ComputedRef } from 'vue'
 import type { User } from '~/types/auth'
 import type { ApiError } from '~/types/api'
 import { authService } from '~/services/AuthServices'
@@ -10,7 +10,7 @@ interface AuthState {
   user: Ref<User | null>
   isAuthenticated: ComputedRef<boolean>
   login: (email: string, password: string) => Promise<boolean>
-  google: (code: string,) => Promise<boolean>
+  google: (code: string) => Promise<boolean>
   logout: () => void
   refreshAccessToken: () => Promise<boolean>
   getMe: () => Promise<boolean>
@@ -23,12 +23,16 @@ export const useAuth = (): AuthState => {
   const accessToken = useState<string | null>('auth.accessToken', () =>
     import.meta.client ? localStorage.getItem('accessToken') : null
   )
-
   const refreshToken = useState<string | null>('auth.refreshToken', () =>
     import.meta.client ? localStorage.getItem('refreshToken') : null
   )
-
-  const user = useState<User | null>('auth.user', () => null)
+  const user = useState<User | null>('auth.user', () => {
+    if (import.meta.client) {
+      const stored = localStorage.getItem('user')
+      return stored ? JSON.parse(stored) : null
+    }
+    return null
+  })
 
   const isAuthenticated = computed(() => !!accessToken.value)
 

@@ -2,6 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useSubCategory } from '~/composables/useSubCategory'
+import { useRole } from '~/composables/useRole'
 import AddPropertyModal from '~/components/subCategory/AddPropertyModal.vue'
 
 // global components
@@ -18,32 +19,26 @@ const isAddPropertyModalOpen = ref(false)
 const editingSubCategoryId = ref<string | null>(null)
 const AddPropertySubCategoryId = ref<string | null>(null)
 
-// expanded rows
 const expanded = ref<Record<number | string, boolean>>({})
 
-// property delete modal
 const isDeletePropertyModalOpen = ref(false)
 const deletingProperty = ref<{ subCategoryId: string, propertyId: string } | null>(null)
 
-// composable
 const { subCategories, apiPagination, pagination, loading, fetchSubCategories, deleteSubCategory } = useSubCategory()
 const { deleteProperty } = useProperty()
+const { isAdmin } = useRole()
 
-// fetch wrapper
 function loadSubCategories(page = pagination.value.pageIndex + 1) {
   fetchSubCategories(search.value, page, pagination.value.pageSize)
 }
 
-// lifecycle
 onMounted(() => loadSubCategories())
 watch(search, () => loadSubCategories(1))
 
-// pagination handler
 function handlePageChange(newPage: number) {
   loadSubCategories(newPage)
 }
 
-// info showing
 const showingFrom = computed(() =>
   apiPagination.value
     ? (apiPagination.value.currentPage - 1) * apiPagination.value.itemsPerPage + 1
@@ -133,8 +128,9 @@ const columns: TableColumn<any>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) =>
-      h(
+    cell: ({ row }) => {
+      if (!isAdmin.value) return null
+      return h(
         'div',
         { class: 'text-right' },
         h(
@@ -149,6 +145,7 @@ const columns: TableColumn<any>[] = [
             })
         )
       )
+    }
   }
 ]
 </script>
@@ -162,44 +159,48 @@ const columns: TableColumn<any>[] = [
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <SubCategoryAddModal @created="fetchSubCategories()" />
+          <RoleWrapper role="admin">
+            <SubCategoryAddModal @created="fetchSubCategories()" />
+          </RoleWrapper>
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <!-- Delete Sub Category Modal -->
-      <ConfirmModal
-        v-model:open="isDeleteModalOpen"
-        title="Delete Sub Category"
-        description="Are you sure? This action cannot be undone."
-        confirm-label="Delete"
-        :on-confirm="confirmDelete"
-      />
+      <RoleWrapper role="admin">
+        <!-- Delete Sub Category Modal -->
+        <ConfirmModal
+          v-model:open="isDeleteModalOpen"
+          title="Delete Sub Category"
+          description="Are you sure? This action cannot be undone."
+          confirm-label="Delete"
+          :on-confirm="confirmDelete"
+        />
 
-      <!-- Delete Property Modal -->
-      <ConfirmModal
-        v-model:open="isDeletePropertyModalOpen"
-        title="Delete Property"
-        description="Are you sure you want to delete this property? This action cannot be undone."
-        confirm-label="Delete"
-        :on-confirm="confirmDeleteProperty"
-      />
+        <!-- Delete Property Modal -->
+        <ConfirmModal
+          v-model:open="isDeletePropertyModalOpen"
+          title="Delete Property"
+          description="Are you sure you want to delete this property? This action cannot be undone."
+          confirm-label="Delete"
+          :on-confirm="confirmDeleteProperty"
+        />
 
-      <!-- Update Sub Category Modal -->
-      <SubCategoryUpdateModal
-        v-if="editingSubCategoryId"
-        :id="editingSubCategoryId"
-        v-model="isUpdateModalOpen"
-        @updated="fetchSubCategories()"
-      />
+        <!-- Update Sub Category Modal -->
+        <SubCategoryUpdateModal
+          v-if="editingSubCategoryId"
+          :id="editingSubCategoryId"
+          v-model="isUpdateModalOpen"
+          @updated="fetchSubCategories()"
+        />
 
-      <AddPropertyModal
-        v-if="AddPropertySubCategoryId"
-        :id="AddPropertySubCategoryId"
-        v-model="isAddPropertyModalOpen"
-        @updated="fetchSubCategories()"
-      />
+        <AddPropertyModal
+          v-if="AddPropertySubCategoryId"
+          :id="AddPropertySubCategoryId"
+          v-model="isAddPropertyModalOpen"
+          @updated="fetchSubCategories()"
+        />
+      </RoleWrapper>
 
       <!-- Search -->
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
@@ -241,9 +242,11 @@ const columns: TableColumn<any>[] = [
                     <th class="px-3 py-2 text-left">
                       Type
                     </th>
-                    <th class="px-3 py-2 text-right">
-                      Actions
-                    </th>
+                    <RoleWrapper role="admin">
+                      <th class="px-3 py-2 text-right">
+                        Actions
+                      </th>
+                    </RoleWrapper>
                   </tr>
                 </thead>
                 <tbody>
@@ -260,18 +263,20 @@ const columns: TableColumn<any>[] = [
                         {{ prop.dataType }}
                       </UBadge>
                     </td>
-                    <td class="px-3 py-2 text-right">
-                      <UButton
-                        icon="i-lucide-trash"
-                        color="error"
-                        variant="subtle"
-                        size="sm"
-                        @click="() => {
-                          deletingProperty = { subCategoryId: row.original.id, propertyId: prop.id }
-                          isDeletePropertyModalOpen = true
-                        }"
-                      />
-                    </td>
+                    <RoleWrapper role="admin">
+                      <td class="px-3 py-2 text-right">
+                        <UButton
+                          icon="i-lucide-trash"
+                          color="error"
+                          variant="subtle"
+                          size="sm"
+                          @click="() => {
+                            deletingProperty = { subCategoryId: row.original.id, propertyId: prop.id }
+                            isDeletePropertyModalOpen = true
+                          }"
+                        />
+                      </td>
+                    </RoleWrapper>
                   </tr>
                 </tbody>
               </table>
