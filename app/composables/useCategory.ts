@@ -17,7 +17,7 @@ interface CategoryState {
   refreshCategories: () => Promise<void>
   getCategoryById: (id: string) => Promise<CategoryDetailResponse | null>
   getSubCategoriesByCategory: (id: string) => Promise<void>
-  createCategory: (payload: CreateCategoryPayload) => Promise<void>
+  createCategory: (payload: CreateCategoryPayload) => Promise<Category | undefined>
   updateCategory: (id: string, payload: UpdateCategoryPayload) => Promise<void>
   deleteCategory: (id: string) => Promise<void>
   getAllCategories: () => Promise<void>
@@ -69,13 +69,14 @@ export const useCategory = (): CategoryState => {
     await fetchCategories('', pagination.value.pageIndex + 1, pagination.value.pageSize)
   }
 
-  async function createCategory(payload: CreateCategoryPayload): Promise<void> {
+  async function createCategory(payload: CreateCategoryPayload): Promise<Category | undefined> {
     loading.value = true
     error.value = null
     try {
-      await categoryService.createCategory(payload)
+      const res = await categoryService.createCategory(payload)
       await refreshCategories()
       toast.add({ title: 'Created', description: 'Category created successfully', color: 'success' })
+      return res.data
     } catch (err: unknown) {
       const fetchError = err as FetchError<ApiError>
       error.value = fetchError.data?.message ?? 'Failed to create category'
