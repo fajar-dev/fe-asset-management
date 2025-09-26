@@ -4,6 +4,7 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { useCategory } from '~/composables/useCategory'
 import { useSubCategory } from '~/composables/useSubCategory'
 import { useAsset } from '~/composables/useAsset'
+import { useProperty } from '~/composables/useProperty'
 
 const schema = z.object({
   code: z.string().min(1, 'Asset code is required'),
@@ -25,7 +26,27 @@ const schema = z.object({
   ).optional()
 })
 
+const categorySchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  hasLocation: z.boolean().default(false),
+  hasMaintenance: z.boolean().default(false),
+  hasHolder: z.boolean().default(false)
+})
+
+const subCategorySchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  categoryId: z.string().min(1, 'Category is required'),
+  properties: z.array(
+    z.object({
+      name: z.string().min(1, 'Property name is required'),
+      dataType: z.enum(['string', 'number'], { message: 'Type is required' })
+    })
+  )
+})
+
 type Schema = z.output<typeof schema>
+type CategorySchema = z.infer<typeof categorySchema>
+type SubCategorySchema = z.infer<typeof subCategorySchema>
 
 const props = defineProps<{
   assetId: string
@@ -40,7 +61,19 @@ const open = computed({
 const saving = ref(false)
 const loading = ref(false)
 const isInitialLoad = ref(false)
-const state = reactive<Partial<Schema>>({
+const state = reactive<{
+  code: string
+  name: string
+  description: string
+  brand: string
+  model: string
+  categoryId: string
+  subCategoryId: string
+  locationId: string
+  status: 'active' | 'in repair' | 'disposed'
+  image: File | null
+  properties: { id: string, value: string | number }[]
+}>({
   code: '',
   name: '',
   description: '',
@@ -48,19 +81,40 @@ const state = reactive<Partial<Schema>>({
   model: '',
   categoryId: '',
   subCategoryId: '',
+  locationId: '',
   status: 'active',
   image: null,
   properties: []
 })
 
-const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
-const { getSubCategoryById } = useSubCategory()
+const { createCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
+const { createSubCategory, getSubCategoryById } = useSubCategory()
 const { getAssetById, updateAsset } = useAsset()
+const { createProperty } = useProperty()
 
 const categoryItems = ref<{ id: string, name: string }[]>([])
 const subCategoryItems = ref<{ id: string, name: string }[]>([])
 const availableProperties = ref<any[]>([])
 const propertyErrors = ref<Record<string, string>>({})
+
+// Category modal
+const openCategoryModal = ref(false)
+const savingCategory = ref(false)
+const newCategory = reactive<CategorySchema>({
+  name: '',
+  hasLocation: false,
+  hasMaintenance: false,
+  hasHolder: false
+})
+
+// Sub Category modal
+const openSubCategoryModal = ref(false)
+const savingSubCategory = ref(false)
+const newSubCategory = reactive<SubCategorySchema>({
+  name: '',
+  categoryId: '',
+  properties: []
+})
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const imagePreview = ref<string | null>(null)
@@ -216,6 +270,80 @@ function handlePropertyChange(index: number, value: string) {
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete propertyErrors.value[propertyId]
   }
+}
+
+async function onAddCategory() {
+  try {
+    savingCategory.value = true
+    const parsed = categorySchema.parse(newCategory)
+    const res = await createCategory(parsed)
+    await getAllCategories()
+    categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
+    state.categoryId = res!.id
+    Object.assign(newCategory, {
+      name: '',
+      hasLocation: false,
+      hasMaintenance: false,
+      hasHolder: false
+    })
+    openCategoryModal.value = false
+  } catch (err) {
+    console.error('Failed to create category', err)
+    alert('Failed to create category')
+  } finally {
+    savingCategory.value = false
+  }
+}
+
+async function onAddSubCategory() {
+  try {
+    savingSubCategory.value = true
+    newSubCategory.categoryId = state.categoryId
+    const parsed = subCategorySchema.parse(newSubCategory)
+    const subCategory = await createSubCategory({
+      name: parsed.name,
+      categoryId: parsed.categoryId
+    })
+
+    if (parsed.properties.length > 0) {
+      for (const property of parsed.properties) {
+        await createProperty(subCategory.data.id, {
+          name: property.name,
+          dataType: property.dataType
+        })
+      }
+    }
+
+    await getSubCategoriesByCategory(state.categoryId)
+    subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
+    state.subCategoryId = subCategory.data.id
+
+    Object.assign(newSubCategory, {
+      name: '',
+      categoryId: '',
+      properties: []
+    })
+    openSubCategoryModal.value = false
+  } catch (err) {
+    console.error('Failed to create sub category', err)
+    alert('Failed to create sub category')
+  } finally {
+    savingSubCategory.value = false
+  }
+}
+
+function showSubCategoryModal() {
+  // Pre-fill the category ID from the selected category
+  newSubCategory.categoryId = state.categoryId
+  openSubCategoryModal.value = true
+}
+
+function addSubCategoryProperty() {
+  newSubCategory.properties?.push({ name: '', dataType: 'string' })
+}
+
+function removeSubCategoryProperty(index: number) {
+  newSubCategory.properties?.splice(index, 1)
 }
 
 function triggerFileUpload() {
@@ -489,26 +617,43 @@ watch(open, (isOpen) => {
 
         <div class="space-y-4">
           <UFormField label="Category" name="categoryId">
-            <USelectMenu
-              v-model="state.categoryId"
-              :items="categoryItems"
-              value-key="id"
-              label-key="name"
-              placeholder="Select category"
-              class="w-full"
-            />
+            <div class="flex gap-2">
+              <USelectMenu
+                v-model="state.categoryId"
+                :items="categoryItems"
+                value-key="id"
+                label-key="name"
+                placeholder="Select category"
+                class="flex-1"
+              />
+              <UButton
+                icon="i-lucide-plus"
+                size="sm"
+                variant="soft"
+                @click="openCategoryModal = true"
+              />
+            </div>
           </UFormField>
 
           <UFormField label="Sub Category" name="subCategoryId">
-            <USelectMenu
-              v-model="state.subCategoryId"
-              :items="subCategoryItems"
-              value-key="id"
-              label-key="name"
-              placeholder="Select sub category"
-              :disabled="!state.categoryId"
-              class="w-full"
-            />
+            <div class="flex gap-2">
+              <USelectMenu
+                v-model="state.subCategoryId"
+                :items="subCategoryItems"
+                value-key="id"
+                label-key="name"
+                placeholder="Select sub category"
+                :disabled="!state.categoryId"
+                class="flex-1"
+              />
+              <UButton
+                icon="i-lucide-plus"
+                size="sm"
+                variant="soft"
+                :disabled="!state.categoryId"
+                @click="showSubCategoryModal()"
+              />
+            </div>
           </UFormField>
 
           <div v-if="state.properties?.length" class="space-y-3">
@@ -554,6 +699,137 @@ watch(open, (isOpen) => {
             type="submit"
             :loading="saving"
             :disabled="saving || hasValidationErrors"
+          />
+        </div>
+      </UForm>
+    </template>
+  </UModal>
+
+  <!-- Add Category Modal -->
+  <UModal v-model:open="openCategoryModal" title="Add Category" description="Create a new category">
+    <template #body>
+      <UForm
+        :schema="categorySchema"
+        :state="newCategory"
+        class="space-y-4"
+        @submit="onAddCategory"
+      >
+        <UFormField label="Name" name="name" required>
+          <UInput v-model="newCategory.name" class="w-full" placeholder="Category name" />
+        </UFormField>
+
+        <UFormField name="hasLocation">
+          <USwitch v-model="newCategory.hasLocation" label="Has Location" />
+        </UFormField>
+
+        <UFormField name="hasMaintenance">
+          <USwitch v-model="newCategory.hasMaintenance" label="Has Maintenance" />
+        </UFormField>
+
+        <UFormField name="hasHolder">
+          <USwitch v-model="newCategory.hasHolder" label="Has Holder" />
+        </UFormField>
+
+        <div class="flex justify-end gap-2">
+          <UButton
+            label="Cancel"
+            color="neutral"
+            variant="subtle"
+            :disabled="savingCategory"
+            @click="openCategoryModal = false"
+          />
+          <UButton
+            label="Save"
+            color="primary"
+            variant="solid"
+            type="submit"
+            :loading="savingCategory"
+          />
+        </div>
+      </UForm>
+    </template>
+  </UModal>
+
+  <!-- Add Sub Category Modal -->
+  <UModal v-model:open="openSubCategoryModal" title="Add Sub Category" description="Create a new sub category">
+    <template #body>
+      <UForm
+        :schema="subCategorySchema"
+        :state="newSubCategory"
+        class="space-y-4"
+        @submit="onAddSubCategory"
+      >
+        <UFormField label="Category" name="categoryId">
+          <USelectMenu
+            v-model="newSubCategory.categoryId"
+            :items="categoryItems"
+            value-key="id"
+            label-key="name"
+            placeholder="Select category"
+            class="w-full"
+            disabled
+          />
+        </UFormField>
+
+        <UFormField label="Name" name="name" required>
+          <UInput v-model="newSubCategory.name" class="w-full" placeholder="Sub Category name" />
+        </UFormField>
+
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <label class="text-sm font-medium">Properties</label>
+            <UButton
+              label="Add Property"
+              icon="i-lucide-plus"
+              size="xs"
+              @click="addSubCategoryProperty"
+            />
+          </div>
+
+          <div v-for="(prop, i) in newSubCategory.properties" :key="i" class="flex gap-3 py-1 items-start">
+            <UFormField :name="`properties.${i}.name`" class="flex-1">
+              <UInput v-model="prop.name" placeholder="Property name" class="w-full" />
+            </UFormField>
+
+            <UFormField :name="`properties.${i}.dataType`" class="w-30">
+              <USelectMenu
+                v-model="prop.dataType"
+                :items="[
+                  { label: 'String', value: 'string' },
+                  { label: 'Number', value: 'number' }
+                ]"
+                value-key="value"
+                label-key="label"
+                placeholder="Select type"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UButton
+              icon="i-lucide-x"
+              color="error"
+              variant="subtle"
+              class="mt-1"
+              size="xs"
+              @click="removeSubCategoryProperty(i)"
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <UButton
+            label="Cancel"
+            color="neutral"
+            variant="subtle"
+            :disabled="savingSubCategory"
+            @click="openSubCategoryModal = false"
+          />
+          <UButton
+            label="Save"
+            color="primary"
+            variant="solid"
+            type="submit"
+            :loading="savingSubCategory"
           />
         </div>
       </UForm>
