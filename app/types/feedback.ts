@@ -31,6 +31,8 @@ export interface Feedback {
   description: string
   imageUrls?: string[]
   createdAt: string
+  updatedAt: string
+  reply?: string
   status?: FeedbackStatus
 }
 
