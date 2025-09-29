@@ -49,33 +49,12 @@ async function handleLogout() {
     })
   }
 }
-
-function handleProfile() {
-  router.push('/profile')
-}
-
 const items = computed<DropdownMenuItem[][]>(() => ([
   [
     {
       type: 'label',
       label: currentUser.value.name,
       avatar: currentUser.value.avatar
-    }
-  ],
-  [
-    {
-      label: 'Profile',
-      icon: 'i-lucide-user',
-      onSelect: handleProfile
-    },
-    {
-      label: 'Settings',
-      icon: 'i-lucide-settings'
-    },
-    {
-      label: 'Log out',
-      icon: 'i-lucide-log-out',
-      onSelect: handleLogout
     }
   ],
   [
@@ -114,6 +93,11 @@ const items = computed<DropdownMenuItem[][]>(() => ([
           }
         }
       ]
+    },
+    {
+      label: 'Log out',
+      icon: 'i-lucide-log-out',
+      onSelect: handleLogout
     }
   ]
 ]))

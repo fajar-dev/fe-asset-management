@@ -6,8 +6,16 @@ const assetId = route.params.id as string
 // state untuk menampung detail asset
 const assetDetail = ref<any>(null)
 const loading = ref(false)
+const previewImage = ref<string | null>(null)
 
 const { getAssetById } = useAsset()
+
+function openImageModal(url: string) {
+  previewImage.value = url
+}
+function closeImageModal() {
+  previewImage.value = null
+}
 
 onMounted(async () => {
   loading.value = true
@@ -72,11 +80,24 @@ onMounted(async () => {
               <!-- Basic Details -->
               <div class="flex flex-col md:flex-row md:items-start md:gap-6">
                 <div v-if="assetDetail.imageUrl" class="flex justify-center md:justify-start mb-4 md:mb-0">
-                  <img
-                    :src="assetDetail.imageUrl"
-                    :alt="assetDetail.name"
-                    class="w-100 h-50 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                  >
+                  <div class="relative group">
+                    <img
+                      :src="assetDetail.imageUrl"
+                      :alt="assetDetail.name"
+                      class="w-100 h-50 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer transition"
+                      @click="openImageModal(assetDetail.imageUrl)"
+                    >
+                    <!-- Hover Overlay -->
+                    <div
+                      class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition rounded-lg pointer-events-none"
+                    >
+                      <UIcon
+                        name="i-lucide-maximize-2"
+                        class="w-8 h-8 text-white pointer-events-auto"
+                        @click="openImageModal(assetDetail.imageUrl)"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                   <div class="space-y-3">
@@ -169,5 +190,23 @@ onMounted(async () => {
         </div>
       </div>
     </template>
+    <!-- Image Preview Modal -->
   </UDashboardPanel>
+  <div
+    v-if="previewImage"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+    @click.self="closeImageModal"
+  >
+    <img
+      :src="previewImage"
+      alt="Preview"
+      class="max-h-[90%] max-w-[90%] rounded-lg shadow-lg"
+    >
+    <button
+      class="absolute top-5 right-5 text-white text-3xl leading-none"
+      @click="closeImageModal"
+    >
+      &times;
+    </button>
+  </div>
 </template>

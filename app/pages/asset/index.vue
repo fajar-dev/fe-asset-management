@@ -40,6 +40,7 @@ const selectedSubCategoryId = ref<string | undefined>(undefined)
 const selectedStatus = ref<string | undefined>(undefined)
 const selectedEmployee = ref<string | undefined>(undefined)
 const selectedLocation = ref<string | undefined>(undefined)
+const previewImage = ref<string | null>(null)
 const statusOptions = ['active', 'in repair', 'disposed']
 
 onMounted(async () => {
@@ -115,6 +116,13 @@ async function confirmDelete() {
 
 function handleUpdated() {
   loadAssets()
+}
+
+function openImageModal(url: string) {
+  previewImage.value = url
+}
+function closeImageModal() {
+  previewImage.value = null
 }
 
 // action menu items
@@ -210,7 +218,11 @@ const columns: TableColumn<any>[] = [
           h('img', {
             src: row.original.imageUrl,
             alt: row.original.name,
-            class: 'w-10 h-10 object-cover rounded'
+            class: 'w-10 h-10 object-cover rounded cursor-pointer hover:scale-105 transition-transform',
+            onClick: (e: Event) => {
+              e.preventDefault() // supaya tidak langsung redirect ke detail
+              openImageModal(row.original.imageUrl)
+            }
           }),
           h('div', { class: 'flex flex-col' }, [
             h('p', { class: 'font-medium text-highlighted' }, row.original.name),
@@ -459,4 +471,22 @@ const columns: TableColumn<any>[] = [
       </div>
     </template>
   </UDashboardPanel>
+
+  <div
+    v-if="previewImage"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+    @click.self="closeImageModal"
+  >
+    <img
+      :src="previewImage"
+      alt="Preview"
+      class="max-h-[90%] max-w-[90%] rounded-lg shadow-lg"
+    >
+    <button
+      class="absolute top-5 right-5 text-white text-2xl"
+      @click="closeImageModal"
+    >
+      &times;
+    </button>
+  </div>
 </template>
