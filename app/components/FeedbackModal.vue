@@ -21,7 +21,7 @@ const emit = defineEmits<{
 const schema = z.object({
   type: z.enum(['keluhan', 'saran', 'pujian']),
   description: z.string().min(1, 'Description is required'),
-  images: z.array(z.instanceof(File)).max(3).optional()
+  images: z.array(z.instanceof(File)).min(1, 'At least 1 image is required').max(3, 'Maximum 3 images allowed')
 })
 
 type Schema = z.infer<typeof schema>
@@ -148,6 +148,8 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
               color="primary"
               variant="ghost"
               icon="i-lucide-history"
+              to="/my-feedback"
+              @click="emit('update:open', false)"
             />
             <div class="flex justify-end gap-2">
               <UButton

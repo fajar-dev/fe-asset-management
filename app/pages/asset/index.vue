@@ -208,8 +208,8 @@ const columns: TableColumn<any>[] = [
         },
         () => [
           h('img', {
-            src: row.original.imageUrl || '/placeholder-asset.png',
-            alt: row.original.name || 'Asset image',
+            src: row.original.imageUrl,
+            alt: row.original.name,
             class: 'w-10 h-10 object-cover rounded'
           }),
           h('div', { class: 'flex flex-col' }, [

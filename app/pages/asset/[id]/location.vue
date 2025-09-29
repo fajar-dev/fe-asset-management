@@ -65,9 +65,8 @@ const columns: TableColumn<any>[] = [
     header: 'Date',
     cell: ({ row }) => {
       const date = new Date(row.original.createdAt)
-      // Convert ke GMT+7
       const gmt7 = new Date(date.getTime() + 7 * 60 * 60 * 1000)
-      return gmt7.toISOString().replace('T', ' ').substring(0, 19) // format YYYY-MM-DD HH:MM:SS
+      return gmt7.toISOString().replace('T', ' ').substring(0, 19)
     }
   },
   { accessorKey: 'location.name', header: 'Location Name' },
