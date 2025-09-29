@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+import { ref, reactive, computed } from 'vue'
 
 const toast = useToast()
+
 const open = ref(false)
+
 const isFeedbackOpen = ref(false)
+
+const feedbackState = reactive({
+  type: 'keluhan',
+  description: '',
+  images: [] as File[]
+})
 
 const links = [[
   {
@@ -33,7 +42,31 @@ const links = [[
   {
     label: 'Feedback',
     icon: 'i-lucide-message-square-warning',
-    onSelect: () => {
+    onSelect: async () => {
+      await new Promise(resolve => setTimeout(resolve, 500))
+      const targetEl = document.documentElement
+
+      const colorMode = useColorMode()
+      const bgColor = colorMode.value === 'dark' ? 'black' : 'white'
+      const { domToJpeg } = await import('modern-screenshot')
+      const dataUrl = await domToJpeg(targetEl, {
+        quality: 0.95,
+        scale: 1,
+        backgroundColor: bgColor,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+          width: `${window.innerWidth}px`,
+          height: `${window.innerHeight}px`
+        }
+      })
+
+      const res = await fetch(dataUrl)
+      const blob = await res.blob()
+      const screenshotFile = new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' })
+      feedbackState.images = [screenshotFile]
       isFeedbackOpen.value = true
     }
   }
@@ -44,7 +77,6 @@ const groups = computed(() => [
   { id: 'code', label: 'Code' }
 ])
 
-// Cookie consent
 onMounted(() => {
   const cookie = useCookie('cookie-consent')
   if (cookie.value === 'accepted') return
@@ -57,9 +89,7 @@ onMounted(() => {
       label: 'Accept',
       color: 'neutral',
       variant: 'outline',
-      onClick: () => {
-        cookie.value = 'accepted'
-      }
+      onClick: () => { cookie.value = 'accepted' }
     }, {
       label: 'Opt out',
       color: 'neutral',
@@ -118,5 +148,5 @@ onMounted(() => {
     <slot />
   </UDashboardGroup>
 
-  <FeedbackModal v-model:open="isFeedbackOpen" />
+  <FeedbackModal v-model:open="isFeedbackOpen" :form-state="feedbackState" />
 </template>
