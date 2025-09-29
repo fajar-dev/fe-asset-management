@@ -138,6 +138,10 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
             </UFileUpload>
           </UFormField>
 
+          <div class="text-center text-sm text-gray-500">
+            <span>- Feeback is a gift -</span>
+          </div>
+
           <div class="flex justify-between items-center w-full">
             <UButton
               label="History"
