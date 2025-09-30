@@ -66,7 +66,7 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     categoryId: selectedCategoryId.value,
     subCategoryId: selectedSubCategoryId.value,
     status: selectedStatus.value,
-    employeeId: selectedEmployee.value,
+    employeeId: selectedEmployee.value
   })
 }
 
@@ -333,7 +333,7 @@ const columns: TableColumn<any>[] = [
                 clearable
                 searchable
                 searchable-placeholder="Cari kategori..."
-                class="lg:w-48 md:w-20 w-full"
+                class="lg:w-73 md:w-31 w-full"
                 :items="categories.map(c => ({ label: c.name, value: c.id }))"
               />
 
@@ -343,21 +343,20 @@ const columns: TableColumn<any>[] = [
                 clearable
                 searchable
                 searchable-placeholder="Cari sub kategori..."
-                class="lg:w-48 md:w-20 w-full"
+                class="lg:w-73 md:w-31 w-full"
                 :items="subCategories.map(sc => ({ label: sc.name, value: sc.id }))"
                 :disabled="!selectedCategoryId"
               />
-
+            </div>
+            <div class="flex flex-col md:flex-row gap-2 pt-2">
               <USelect
                 v-model="selectedStatus"
                 placeholder="Filter by Status"
                 clearable
                 searchable
-                class="lg:w-48 md:w-20 w-full"
+                class="lg:w-73 md:w-31 w-full"
                 :items="statusOptions.map(s => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))"
               />
-            </div>
-            <div class="flex flex-col md:flex-row gap-2 pt-2">
               <USelect
                 v-model="selectedEmployee"
                 :items="employees.map(e => ({ label: e.fullName, value: e.employeeId }))"

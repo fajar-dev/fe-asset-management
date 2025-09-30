@@ -21,16 +21,16 @@ const links = [[
     to: '/',
     onSelect: () => (open.value = false)
   },
-  {
-    label: 'master data',
-    icon: 'i-lucide-database',
-    defaultOpen: true,
-    type: 'trigger',
-    children: [
-      { label: 'Category', to: '/master-data/category', onSelect: () => (open.value = false) },
-      { label: 'Sub Category', to: '/master-data/sub-category', onSelect: () => (open.value = false) },
-    ]
-  },
+  // {
+  //   label: 'master data',
+  //   icon: 'i-lucide-database',
+  //   defaultOpen: true,
+  //   type: 'trigger',
+  //   children: [
+  //     { label: 'Category', to: '/master-data/category', onSelect: () => (open.value = false) },
+  //     { label: 'Sub Category', to: '/master-data/sub-category', onSelect: () => (open.value = false) },
+  //   ]
+  // },
   {
     label: 'Asset',
     icon: 'i-lucide-library-big',

@@ -70,6 +70,6 @@ export function useStatistic() {
     assetsBySubCategory,
     getCount,
     getAssetsByCategory,
-    getAssetsBySubCategory,
+    getAssetsBySubCategory
   }
 }

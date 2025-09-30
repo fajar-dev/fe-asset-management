@@ -33,7 +33,7 @@ const stats = computed(() => {
 </script>
 
 <template>
-  <UPageGrid class="lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-px">
+  <UPageGrid class="lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-px">
     <template v-if="loading">
       <UPageCard
         v-for="i in 4"
