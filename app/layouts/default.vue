@@ -7,6 +7,7 @@ const toast = useToast()
 const open = ref(false)
 
 const isFeedbackOpen = ref(false)
+const isFeedbackLoading = ref(false)
 
 const feedbackState = reactive({
   type: 'keluhan',
@@ -14,23 +15,13 @@ const feedbackState = reactive({
   images: [] as File[]
 })
 
-const links = [[
+const links = computed<NavigationMenuItem[][]>(() => [[
   {
     label: 'Home',
     icon: 'i-lucide-house',
     to: '/',
     onSelect: () => (open.value = false)
   },
-  // {
-  //   label: 'master data',
-  //   icon: 'i-lucide-database',
-  //   defaultOpen: true,
-  //   type: 'trigger',
-  //   children: [
-  //     { label: 'Category', to: '/master-data/category', onSelect: () => (open.value = false) },
-  //     { label: 'Sub Category', to: '/master-data/sub-category', onSelect: () => (open.value = false) },
-  //   ]
-  // },
   {
     label: 'Asset',
     icon: 'i-lucide-library-big',
@@ -39,40 +30,47 @@ const links = [[
   }
 ], [
   {
-    label: 'Feedback',
+    label: isFeedbackLoading.value ? 'Loading...' : 'Feedback',
     icon: 'i-lucide-message-square-warning',
+    disabled: isFeedbackLoading.value,
     onSelect: async () => {
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const targetEl = document.documentElement
+      try {
+        isFeedbackLoading.value = true
 
-      const colorMode = useColorMode()
-      const bgColor = colorMode.value === 'dark' ? 'black' : 'white'
-      const { domToJpeg } = await import('modern-screenshot')
-      const dataUrl = await domToJpeg(targetEl, {
-        quality: 0.95,
-        scale: 1,
-        backgroundColor: bgColor,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        style: {
-          transform: 'scale(1)',
-          transformOrigin: 'top left',
-          width: `${window.innerWidth}px`,
-          height: `${window.innerHeight}px`
-        }
-      })
+        await new Promise(resolve => setTimeout(resolve, 500))
+        const targetEl = document.documentElement
 
-      const res = await fetch(dataUrl)
-      const blob = await res.blob()
-      const screenshotFile = new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' })
-      feedbackState.images = [screenshotFile]
-      isFeedbackOpen.value = true
+        const colorMode = useColorMode()
+        const bgColor = colorMode.value === 'dark' ? 'black' : 'white'
+        const { domToJpeg } = await import('modern-screenshot')
+        const dataUrl = await domToJpeg(targetEl, {
+          quality: 0.95,
+          scale: 1,
+          backgroundColor: bgColor,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          style: {
+            transform: 'scale(1)',
+            transformOrigin: 'top left',
+            width: `${window.innerWidth}px`,
+            height: `${window.innerHeight}px`
+          }
+        })
+
+        const res = await fetch(dataUrl)
+        const blob = await res.blob()
+        const screenshotFile = new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' })
+        feedbackState.images = [screenshotFile]
+        isFeedbackOpen.value = true
+      } finally {
+        isFeedbackLoading.value = false
+      }
     }
   }
-]] satisfies NavigationMenuItem[][]
+]])
 
 const groups = computed(() => [
-  { id: 'links', label: 'Go to', items: links.flat() },
+  { id: 'links', label: 'Go to', items: links.value.flat() },
   { id: 'code', label: 'Code' }
 ])
 

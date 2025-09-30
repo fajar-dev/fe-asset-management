@@ -1,11 +1,21 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui'
+import type { TableColumn, SelectMenuItem } from '@nuxt/ui'
+
 import { NuxtLink } from '#components'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
 import { useCategory } from '~/composables/useCategory'
 import { useEmployee } from '~/composables/useEmployee'
 import { useRole } from '~/composables/useRole'
+
+interface EmployeeItem {
+  id: string
+  label: string
+  avatar?: {
+    src: string
+    alt: string
+  }
+}
 
 // global components
 const UAvatar = resolveComponent('UAvatar')
@@ -22,6 +32,7 @@ const isDeleteModalOpen = ref(false)
 const deletingAssetId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
 const editingAssetId = ref<string>('')
+const isFilterOpen = ref(false)
 
 // expanded rows
 const expanded = ref<Record<number | string, boolean>>({})
@@ -32,13 +43,22 @@ const { categories, subCategories, getAllCategories, getSubCategoriesByCategory 
 const { employees, fetchEmployees } = useEmployee()
 const { isAdmin } = useRole()
 
-// filters
 const selectedCategoryId = ref<string | undefined>(undefined)
 const selectedSubCategoryId = ref<string | undefined>(undefined)
 const selectedStatus = ref<string | undefined>(undefined)
 const selectedEmployee = ref<string | undefined>(undefined)
 const previewImage = ref<string | null>(null)
-const statusOptions = ['active', 'in repair', 'disposed']
+
+const tempCategoryId = ref<string | undefined>(undefined)
+const tempSubCategoryId = ref<string | undefined>(undefined)
+const tempStatus = ref<string | undefined>(undefined)
+const tempEmployee = ref<string | undefined>(undefined)
+
+const statusItems: SelectMenuItem[] = [
+  { label: 'Active', id: 'active' },
+  { label: 'In Repair', id: 'in repair' },
+  { label: 'Disposed', id: 'disposed' }
+]
 
 onMounted(async () => {
   await getAllCategories()
@@ -46,17 +66,41 @@ onMounted(async () => {
   loadAssets()
 })
 
-watch(selectedCategoryId, async (newId) => {
+watch(tempCategoryId, async (newId) => {
   if (newId) {
     await getSubCategoriesByCategory(newId)
-    selectedSubCategoryId.value = undefined
+    tempSubCategoryId.value = undefined
   } else {
     subCategories.value = []
   }
-  loadAssets(1)
 })
 
-watch([selectedSubCategoryId, selectedStatus, selectedEmployee, search], () => loadAssets(1))
+watch(search, () => loadAssets(1))
+
+const categoryItems = computed<SelectMenuItem[]>(() =>
+  categories.value.map(c => ({ label: c.name, id: c.id }))
+)
+
+const subCategoryItems = computed<SelectMenuItem[]>(() =>
+  subCategories.value.map(sc => ({ label: sc.name, id: sc.id }))
+)
+
+const employeeItems = computed<EmployeeItem[]>(() =>
+  employees.value.map(e => ({
+    id: e.employeeId,
+    label: e.fullName,
+    avatar: {
+      src: e.photoProfile,
+      alt: e.fullName
+    }
+  }))
+)
+
+const selectedEmployeeAvatar = computed(() => {
+  if (!tempEmployee.value) return undefined
+  const employee = employeeItems.value.find(e => e.id === tempEmployee.value)
+  return employee?.avatar
+})
 
 function loadAssets(page = pagination.value.pageIndex + 1) {
   fetchAssets({
@@ -70,13 +114,29 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
   })
 }
 
+function applyFilters() {
+  selectedCategoryId.value = tempCategoryId.value
+  selectedSubCategoryId.value = tempSubCategoryId.value
+  selectedStatus.value = tempStatus.value
+  selectedEmployee.value = tempEmployee.value
+  isFilterOpen.value = false
+  loadAssets(1)
+}
+
 function resetFilters() {
   selectedCategoryId.value = undefined
   selectedSubCategoryId.value = undefined
   selectedStatus.value = undefined
   selectedEmployee.value = undefined
   search.value = ''
+
+  tempCategoryId.value = undefined
+  tempSubCategoryId.value = undefined
+  tempStatus.value = undefined
+  tempEmployee.value = undefined
+
   subCategories.value = []
+  isFilterOpen.value = false
   loadAssets(1)
 }
 
@@ -95,6 +155,28 @@ const showingTo = computed(() =>
     ? Math.min(apiPagination.value.currentPage * apiPagination.value.itemsPerPage, apiPagination.value.totalItems)
     : 0
 )
+
+const activeFiltersCount = computed(() => {
+  let count = 0
+  if (selectedCategoryId.value) count++
+  if (selectedSubCategoryId.value) count++
+  if (selectedStatus.value) count++
+  if (selectedEmployee.value) count++
+  return count
+})
+
+watch(isFilterOpen, (isOpen) => {
+  if (isOpen) {
+    tempCategoryId.value = selectedCategoryId.value
+    tempSubCategoryId.value = selectedSubCategoryId.value
+    tempStatus.value = selectedStatus.value
+    tempEmployee.value = selectedEmployee.value
+
+    if (tempCategoryId.value) {
+      getSubCategoriesByCategory(tempCategoryId.value)
+    }
+  }
+})
 
 async function confirmDelete() {
   if (!deletingAssetId.value) return
@@ -115,7 +197,6 @@ function closeImageModal() {
   previewImage.value = null
 }
 
-// action menu items
 function getRowItems(row: Row<any>) {
   const category = row.original.subCategory?.category
   if (!category) return []
@@ -202,7 +283,7 @@ const columns: TableColumn<any>[] = [
             alt: row.original.name,
             class: 'w-10 h-10 object-cover rounded cursor-pointer hover:scale-105 transition-transform',
             onClick: (e: Event) => {
-              e.preventDefault() // supaya tidak langsung redirect ke detail
+              e.preventDefault()
               openImageModal(row.original.imageUrl)
             }
           }),
@@ -316,7 +397,7 @@ const columns: TableColumn<any>[] = [
         />
       </RoleWrapper>
 
-      <div class="flex flex-col md:flex-row md:justify-between md:align-center gap-2 mb-2">
+      <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
         <UInput
           v-model="search"
           class="max-w-lg"
@@ -324,59 +405,111 @@ const columns: TableColumn<any>[] = [
           placeholder="Search assets..."
         />
 
-        <div class="flex flex-col md:flex-row gap-2">
-          <div>
-            <div class="flex flex-col md:flex-row gap-2">
-              <USelect
-                v-model="selectedCategoryId"
-                placeholder="Filter by Category"
-                clearable
-                searchable
-                searchable-placeholder="Cari kategori..."
-                class="lg:w-73 md:w-31 w-full"
-                :items="categories.map(c => ({ label: c.name, value: c.id }))"
-              />
+        <div class="flex gap-2 items-center">
+          <UPopover v-model:open="isFilterOpen" :popper="{ placement: 'bottom-end' }">
+            <UButton
+              color="neutral"
+              variant="subtle"
+              icon="i-lucide-filter"
+              trailing-icon="i-lucide-chevron-down"
+            >
+              Filters
+              <UBadge
+                v-if="activeFiltersCount > 0"
+                color="primary"
+                variant="solid"
+                size="sm"
+                class="ml-2"
+              >
+                {{ activeFiltersCount }}
+              </UBadge>
+            </UButton>
 
-              <USelect
-                v-model="selectedSubCategoryId"
-                placeholder="Filter by Sub Category"
-                clearable
-                searchable
-                searchable-placeholder="Cari sub kategori..."
-                class="lg:w-73 md:w-31 w-full"
-                :items="subCategories.map(sc => ({ label: sc.name, value: sc.id }))"
-                :disabled="!selectedCategoryId"
-              />
-            </div>
-            <div class="flex flex-col md:flex-row gap-2 pt-2">
-              <USelect
-                v-model="selectedStatus"
-                placeholder="Filter by Status"
-                clearable
-                searchable
-                class="lg:w-73 md:w-31 w-full"
-                :items="statusOptions.map(s => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))"
-              />
-              <USelect
-                v-model="selectedEmployee"
-                :items="employees.map(e => ({ label: e.fullName, value: e.employeeId }))"
-                placeholder="Filter by Active Holder"
-                clearable
-                searchable
-                class="lg:w-73 md:w-31 w-full"
-              />
-            </div>
-          </div>
+            <template #content>
+              <div class="p-4 w-80 space-y-4">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-semibold text-sm">
+                    Filter Assets
+                  </h3>
+                  <UButton
+                    v-if="activeFiltersCount > 0"
+                    color="error"
+                    variant="link"
+                    size="xs"
+                    @click="resetFilters"
+                  >
+                    Reset All
+                  </UButton>
+                </div>
 
-          <UButton
-            color="error"
-            variant="link"
-            icon="i-lucide-x-circle"
-            class="justify-end"
-            @click="resetFilters"
-          >
-            Reset Filter
-          </UButton>
+                <div class="space-y-2">
+                  <div>
+                    <label class="block text-sm font-medium mb-1.5">Category</label>
+                    <USelectMenu
+                      v-model="tempCategoryId"
+                      class="w-full"
+                      value-key="id"
+                      :items="categoryItems"
+                      placeholder="Select category"
+                      searchable
+                      searchable-placeholder="Search category..."
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-1.5">Sub Category</label>
+                    <USelectMenu
+                      v-model="tempSubCategoryId"
+                      class="w-full"
+                      value-key="id"
+                      :items="subCategoryItems"
+                      placeholder="Select sub category"
+                      searchable
+                      searchable-placeholder="Search sub category..."
+                      :disabled="!tempCategoryId"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-1.5">Status</label>
+                    <USelectMenu
+                      v-model="tempStatus"
+                      class="w-full"
+                      value-key="id"
+                      :items="statusItems"
+                      placeholder="Select status"
+                      searchable
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-1.5">Active Holder</label>
+                    <USelectMenu
+                      v-model="tempEmployee"
+                      class="w-full"
+                      value-key="id"
+                      :avatar="selectedEmployeeAvatar"
+                      :items="employeeItems"
+                      placeholder="Select holder"
+                      searchable
+                      searchable-placeholder="Search employee..."
+                    />
+                  </div>
+                </div>
+
+                <div class="pt-3">
+                  <UButton
+                    color="primary"
+                    variant="soft"
+                    block
+                    @click="applyFilters"
+                  >
+                    Apply Filters
+                  </UButton>
+                </div>
+              </div>
+            </template>
+          </UPopover>
         </div>
       </div>
 
@@ -440,11 +573,5 @@ const columns: TableColumn<any>[] = [
       alt="Preview"
       class="max-h-[90%] max-w-[90%] rounded-lg shadow-lg"
     >
-    <button
-      class="absolute top-5 right-5 text-white text-2xl"
-      @click="closeImageModal"
-    >
-      &times;
-    </button>
   </div>
 </template>
