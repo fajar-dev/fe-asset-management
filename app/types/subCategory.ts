@@ -50,7 +50,6 @@ export interface SubCategoryDetailResponse {
 export interface Category {
   id: string
   name: string
-  hasLocation: boolean
   hasMaintenance: boolean
   hasHolder: boolean
 }

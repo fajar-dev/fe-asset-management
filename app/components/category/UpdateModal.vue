@@ -16,7 +16,6 @@ const emit = defineEmits<{
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
-  hasLocation: z.boolean().default(false),
   hasMaintenance: z.boolean().default(false),
   hasHolder: z.boolean().default(false)
 })
@@ -24,7 +23,6 @@ type Schema = z.output<typeof schema>
 
 const formData = reactive<Schema>({
   name: '',
-  hasLocation: false,
   hasMaintenance: false,
   hasHolder: false
 })
@@ -43,7 +41,6 @@ async function loadCategoryData() {
     if (response?.data) {
       Object.assign(formData, {
         name: response.data.name,
-        hasLocation: response.data.hasLocation,
         hasMaintenance: response.data.hasMaintenance,
         hasHolder: response.data.hasHolder
       })
@@ -71,7 +68,6 @@ watch(
 function resetForm() {
   Object.assign(formData, {
     name: '',
-    hasLocation: false,
     hasMaintenance: false,
     hasHolder: false
   })
@@ -115,10 +111,6 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
             class="w-full"
             placeholder="Category name"
           />
-        </UFormField>
-
-        <UFormField name="hasLocation">
-          <USwitch v-model="formData.hasLocation" label="Has Location" />
         </UFormField>
 
         <UFormField name="hasMaintenance">

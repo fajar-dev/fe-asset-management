@@ -4,8 +4,6 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { useCategory } from '~/composables/useCategory'
 import { useSubCategory } from '~/composables/useSubCategory'
 import { useAsset } from '~/composables/useAsset'
-import { useLocation } from '~/composables/useLocation'
-import { useAssetLocation } from '~/composables/useAssetLocation'
 import { useProperty } from '~/composables/useProperty'
 
 const schema = z.object({
@@ -16,7 +14,6 @@ const schema = z.object({
   model: z.string().optional(),
   categoryId: z.string().min(1, 'Category is required'),
   subCategoryId: z.string().min(1, 'Sub category is required'),
-  locationId: z.string().optional(),
   status: z.enum(['active', 'in repair', 'disposed']).default('active'),
   image: z.any().refine(file => file !== null && file !== undefined, {
     message: 'Asset image is required'
@@ -34,7 +31,6 @@ type Schema = z.output<typeof schema>
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  hasLocation: z.boolean().default(false),
   hasMaintenance: z.boolean().default(false),
   hasHolder: z.boolean().default(false)
 })
@@ -63,7 +59,6 @@ const state = reactive<{
   model: string
   categoryId: string
   subCategoryId: string
-  locationId: string
   status: 'active' | 'in repair' | 'disposed'
   image: File | null
   properties: { id: string, value: string | number }[]
@@ -75,7 +70,6 @@ const state = reactive<{
   model: '',
   categoryId: '',
   subCategoryId: '',
-  locationId: '',
   status: 'active',
   image: null,
   properties: []
@@ -84,23 +78,18 @@ const state = reactive<{
 const { createCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory, getCategoryById } = useCategory()
 const { createSubCategory, getSubCategoryById } = useSubCategory()
 const { createAsset } = useAsset()
-const { locations, getAllLocations } = useLocation()
-const { createLocation } = useAssetLocation()
 const { createProperty } = useProperty()
 
 const categoryItems = ref<{ id: string, name: string }[]>([])
 const subCategoryItems = ref<{ id: string, name: string }[]>([])
-const locationItems = ref<{ id: string, name: string }[]>([])
 const availableProperties = ref<any[]>([])
 const propertyErrors = ref<Record<string, string>>({})
-const showLocationField = ref(false)
 
 // Category modal
 const openCategoryModal = ref(false)
 const savingCategory = ref(false)
 const newCategory = reactive<CategorySchema>({
   name: '',
-  hasLocation: false,
   hasMaintenance: false,
   hasHolder: false
 })
@@ -125,17 +114,6 @@ const imageInteracted = ref(false)
 
 watch(() => state.categoryId, async (catId) => {
   if (catId) {
-    const categoryDetail = await getCategoryById(catId)
-    showLocationField.value = categoryDetail?.data?.hasLocation || false
-
-    if (showLocationField.value) {
-      await getAllLocations()
-      locationItems.value = locations.value.map(l => ({ id: l.id, name: l.name + ' - ' + l.branch.name }))
-    } else {
-      locationItems.value = []
-      state.locationId = ''
-    }
-
     await getSubCategoriesByCategory(catId)
     subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
     state.subCategoryId = ''
@@ -144,13 +122,10 @@ watch(() => state.categoryId, async (catId) => {
     propertyErrors.value = {}
   } else {
     subCategoryItems.value = []
-    locationItems.value = []
     state.subCategoryId = ''
-    state.locationId = ''
     state.properties = []
     availableProperties.value = []
     propertyErrors.value = {}
-    showLocationField.value = false
   }
 })
 
@@ -183,16 +158,13 @@ function resetForm() {
   state.model = ''
   state.categoryId = ''
   state.subCategoryId = ''
-  state.locationId = ''
   state.status = 'active'
   state.image = null
   state.properties = []
   availableProperties.value = []
   categoryItems.value = []
   subCategoryItems.value = []
-  locationItems.value = []
   propertyErrors.value = {}
-  showLocationField.value = false
   imagePreview.value = null
   imageError.value = ''
   imageInteracted.value = false
@@ -265,7 +237,6 @@ async function onAddCategory() {
     state.categoryId = res!.id
     Object.assign(newCategory, {
       name: '',
-      hasLocation: false,
       hasMaintenance: false,
       hasHolder: false
     })
@@ -451,20 +422,12 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     if (event.data.model) {
       formData.append('model', event.data.model)
     }
-    if (event.data.locationId) {
-      formData.append('locationId', event.data.locationId)
-    }
 
     formData.append('status', event.data.status || 'active')
     formData.append('properties', JSON.stringify(processedProperties))
 
     formData.append('image', state.image)
-
-    const asset = await createAsset(formData)
-
-    if (event.data.locationId) {
-      await createLocation(asset.data.id, { locationId: event.data.locationId })
-    }
+    await createAsset(formData)
 
     resetForm()
     open.value = false
@@ -642,17 +605,6 @@ async function openModal() {
             </div>
           </UFormField>
 
-          <UFormField v-if="showLocationField" label="Location" name="locationId">
-            <USelectMenu
-              v-model="state.locationId"
-              :items="locationItems"
-              value-key="id"
-              label-key="name"
-              placeholder="Select location (optional)"
-              class="w-full"
-            />
-          </UFormField>
-
           <div v-if="state.properties?.length" class="space-y-3">
             <div
               v-for="(prop, i) in state.properties"
@@ -713,10 +665,6 @@ async function openModal() {
       >
         <UFormField label="Name" name="name" required>
           <UInput v-model="newCategory.name" class="w-full" placeholder="Category name" />
-        </UFormField>
-
-        <UFormField name="hasLocation">
-          <USwitch v-model="newCategory.hasLocation" label="Has Location" />
         </UFormField>
 
         <UFormField name="hasMaintenance">

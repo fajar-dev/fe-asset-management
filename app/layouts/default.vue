@@ -29,7 +29,6 @@ const links = [[
     children: [
       { label: 'Category', to: '/master-data/category', onSelect: () => (open.value = false) },
       { label: 'Sub Category', to: '/master-data/sub-category', onSelect: () => (open.value = false) },
-      { label: 'Location', to: '/master-data/location', onSelect: () => (open.value = false) }
     ]
   },
   {

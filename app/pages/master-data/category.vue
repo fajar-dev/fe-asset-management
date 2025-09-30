@@ -96,11 +96,6 @@ const renderBooleanIcon = (value: boolean) => {
 const columns: TableColumn<any>[] = [
   { accessorKey: 'name', header: 'Name' },
   {
-    accessorKey: 'hasLocation',
-    header: () => h('div', { class: 'text-center' }, 'Has Location'),
-    cell: ({ row }) => renderBooleanIcon(row.original.hasLocation)
-  },
-  {
     accessorKey: 'hasMaintenance',
     header: () => h('div', { class: 'text-center' }, 'Has Maintenance'),
     cell: ({ row }) => renderBooleanIcon(row.original.hasMaintenance)
@@ -135,7 +130,7 @@ const columns: TableColumn<any>[] = [
 </script>
 
 <template>
-  <UDashboardPanel id="locations">
+  <UDashboardPanel id="categories">
     <template #header>
       <UDashboardNavbar title="Categories">
         <template #leading>
@@ -170,7 +165,7 @@ const columns: TableColumn<any>[] = [
           v-model="search"
           class="max-w-sm"
           icon="i-lucide-search"
-          placeholder="Search locations..."
+          placeholder="Search category..."
         />
       </div>
 

@@ -34,7 +34,6 @@ export interface Asset {
     category: {
       id: string
       name: string
-      hasLocation: boolean
       hasMaintenance: boolean
       hasHolder: boolean
     }

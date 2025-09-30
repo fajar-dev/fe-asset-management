@@ -5,7 +5,6 @@ import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
 import { useCategory } from '~/composables/useCategory'
 import { useEmployee } from '~/composables/useEmployee'
-import { useLocation } from '~/composables/useLocation'
 import { useRole } from '~/composables/useRole'
 
 // global components
@@ -31,7 +30,6 @@ const expanded = ref<Record<number | string, boolean>>({})
 const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset } = useAsset()
 const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
 const { employees, fetchEmployees } = useEmployee()
-const { locations: allLocations, getAllLocations } = useLocation()
 const { isAdmin } = useRole()
 
 // filters
@@ -39,18 +37,12 @@ const selectedCategoryId = ref<string | undefined>(undefined)
 const selectedSubCategoryId = ref<string | undefined>(undefined)
 const selectedStatus = ref<string | undefined>(undefined)
 const selectedEmployee = ref<string | undefined>(undefined)
-const selectedLocation = ref<string | undefined>(undefined)
 const previewImage = ref<string | null>(null)
 const statusOptions = ['active', 'in repair', 'disposed']
 
 onMounted(async () => {
   await getAllCategories()
   await fetchEmployees()
-  await getAllLocations()
-  allLocations.value = allLocations.value.map(l => ({
-    ...l,
-    id: String(l.id)
-  }))
   loadAssets()
 })
 
@@ -64,7 +56,7 @@ watch(selectedCategoryId, async (newId) => {
   loadAssets(1)
 })
 
-watch([selectedSubCategoryId, selectedStatus, selectedEmployee, selectedLocation, search], () => loadAssets(1))
+watch([selectedSubCategoryId, selectedStatus, selectedEmployee, search], () => loadAssets(1))
 
 function loadAssets(page = pagination.value.pageIndex + 1) {
   fetchAssets({
@@ -75,7 +67,6 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     subCategoryId: selectedSubCategoryId.value,
     status: selectedStatus.value,
     employeeId: selectedEmployee.value,
-    locationId: selectedLocation.value
   })
 }
 
@@ -84,7 +75,6 @@ function resetFilters() {
   selectedSubCategoryId.value = undefined
   selectedStatus.value = undefined
   selectedEmployee.value = undefined
-  selectedLocation.value = undefined
   search.value = ''
   subCategories.value = []
   loadAssets(1)
@@ -145,14 +135,6 @@ function getRowItems(row: Row<any>) {
       label: 'Holder',
       icon: 'i-lucide-users',
       to: `/asset/${row.original.id}/holder`
-    })
-  }
-
-  if (category.hasLocation) {
-    items.push({
-      label: 'Location',
-      icon: 'i-lucide-map-pin',
-      to: `/asset/${row.original.id}/location`
     })
   }
 
@@ -250,19 +232,6 @@ const columns: TableColumn<any>[] = [
     accessorKey: 'model',
     header: 'Model',
     cell: ({ row }) => row.original.model ?? '-'
-  },
-  {
-    accessorKey: 'lastLocation',
-    header: 'Last Location',
-    cell: ({ row }) => {
-      const loc = row.original.lastLocation
-      if (!loc) return h('span', { class: 'text-xs text-muted' }, '-')
-
-      return h('div', { class: 'flex flex-col' }, [
-        h('span', { class: 'text-highlighted font-medium text-xs' }, loc.name),
-        h('span', { class: 'text-xs' }, loc.branch?.name ?? '-')
-      ])
-    }
   },
   {
     accessorKey: 'employee',
@@ -393,16 +362,6 @@ const columns: TableColumn<any>[] = [
                 v-model="selectedEmployee"
                 :items="employees.map(e => ({ label: e.fullName, value: e.employeeId }))"
                 placeholder="Filter by Active Holder"
-                clearable
-                searchable
-                class="lg:w-73 md:w-31 w-full"
-              />
-
-              <USelect
-                :key="allLocations.length"
-                v-model="selectedLocation"
-                :items="allLocations.map(l => ({ label: `${l.name} - ${l.branch.name}`, value: l.id }))"
-                placeholder="Filter by Last Location"
                 clearable
                 searchable
                 class="lg:w-73 md:w-31 w-full"

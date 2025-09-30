@@ -28,7 +28,6 @@ const schema = z.object({
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  hasLocation: z.boolean().default(false),
   hasMaintenance: z.boolean().default(false),
   hasHolder: z.boolean().default(false)
 })
@@ -69,7 +68,6 @@ const state = reactive<{
   model: string
   categoryId: string
   subCategoryId: string
-  locationId: string
   status: 'active' | 'in repair' | 'disposed'
   image: File | null
   properties: { id: string, value: string | number }[]
@@ -81,7 +79,6 @@ const state = reactive<{
   model: '',
   categoryId: '',
   subCategoryId: '',
-  locationId: '',
   status: 'active',
   image: null,
   properties: []
@@ -102,7 +99,6 @@ const openCategoryModal = ref(false)
 const savingCategory = ref(false)
 const newCategory = reactive<CategorySchema>({
   name: '',
-  hasLocation: false,
   hasMaintenance: false,
   hasHolder: false
 })
@@ -282,7 +278,6 @@ async function onAddCategory() {
     state.categoryId = res!.id
     Object.assign(newCategory, {
       name: '',
-      hasLocation: false,
       hasMaintenance: false,
       hasHolder: false
     })
@@ -716,10 +711,6 @@ watch(open, (isOpen) => {
       >
         <UFormField label="Name" name="name" required>
           <UInput v-model="newCategory.name" class="w-full" placeholder="Category name" />
-        </UFormField>
-
-        <UFormField name="hasLocation">
-          <USwitch v-model="newCategory.hasLocation" label="Has Location" />
         </UFormField>
 
         <UFormField name="hasMaintenance">
