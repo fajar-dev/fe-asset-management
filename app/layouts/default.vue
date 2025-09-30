@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
-import { ref, reactive, computed } from 'vue'
 
 const toast = useToast()
 

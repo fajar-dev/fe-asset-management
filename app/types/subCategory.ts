@@ -1,24 +1,38 @@
+// ~/types/subCategory.ts
+
 export interface AssetProperty {
   id: string
   name: string
   dataType: 'string' | 'number'
 }
 
-export interface SubCategory {
-  data: any
+export interface Category {
   id: string
   name: string
+  hasMaintenance: boolean
+  hasHolder: boolean
+}
+
+export interface SubCategory {
+  id: string
+  name: string
+  level: number
   category: Category | null
-  assetProperties?: AssetProperty[] | null
+  parent: SubCategory | null
+  children: SubCategory[]
+  assetProperties: AssetProperty[]
 }
 
 export interface CreateSubCategoryPayload {
   name: string
   categoryId: string
+  parentId?: string
 }
 
-export interface UpdateSubCategoryPayload extends Partial<CreateSubCategoryPayload> {
-  id?: string
+export interface UpdateSubCategoryPayload {
+  name: string
+  categoryId: string
+  parentId?: string
 }
 
 export interface Pagination {
@@ -46,10 +60,16 @@ export interface SubCategoryDetailResponse {
   data: SubCategory
 }
 
-// Optional: jika Category dari tipe sebelumnya
-export interface Category {
-  id: string
-  name: string
-  hasMaintenance: boolean
-  hasHolder: boolean
+export interface SubCategoryHierarchyResponse {
+  success: boolean
+  statusCode: number
+  message: string
+  data: SubCategory[]
+}
+
+export interface SubCategoryPathResponse {
+  success: boolean
+  statusCode: number
+  message: string
+  data: SubCategory[]
 }

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { reactive, ref, computed, watch } from 'vue'
 import { useFeedback } from '~/composables/useFeedback'
 
 const props = defineProps<{

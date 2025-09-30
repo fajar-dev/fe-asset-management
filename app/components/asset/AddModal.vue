@@ -75,7 +75,7 @@ const state = reactive<{
   properties: []
 })
 
-const { createCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory, getCategoryById } = useCategory()
+const { createCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
 const { createSubCategory, getSubCategoryById } = useSubCategory()
 const { createAsset } = useAsset()
 const { createProperty } = useProperty()
@@ -85,7 +85,6 @@ const subCategoryItems = ref<{ id: string, name: string }[]>([])
 const availableProperties = ref<any[]>([])
 const propertyErrors = ref<Record<string, string>>({})
 
-// Category modal
 const openCategoryModal = ref(false)
 const savingCategory = ref(false)
 const newCategory = reactive<CategorySchema>({
@@ -94,7 +93,6 @@ const newCategory = reactive<CategorySchema>({
   hasHolder: false
 })
 
-// Sub Category modal
 const openSubCategoryModal = ref(false)
 const savingSubCategory = ref(false)
 const newSubCategory = reactive<{
@@ -261,7 +259,7 @@ async function onAddSubCategory() {
 
     if (parsed.properties.length > 0) {
       for (const property of parsed.properties) {
-        await createProperty(subCategory.data.id, {
+        await createProperty(subCategory.id, {
           name: property.name,
           dataType: property.dataType
         })
@@ -270,7 +268,7 @@ async function onAddSubCategory() {
 
     await getSubCategoriesByCategory(state.categoryId)
     subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
-    state.subCategoryId = subCategory.data.id
+    state.subCategoryId = subCategory.id
 
     Object.assign(newSubCategory, {
       name: '',

@@ -54,7 +54,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     })
     if (event.data.properties.length > 0) {
       for (const property of event.data.properties) {
-        await createProperty(subCategory.data.id, {
+        await createProperty(subCategory.id, {
           name: property.name,
           dataType: property.dataType
         })
