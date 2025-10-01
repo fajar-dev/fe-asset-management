@@ -99,52 +99,66 @@ onMounted(async () => {
                     </div>
                   </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-                  <div class="space-y-3">
-                    <div>
-                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Asset Name</label>
-                      <p class="text-gray-900 dark:text-white font-medium text-sm">
-                        {{ assetDetail.name }}
-                      </p>
-                    </div>
-                    <div>
-                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Brand</label>
-                      <p class="text-gray-900 dark:text-white font-medium text-sm">
-                        {{ assetDetail.brand ?? '-' }}
-                      </p>
-                    </div>
-                    <div>
-                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Category</label>
-                      <p class="text-gray-900 dark:text-white font-medium text-sm">
-                        {{ assetDetail.subCategory.category.name }} > {{ assetDetail.subCategory.name }}
-                      </p>
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 w-full">
+                  <!-- Item -->
+                  <div>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Asset Name</label>
+                    <p class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ assetDetail.name }}
+                    </p>
                   </div>
 
-                  <div class="space-y-3">
-                    <div>
-                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Serial ID</label>
-                      <p class="text-gray-900 dark:text-white font-mono text-sm">
-                        {{ assetDetail.code }}
-                      </p>
+                  <div>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Serial ID</label>
+                    <p class="text-gray-900 dark:text-white font-mono text-sm">
+                      {{ assetDetail.code }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Brand</label>
+                    <p class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ assetDetail.brand ?? '-' }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Model</label>
+                    <p class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ assetDetail.model ?? '-' }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Category</label>
+                    <p class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ assetDetail.subCategory.category.name }} > {{ assetDetail.subCategory.name }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
+                    <div class="flex items-center gap-2 mt-1">
+                      <UIcon
+                        :name="assetDetail.status === 'active' ? 'i-lucide-check-circle' : assetDetail.status === 'in_repair' ? 'i-lucide-wrench' : 'i-lucide-trash-2'"
+                        :class="assetDetail.status === 'active' ? 'text-green-500 text-sm' : assetDetail.status === 'in_repair' ? 'text-yellow-500 text-sm' : 'text-red-500 text-sm'"
+                        class="w-4 h-4"
+                      />
+                      <span class="text-gray-900 dark:text-white text-sm capitalize">
+                        {{ assetDetail.status.replace('_', ' ') }}
+                      </span>
                     </div>
-                    <div>
-                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Model</label>
-                      <p class="text-gray-900 dark:text-white font-medium text-sm">
-                        {{ assetDetail.model ?? '-' }}
-                      </p>
-                    </div>
-                    <div>
-                      <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
-                      <div class="flex items-center gap-2 mt-1">
-                        <UIcon
-                          :name="assetDetail.status === 'active' ? 'i-lucide-check-circle' : assetDetail.status === 'in_repair' ? 'i-lucide-wrench' : 'i-lucide-trash-2'"
-                          :class="assetDetail.status === 'active' ? 'text-green-500 text-sm' : assetDetail.status === 'in_repair' ? 'text-yellow-500 text-sm' : 'text-red-500 text-sm'"
-                          class="w-4 h-4"
-                        />
-                        <span class="text-gray-900 dark:text-white text-sm capitalize">{{ assetDetail.status.replace('_', ' ') }}</span>
-                      </div>
-                    </div>
+                  </div>
+                  <div
+                    v-for="(item, idx) in assetDetail.customValues"
+                    :key="idx"
+                  >
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      {{ item.name }}
+                    </label>
+                    <p class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ item.value ?? '-' }}
+                    </p>
                   </div>
                 </div>
               </div>

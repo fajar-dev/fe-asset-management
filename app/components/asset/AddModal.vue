@@ -25,6 +25,12 @@ const schema = z.object({
         return val !== undefined && val !== null && val !== ''
       }, 'Property value is required')
     })
+  ).optional(),
+  customValues: z.array(
+    z.object({
+      name: z.string().min(1, 'Custom field name is required'),
+      value: z.string().min(1, 'Custom field value is required')
+    })
   ).optional()
 })
 type Schema = z.output<typeof schema>
@@ -62,6 +68,7 @@ const state = reactive<{
   status: 'active' | 'in repair' | 'disposed'
   image: File | null
   properties: { id: string, value: string | number }[]
+  customValues: { name: string, value: string }[]
 }>({
   code: '',
   name: '',
@@ -72,7 +79,8 @@ const state = reactive<{
   subCategoryId: '',
   status: 'active',
   image: null,
-  properties: []
+  properties: [],
+  customValues: []
 })
 
 const { createCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
@@ -159,6 +167,7 @@ function resetForm() {
   state.status = 'active'
   state.image = null
   state.properties = []
+  state.customValues = []
   availableProperties.value = []
   categoryItems.value = []
   subCategoryItems.value = []
@@ -252,14 +261,20 @@ async function onAddSubCategory() {
     savingSubCategory.value = true
     newSubCategory.categoryId = state.categoryId
     const parsed = subCategorySchema.parse(newSubCategory)
-    const subCategory = await createSubCategory({
+    const subCategoryRes = await createSubCategory({
       name: parsed.name,
       categoryId: parsed.categoryId
     })
 
+    const subCategoryId = subCategoryRes?.id || subCategoryRes?.id
+
+    if (!subCategoryId) {
+      throw new Error('Failed to get sub category ID')
+    }
+
     if (parsed.properties.length > 0) {
       for (const property of parsed.properties) {
-        await createProperty(subCategory.id, {
+        await createProperty(subCategoryId, {
           name: property.name,
           dataType: property.dataType
         })
@@ -268,7 +283,7 @@ async function onAddSubCategory() {
 
     await getSubCategoriesByCategory(state.categoryId)
     subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
-    state.subCategoryId = subCategory.id
+    state.subCategoryId = subCategoryId
 
     Object.assign(newSubCategory, {
       name: '',
@@ -350,6 +365,14 @@ function removeImage() {
   }
 }
 
+function addCustomValue() {
+  state.customValues.push({ name: '', value: '' })
+}
+
+function removeCustomValue(index: number) {
+  state.customValues.splice(index, 1)
+}
+
 const hasValidationErrors = computed(() => {
   if (!state.image) {
     return true
@@ -424,7 +447,17 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     formData.append('status', event.data.status || 'active')
     formData.append('properties', JSON.stringify(processedProperties))
 
-    formData.append('image', state.image)
+    if (state.customValues && state.customValues.length > 0) {
+      const validCustomValues = state.customValues.filter(cv => cv.name && cv.value)
+      if (validCustomValues.length > 0) {
+        formData.append('customValues', JSON.stringify(validCustomValues))
+      }
+    }
+
+    if (state.image) {
+      formData.append('image', state.image)
+    }
+
     await createAsset(formData)
 
     resetForm()
@@ -432,7 +465,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     emit('created')
   } catch (err) {
     console.error(err)
-    alert('Failed to create asset. Please try again.')
   } finally {
     saving.value = false
   }
@@ -556,7 +588,7 @@ async function openModal() {
               <div class="text-xs text-gray-500 mt-2">
                 <p>• <strong>Required field:</strong> You must upload an image</p>
                 <p>• Supported formats: JPEG, PNG, WebP</p>
-                <p>• Maximum file size: 2MB</p>
+                <p>• Maximum file size: 5MB</p>
               </div>
             </div>
           </UFormField>
@@ -629,6 +661,55 @@ async function openModal() {
               </p>
             </div>
           </div>
+
+          <div class="space-y-2 pt-4">
+            <div class="flex justify-between items-center">
+              <label class="text-sm font-medium text-gray-700">Custom Fields</label>
+              <UButton
+                label="Add Custom Field"
+                icon="i-lucide-plus"
+                size="xs"
+                variant="soft"
+                @click="addCustomValue"
+              />
+            </div>
+
+            <div v-if="state.customValues.length > 0" class="space-y-2">
+              <div
+                v-for="(customValue, i) in state.customValues"
+                :key="i"
+                class="flex gap-2 items-start"
+              >
+                <UFormField :name="`customValues.${i}.name`" class="flex-1">
+                  <UInput
+                    v-model="customValue.name"
+                    placeholder="Field name"
+                    class="w-full"
+                  />
+                </UFormField>
+
+                <UFormField :name="`customValues.${i}.value`" class="flex-1">
+                  <UInput
+                    v-model="customValue.value"
+                    placeholder="Field value"
+                    class="w-full"
+                  />
+                </UFormField>
+
+                <UButton
+                  icon="i-lucide-x"
+                  color="error"
+                  variant="ghost"
+                  size="sm"
+                  @click="removeCustomValue(i)"
+                />
+              </div>
+            </div>
+
+            <p v-if="state.customValues.length === 0" class="text-sm text-gray-500 italic">
+              No custom fields added yet
+            </p>
+          </div>
         </div>
 
         <div class="col-span-2 flex justify-end gap-2 pt-4">
@@ -652,7 +733,6 @@ async function openModal() {
     </template>
   </UModal>
 
-  <!-- Add Category Modal -->
   <UModal v-model:open="openCategoryModal" title="Add Category" description="Create a new category">
     <template #body>
       <UForm
@@ -693,7 +773,6 @@ async function openModal() {
     </template>
   </UModal>
 
-  <!-- Add Sub Category Modal -->
   <UModal v-model:open="openSubCategoryModal" title="Add Sub Category" description="Create a new sub category">
     <template #body>
       <UForm

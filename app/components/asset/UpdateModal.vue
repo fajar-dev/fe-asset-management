@@ -23,6 +23,12 @@ const schema = z.object({
         return val !== undefined && val !== null && val !== ''
       }, 'Property value is required')
     })
+  ).optional(),
+  customValues: z.array(
+    z.object({
+      name: z.string().min(1, 'Custom field name is required'),
+      value: z.string().min(1, 'Custom field value is required')
+    })
   ).optional()
 })
 
@@ -71,6 +77,7 @@ const state = reactive<{
   status: 'active' | 'in repair' | 'disposed'
   image: File | null
   properties: { id: string, value: string | number }[]
+  customValues: { name: string, value: string }[]
 }>({
   code: '',
   name: '',
@@ -81,7 +88,8 @@ const state = reactive<{
   subCategoryId: '',
   status: 'active',
   image: null,
-  properties: []
+  properties: [],
+  customValues: []
 })
 
 const { createCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
@@ -94,7 +102,6 @@ const subCategoryItems = ref<{ id: string, name: string }[]>([])
 const availableProperties = ref<any[]>([])
 const propertyErrors = ref<Record<string, string>>({})
 
-// Category modal
 const openCategoryModal = ref(false)
 const savingCategory = ref(false)
 const newCategory = reactive<CategorySchema>({
@@ -103,7 +110,6 @@ const newCategory = reactive<CategorySchema>({
   hasHolder: false
 })
 
-// Sub Category modal
 const openSubCategoryModal = ref(false)
 const savingSubCategory = ref(false)
 const newSubCategory = reactive<SubCategorySchema>({
@@ -204,6 +210,13 @@ async function loadAssetData() {
           dataType: p.property.dataType
         }))
       }
+
+      if (asset.customValues && asset.customValues.length > 0) {
+        state.customValues = asset.customValues.map(cv => ({
+          name: cv.name,
+          value: cv.value.toString()
+        }))
+      }
     }
   } catch (err) {
     console.error('Error loading asset:', err)
@@ -295,14 +308,20 @@ async function onAddSubCategory() {
     savingSubCategory.value = true
     newSubCategory.categoryId = state.categoryId
     const parsed = subCategorySchema.parse(newSubCategory)
-    const subCategory = await createSubCategory({
+    const subCategoryRes = await createSubCategory({
       name: parsed.name,
       categoryId: parsed.categoryId
     })
 
+    const subCategoryId = subCategoryRes?.id || subCategoryRes?.id
+
+    if (!subCategoryId) {
+      throw new Error('Failed to get sub category ID')
+    }
+
     if (parsed.properties.length > 0) {
       for (const property of parsed.properties) {
-        await createProperty(subCategory.data.id, {
+        await createProperty(subCategoryId, {
           name: property.name,
           dataType: property.dataType
         })
@@ -311,7 +330,7 @@ async function onAddSubCategory() {
 
     await getSubCategoriesByCategory(state.categoryId)
     subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
-    state.subCategoryId = subCategory.data.id
+    state.subCategoryId = subCategoryId
 
     Object.assign(newSubCategory, {
       name: '',
@@ -328,7 +347,6 @@ async function onAddSubCategory() {
 }
 
 function showSubCategoryModal() {
-  // Pre-fill the category ID from the selected category
   newSubCategory.categoryId = state.categoryId
   openSubCategoryModal.value = true
 }
@@ -382,6 +400,14 @@ function resetImageToOriginal() {
   }
 }
 
+function addCustomValue() {
+  state.customValues.push({ name: '', value: '' })
+}
+
+function removeCustomValue(index: number) {
+  state.customValues.splice(index, 1)
+}
+
 const hasValidationErrors = computed(() => {
   if (Object.keys(propertyErrors.value).length > 0) {
     return true
@@ -427,7 +453,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       return { id: prop.id, value: prop.value?.toString() || '' }
     }).filter(prop => prop.value !== '') || []
 
-    if (hasImageChanged.value) {
+    if (hasImageChanged.value && state.image) {
       const formData = new FormData()
 
       formData.append('code', event.data.code)
@@ -447,20 +473,27 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       formData.append('status', event.data.status || 'active')
       formData.append('properties', JSON.stringify(processedProperties))
 
-      if (state.image) {
-        formData.append('image', state.image)
+      if (state.customValues && state.customValues.length > 0) {
+        const validCustomValues = state.customValues.filter(cv => cv.name && cv.value)
+        if (validCustomValues.length > 0) {
+          formData.append('customValues', JSON.stringify(validCustomValues))
+        }
       }
+
+      formData.append('image', state.image)
+
       await updateAsset(props.assetId, formData)
     } else {
       const payload = {
         code: event.data.code,
         subCategoryId: event.data.subCategoryId,
         name: event.data.name,
-        description: event.data.description,
-        brand: event.data.brand,
-        model: event.data.model,
+        description: event.data.description || '',
+        brand: event.data.brand || '',
+        model: event.data.model || '',
         status: event.data.status || 'active',
-        properties: processedProperties
+        properties: processedProperties,
+        customValues: state.customValues.filter(cv => cv.name && cv.value)
       }
 
       await updateAsset(props.assetId, payload)
@@ -470,13 +503,12 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     emit('updated')
   } catch (err) {
     console.error(err)
-    alert('Failed to update asset. Please try again.')
   } finally {
     saving.value = false
   }
 }
 
-async function openModal() {
+async function openModalHandler() {
   await getAllCategories()
   categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
   await loadAssetData()
@@ -484,7 +516,7 @@ async function openModal() {
 
 watch(open, (isOpen) => {
   if (isOpen) {
-    openModal()
+    openModalHandler()
   } else {
     hasImageChanged.value = false
     existingImageUrl.value = null
@@ -677,6 +709,55 @@ watch(open, (isOpen) => {
               </p>
             </div>
           </div>
+
+          <div class="space-y-2 pt-4">
+            <div class="flex justify-between items-center">
+              <label class="text-sm font-medium text-gray-700">Custom Fields</label>
+              <UButton
+                label="Add Custom Field"
+                icon="i-lucide-plus"
+                size="xs"
+                variant="soft"
+                @click="addCustomValue"
+              />
+            </div>
+
+            <div v-if="state.customValues.length > 0" class="space-y-2">
+              <div
+                v-for="(customValue, i) in state.customValues"
+                :key="i"
+                class="flex gap-2 items-start"
+              >
+                <UFormField :name="`customValues.${i}.name`" class="flex-1">
+                  <UInput
+                    v-model="customValue.name"
+                    placeholder="Field name"
+                    class="w-full"
+                  />
+                </UFormField>
+
+                <UFormField :name="`customValues.${i}.value`" class="flex-1">
+                  <UInput
+                    v-model="customValue.value"
+                    placeholder="Field value"
+                    class="w-full"
+                  />
+                </UFormField>
+
+                <UButton
+                  icon="i-lucide-x"
+                  color="error"
+                  variant="ghost"
+                  size="sm"
+                  @click="removeCustomValue(i)"
+                />
+              </div>
+            </div>
+
+            <p v-if="state.customValues.length === 0" class="text-sm text-gray-500 italic">
+              No custom fields added yet
+            </p>
+          </div>
         </div>
 
         <div class="col-span-2 flex justify-end gap-2 pt-4">
@@ -700,7 +781,6 @@ watch(open, (isOpen) => {
     </template>
   </UModal>
 
-  <!-- Add Category Modal -->
   <UModal v-model:open="openCategoryModal" title="Add Category" description="Create a new category">
     <template #body>
       <UForm
@@ -741,7 +821,6 @@ watch(open, (isOpen) => {
     </template>
   </UModal>
 
-  <!-- Add Sub Category Modal -->
   <UModal v-model:open="openSubCategoryModal" title="Add Sub Category" description="Create a new sub category">
     <template #body>
       <UForm

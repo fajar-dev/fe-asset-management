@@ -28,8 +28,8 @@ interface AssetState {
   refreshAssets: () => Promise<void>
   getAssetById: (id: string) => Promise<AssetDetailResponse | null>
   getAssetByCode: (code: string) => Promise<AssetDetailResponse | null>
-  createAsset: (payload: CreateAssetPayload) => Promise<Asset>
-  updateAsset: (id: string, payload: UpdateAssetPayload) => Promise<void>
+  createAsset: (payload: CreateAssetPayload | FormData) => Promise<Asset>
+  updateAsset: (id: string, payload: UpdateAssetPayload | FormData) => Promise<void>
   deleteAsset: (id: string) => Promise<void>
 }
 
@@ -44,7 +44,6 @@ export const useAsset = (): AssetState => {
   const pagination = ref({ pageIndex: 0, pageSize: 10 })
   const searchTerm = ref('')
 
-  // Fetch assets with filters
   async function fetchAssets(options?: {
     search?: string
     page?: number
@@ -119,14 +118,14 @@ export const useAsset = (): AssetState => {
     }
   }
 
-  async function createAsset(payload: CreateAssetPayload): Promise<Asset> {
+  async function createAsset(payload: CreateAssetPayload | FormData): Promise<Asset> {
     loading.value = true
     error.value = null
     try {
       const res = await assetService.createAsset(payload)
       toast.add({ title: 'Created', description: 'Asset created successfully', color: 'success' })
       await refreshAssets()
-      return res
+      return res.data
     } catch (err: unknown) {
       const fetchError = err as FetchError<ApiError>
       error.value = fetchError.data?.message ?? 'Failed to create asset'
@@ -137,7 +136,7 @@ export const useAsset = (): AssetState => {
     }
   }
 
-  async function updateAsset(id: string, payload: UpdateAssetPayload): Promise<void> {
+  async function updateAsset(id: string, payload: UpdateAssetPayload | FormData): Promise<void> {
     loading.value = true
     error.value = null
     try {
@@ -148,6 +147,7 @@ export const useAsset = (): AssetState => {
       const fetchError = err as FetchError<ApiError>
       error.value = fetchError.data?.message ?? 'Failed to update asset'
       toast.add({ title: 'Update failed', description: error.value, color: 'error' })
+      throw err
     } finally {
       loading.value = false
     }
@@ -164,12 +164,12 @@ export const useAsset = (): AssetState => {
       const fetchError = err as FetchError<ApiError>
       error.value = fetchError.data?.message ?? 'Failed to delete asset'
       toast.add({ title: 'Delete failed', description: error.value, color: 'error' })
+      throw err
     } finally {
       loading.value = false
     }
   }
 
-  // Watch search term
   watch(searchTerm, () => {
     pagination.value.pageIndex = 0
     fetchAssets({ search: searchTerm.value, page: 1 })

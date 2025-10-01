@@ -3,6 +3,11 @@ export interface AssetPropertyPayload {
   value: string | number
 }
 
+export interface customValues {
+  name: string
+  value: string
+}
+
 export interface CreateAssetPayload {
   subCategoryId: string
   code: string
@@ -11,19 +16,30 @@ export interface CreateAssetPayload {
   status: 'active' | 'in repair' | 'disposed'
   brand?: string
   model?: string
-  properties?: AssetPropertyPayload[] // opsional
+  properties?: AssetPropertyPayload[]
+  customValues?: customValues[]
   image?: File | null
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface UpdateAssetPayload extends CreateAssetPayload {}
+export interface UpdateAssetPayload {
+  subCategoryId: string
+  code: string
+  name: string
+  description?: string
+  status: 'active' | 'in repair' | 'disposed'
+  brand?: string
+  model?: string
+  properties?: AssetPropertyPayload[]
+  customValues?: customValues[]
+  image?: File | null
+}
 
 export interface Asset {
-  data: any
   id: string
   code: string
   name: string
   imageUrl?: string
+  imagePath?: string
   description?: string
   brand?: string
   model?: string
@@ -38,7 +54,7 @@ export interface Asset {
       hasHolder: boolean
     }
   }
-  properties?: {
+  properties?: Array<{
     id: string
     value: string | number
     property: {
@@ -46,7 +62,12 @@ export interface Asset {
       name: string
       dataType: string
     }
-  }[]
+  }>
+  customValues?: Array<{
+    id: string
+    name: string
+    value: string | number
+  }>
 }
 
 export interface Pagination {

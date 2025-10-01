@@ -538,6 +538,17 @@ const columns: TableColumn<any>[] = [
                       {{ prop.value }}
                     </td>
                   </tr>
+                  <tr v-for="field in row.original.customValues" :key="field.name" class="border-t border-default hover:bg-muted/30">
+                    <td class="px-3 py-2 font-medium text-highlighted">
+                      {{ field.name }}
+                    </td>
+                    <td class="px-3 py-2">
+                      :
+                    </td>
+                    <td class="px-3 py-2 capitalize">
+                      {{ field.value }}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
