@@ -19,9 +19,7 @@ const schema = z.object({
   properties: z.array(
     z.object({
       id: z.string(),
-      value: z.union([z.string(), z.number()]).refine((val) => {
-        return val !== undefined && val !== null && val !== ''
-      }, 'Property value is required')
+      value: z.union([z.string(), z.number()]).optional()
     })
   ).optional(),
   customValues: z.array(
@@ -245,8 +243,8 @@ function validateProperty(propertyId: string, value: any): string | null {
   const property = getPropertyInfo(propertyId)
   if (!property) return null
 
-  if (!value || value === '') {
-    return `${property.name} is required`
+  if (value === '' || value === null || value === undefined) {
+    return null
   }
 
   if (property.dataType === 'number') {
@@ -409,20 +407,7 @@ function removeCustomValue(index: number) {
 }
 
 const hasValidationErrors = computed(() => {
-  if (Object.keys(propertyErrors.value).length > 0) {
-    return true
-  }
-
-  if (availableProperties.value.length > 0) {
-    for (const property of availableProperties.value) {
-      const propertyValue = state.properties?.find(p => p.id === property.id)
-      if (!propertyValue || !propertyValue.value || propertyValue.value === '') {
-        return true
-      }
-    }
-  }
-
-  return false
+  return Object.keys(propertyErrors.value).length > 0
 })
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
@@ -691,7 +676,6 @@ watch(open, (isOpen) => {
             >
               <label class="block text-sm font-medium text-gray-700">
                 {{ getPropertyName(prop.id) }}
-                <span class="text-red-500">*</span>
                 <span v-if="getPropertyDataType(prop.id) === 'number'" class="text-xs text-gray-500 ml-1">(Number)</span>
               </label>
 

@@ -21,9 +21,7 @@ const schema = z.object({
   properties: z.array(
     z.object({
       id: z.string(),
-      value: z.union([z.string(), z.number()]).refine((val) => {
-        return val !== undefined && val !== null && val !== ''
-      }, 'Property value is required')
+      value: z.union([z.string(), z.number()]).optional()
     })
   ).optional(),
   customValues: z.array(
@@ -198,8 +196,8 @@ function validateProperty(propertyId: string, value: any): string | null {
   const property = getPropertyInfo(propertyId)
   if (!property) return null
 
-  if (!value || value === '') {
-    return `${property.name} is required`
+  if (value === null || value === undefined || value === '') {
+    return null
   }
 
   if (property.dataType === 'number') {
@@ -211,7 +209,6 @@ function validateProperty(propertyId: string, value: any): string | null {
 
   return null
 }
-
 function handlePropertyChange(index: number, value: string) {
   if (!state.properties || !state.properties[index]) return
 
@@ -374,23 +371,8 @@ function removeCustomValue(index: number) {
 }
 
 const hasValidationErrors = computed(() => {
-  if (!state.image) {
-    return true
-  }
-
-  if (Object.keys(propertyErrors.value).length > 0) {
-    return true
-  }
-
-  if (availableProperties.value.length > 0) {
-    for (const property of availableProperties.value) {
-      const propertyValue = state.properties?.find(p => p.id === property.id)
-      if (!propertyValue || !propertyValue.value || propertyValue.value === '') {
-        return true
-      }
-    }
-  }
-
+  if (!state.image) return true
+  if (Object.keys(propertyErrors.value).length > 0) return true
   return false
 })
 
@@ -410,7 +392,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       for (const property of availableProperties.value) {
         const propertyValue = state.properties?.find(p => p.id === property.id)
         const errorMessage = validateProperty(property.id, propertyValue?.value)
-
         if (errorMessage) {
           propertyErrors.value[property.id] = errorMessage
           hasErrors = true
@@ -420,43 +401,34 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
     if (hasErrors) return
 
-    const processedProperties = event.data.properties?.map((prop) => {
+    const processedProperties = event.data.properties?.filter(prop => prop.value !== '' && prop.value !== null && prop.value !== undefined).map((prop) => {
       const property = availableProperties.value.find(p => p.id === prop.id)
       if (property?.dataType === 'number') {
         return { id: prop.id, value: Number(prop.value) }
       }
       return { id: prop.id, value: prop.value?.toString() || '' }
-    }).filter(prop => prop.value !== '') || []
+    }) || []
 
     const formData = new FormData()
-
     formData.append('code', event.data.code)
     formData.append('subCategoryId', event.data.subCategoryId)
     formData.append('name', event.data.name)
 
-    if (event.data.description) {
-      formData.append('description', event.data.description)
-    }
-    if (event.data.brand) {
-      formData.append('brand', event.data.brand)
-    }
-    if (event.data.model) {
-      formData.append('model', event.data.model)
-    }
+    if (event.data.description) formData.append('description', event.data.description)
+    if (event.data.brand) formData.append('brand', event.data.brand)
+    if (event.data.model) formData.append('model', event.data.model)
 
     formData.append('status', event.data.status || 'active')
     formData.append('properties', JSON.stringify(processedProperties))
 
-    if (state.customValues && state.customValues.length > 0) {
+    if (state.customValues?.length > 0) {
       const validCustomValues = state.customValues.filter(cv => cv.name && cv.value)
       if (validCustomValues.length > 0) {
         formData.append('customValues', JSON.stringify(validCustomValues))
       }
     }
 
-    if (state.image) {
-      formData.append('image', state.image)
-    }
+    if (state.image) formData.append('image', state.image)
 
     await createAsset(formData)
 
@@ -643,7 +615,6 @@ async function openModal() {
             >
               <label class="block text-sm font-medium text-gray-700">
                 {{ getPropertyName(prop.id) }}
-                <span class="text-red-500">*</span>
                 <span v-if="getPropertyDataType(prop.id) === 'number'" class="text-xs text-gray-500 ml-1">(Number)</span>
               </label>
 

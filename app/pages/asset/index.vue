@@ -524,7 +524,7 @@ const columns: TableColumn<any>[] = [
       >
         <template #expanded="{ row }">
           <div class="p-0">
-            <div v-if="row.original.properties?.length">
+            <div v-if="row.original.properties?.length || row.original.customValues?.length">
               <table class="w-full text-sm border border-default rounded-lg overflow-hidden bg-muted">
                 <tbody>
                   <tr v-for="prop in row.original.properties" :key="prop.id" class="border-t border-default hover:bg-muted/30">
