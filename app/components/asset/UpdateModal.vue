@@ -499,14 +499,27 @@ async function openModalHandler() {
   await loadAssetData()
 }
 
-watch(open, (isOpen) => {
+watch(open, async (isOpen) => {
   if (isOpen) {
-    openModalHandler()
+    await openModalHandler()
   } else {
+    Object.assign(state, {
+      code: '',
+      name: '',
+      description: '',
+      brand: '',
+      model: '',
+      categoryId: '',
+      subCategoryId: '',
+      status: 'active',
+      image: null,
+      properties: [],
+      customValues: []
+    })
+
     hasImageChanged.value = false
     existingImageUrl.value = null
     imagePreview.value = null
-    state.image = null
     isInitialLoad.value = false
   }
 })
