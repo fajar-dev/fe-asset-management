@@ -46,17 +46,24 @@ export const useAuth = (): AuthState => {
       localStorage.setItem('refreshToken', refresh)
       if (userData) localStorage.setItem('user', JSON.stringify(userData))
     }
+
+    const cookie = useCookie('accessToken')
+    cookie.value = access
   }
 
   function clearTokens() {
     accessToken.value = null
     refreshToken.value = null
     user.value = null
+
     if (import.meta.client) {
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
     }
+
+    const cookie = useCookie('accessToken')
+    cookie.value = null
   }
 
   async function login(email: string, password: string): Promise<boolean> {
@@ -97,6 +104,10 @@ export const useAuth = (): AuthState => {
 
   function logout(): void {
     clearTokens()
+
+    const cookie = useCookie('accessToken')
+    cookie.value = null
+
     router.push('/login')
   }
 
