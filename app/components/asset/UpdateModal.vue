@@ -90,8 +90,8 @@ const state = reactive<{
   customValues: []
 })
 
-const { createCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
-const { createSubCategory, getSubCategoryById } = useSubCategory()
+const { createCategory, deleteCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
+const { createSubCategory, deleteSubCategory, getSubCategoryById } = useSubCategory()
 const { getAssetById, updateAsset } = useAsset()
 const { createProperty } = useProperty()
 
@@ -120,6 +120,12 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const imagePreview = ref<string | null>(null)
 const existingImageUrl = ref<string | null>(null)
 const hasImageChanged = ref(false)
+
+// Delete modals
+const isDeleteCategoryModalOpen = ref(false)
+const deletingCategoryId = ref<string | null>(null)
+const isDeleteSubCategoryModalOpen = ref(false)
+const deletingSubCategoryId = ref<string | null>(null)
 
 watch(() => state.categoryId, async (catId) => {
   if (isInitialLoad.value) return
@@ -406,6 +412,62 @@ function removeCustomValue(index: number) {
   state.customValues.splice(index, 1)
 }
 
+function removeCategory(categoryId: string) {
+  deletingCategoryId.value = categoryId
+  isDeleteCategoryModalOpen.value = true
+}
+
+async function confirmDeleteCategory() {
+  if (!deletingCategoryId.value) return
+  try {
+    await deleteCategory(deletingCategoryId.value)
+    await getAllCategories()
+    categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
+
+    // Reset category selection if deleted category was selected
+    if (state.categoryId === deletingCategoryId.value) {
+      state.categoryId = ''
+      state.subCategoryId = ''
+      subCategoryItems.value = []
+      availableProperties.value = []
+      state.properties = []
+    }
+
+    deletingCategoryId.value = null
+    isDeleteCategoryModalOpen.value = false
+  } catch (err) {
+    console.error('Failed to delete category', err)
+    alert('Failed to delete category')
+  }
+}
+
+function removeSubCategory(subCategoryId: string) {
+  deletingSubCategoryId.value = subCategoryId
+  isDeleteSubCategoryModalOpen.value = true
+}
+
+async function confirmDeleteSubCategory() {
+  if (!deletingSubCategoryId.value) return
+  try {
+    await deleteSubCategory(deletingSubCategoryId.value)
+    await getSubCategoriesByCategory(state.categoryId)
+    subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
+
+    // Reset sub category selection if deleted sub category was selected
+    if (state.subCategoryId === deletingSubCategoryId.value) {
+      state.subCategoryId = ''
+      availableProperties.value = []
+      state.properties = []
+    }
+
+    deletingSubCategoryId.value = null
+    isDeleteSubCategoryModalOpen.value = false
+  } catch (err) {
+    console.error('Failed to delete sub category', err)
+    alert('Failed to delete sub category')
+  }
+}
+
 const hasValidationErrors = computed(() => {
   return Object.keys(propertyErrors.value).length > 0
 })
@@ -640,7 +702,7 @@ watch(open, async (isOpen) => {
           </UFormField>
         </div>
 
-        <div class="space-y-4">
+        <div class="space-y-2">
           <UFormField label="Category" name="categoryId">
             <div class="flex gap-2">
               <USelectMenu
@@ -650,7 +712,20 @@ watch(open, async (isOpen) => {
                 label-key="name"
                 placeholder="Select category"
                 class="flex-1"
-              />
+              >
+                <template #item="{ item }">
+                  <div class="flex justify-between items-center w-full">
+                    <span>{{ item.name }}</span>
+                    <UButton
+                      icon="i-lucide-trash-2"
+                      color="error"
+                      size="xs"
+                      variant="ghost"
+                      @click.stop="removeCategory(item.id)"
+                    />
+                  </div>
+                </template>
+              </USelectMenu>
               <UButton
                 icon="i-lucide-plus"
                 size="sm"
@@ -670,7 +745,20 @@ watch(open, async (isOpen) => {
                 placeholder="Select sub category"
                 :disabled="!state.categoryId"
                 class="flex-1"
-              />
+              >
+                <template #item="{ item }">
+                  <div class="flex justify-between items-center w-full">
+                    <span>{{ item.name }}</span>
+                    <UButton
+                      icon="i-lucide-trash-2"
+                      color="error"
+                      size="xs"
+                      variant="ghost"
+                      @click.stop="removeSubCategory(item.id)"
+                    />
+                  </div>
+                </template>
+              </USelectMenu>
               <UButton
                 icon="i-lucide-plus"
                 size="sm"
@@ -711,7 +799,7 @@ watch(open, async (isOpen) => {
             <div class="flex justify-between items-center">
               <label class="text-sm font-medium text-gray-700">Custom Fields</label>
               <UButton
-                label="Add Custom Field"
+                label="Add"
                 icon="i-lucide-plus"
                 size="xs"
                 variant="soft"
@@ -777,6 +865,23 @@ watch(open, async (isOpen) => {
       </UForm>
     </template>
   </UModal>
+
+  <!-- Delete Confirmation Modals -->
+  <ConfirmModal
+    v-model:open="isDeleteCategoryModalOpen"
+    title="Delete Category"
+    description="Are you sure you want to delete this category? This action cannot be undone."
+    confirm-label="Delete"
+    :on-confirm="confirmDeleteCategory"
+  />
+
+  <ConfirmModal
+    v-model:open="isDeleteSubCategoryModalOpen"
+    title="Delete Sub Category"
+    description="Are you sure you want to delete this sub category? This action cannot be undone."
+    confirm-label="Delete"
+    :on-confirm="confirmDeleteSubCategory"
+  />
 
   <UModal v-model:open="openCategoryModal" title="Add Category" description="Create a new category">
     <template #body>
