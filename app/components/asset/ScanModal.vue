@@ -11,6 +11,9 @@ const videoRef = ref<HTMLVideoElement>()
 const codeReader = ref<BrowserMultiFormatReader>()
 const scanning = ref(false)
 
+const videoDevices = ref<MediaDeviceInfo[]>([])
+const selectedDeviceIndex = ref(0)
+
 const toast = useToast()
 const router = useRouter()
 const { getAssetByCode } = useAsset()
@@ -32,7 +35,9 @@ const startScanning = async () => {
       throw new Error('No camera found on this device')
     }
 
-    const selectedDeviceId = videoInputDevices[0]?.deviceId
+    videoDevices.value = videoInputDevices
+
+    const selectedDeviceId = videoInputDevices[selectedDeviceIndex.value]?.deviceId
 
     const result = await codeReader.value.decodeOnceFromVideoDevice(selectedDeviceId, videoRef.value)
 
@@ -137,6 +142,14 @@ const stopScanning = () => {
   scanning.value = false
 }
 
+const switchCamera = async () => {
+  if (videoDevices.value.length <= 1) return
+  stopScanning()
+  selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
+  await nextTick()
+  await continuousScanning()
+}
+
 const continuousScanning = async () => {
   if (!codeReader.value || !videoRef.value) return
 
@@ -151,7 +164,9 @@ const continuousScanning = async () => {
       throw new Error('No camera found on this device')
     }
 
-    const selectedDeviceId = videoInputDevices[0]?.deviceId
+    videoDevices.value = videoInputDevices
+
+    const selectedDeviceId = videoInputDevices[selectedDeviceIndex.value]?.deviceId
 
     codeReader.value.decodeFromVideoDevice(
       selectedDeviceId ?? null,
@@ -185,6 +200,12 @@ watch(open, (newValue) => {
 onUnmounted(() => {
   stopScanning()
 })
+
+const currentCameraName = computed(() => {
+  if (videoDevices.value.length === 0) return ''
+  const device = videoDevices.value[selectedDeviceIndex.value]
+  return device?.label || `Camera ${selectedDeviceIndex.value + 1}`
+})
 </script>
 
 <template>
@@ -212,6 +233,21 @@ onUnmounted(() => {
             muted
             playsinline
           />
+
+          <button
+            v-if="!loading && !cameraError && videoDevices.length > 1"
+            class="absolute top-4 right-4 bg-black bg-opacity-60 hover:bg-opacity-80 text-white rounded-full p-3 transition-all duration-200 z-10"
+            @click="switchCamera"
+          >
+            <UIcon name="i-lucide-repeat" class="w-5 h-5" />
+          </button>
+
+          <div
+            v-if="!loading && !cameraError && scanning"
+            class="absolute top-4 left-4 bg-black bg-opacity-60 text-white text-xs px-3 py-1.5 rounded-full z-10"
+          >
+            {{ currentCameraName }}
+          </div>
 
           <div
             v-if="loading"
@@ -270,6 +306,9 @@ onUnmounted(() => {
                 <li>• Hold your device steady</li>
                 <li>• Point camera at the barcode</li>
                 <li>• Align barcode within the red frame</li>
+                <li v-if="videoDevices.length > 1">
+                  • Tap <UIcon name="i-lucide-repeat" class="inline w-3 h-3" /> to switch camera
+                </li>
                 <li>• Ensure good lighting and focus</li>
                 <li>• Supports: Code128, EAN-13, UPC-A, Code39, etc.</li>
               </ul>
