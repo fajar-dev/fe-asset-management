@@ -23,9 +23,9 @@ function handleCancel() {
 
 <template>
   <UModal>
-    <template #header>
-      <div class="flex items-start justify-between w-full">
-        <div class="flex flex-col">
+    <template #content>
+      <div class="p-5">
+        <div class="space-y-1">
           <h3 class="text-lg font-semibold">
             {{ title }}
           </h3>
@@ -33,31 +33,21 @@ function handleCancel() {
             {{ description }}
           </p>
         </div>
-        <UButton
-          icon="i-heroicons-x-mark"
-          color="neutral"
-          variant="ghost"
-          class="ml-4 shrink-0"
-          @click="handleCancel"
-        />
-      </div>
-    </template>
-
-    <template #body>
-      <div class="flex justify-end gap-2">
-        <UButton
-          label="Cancel"
-          color="neutral"
-          variant="subtle"
-          @click="handleCancel"
-        />
-        <UButton
-          :label="confirmLabel"
-          color="error"
-          variant="solid"
-          loading-auto
-          @click="handleConfirm"
-        />
+        <div class="flex justify-end gap-2 mt-4">
+          <UButton
+            label="Cancel"
+            color="neutral"
+            variant="subtle"
+            @click="handleCancel"
+          />
+          <UButton
+            :label="confirmLabel"
+            color="error"
+            variant="solid"
+            loading-auto
+            @click="handleConfirm"
+          />
+        </div>
       </div>
     </template>
   </UModal>
