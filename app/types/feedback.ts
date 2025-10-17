@@ -34,6 +34,7 @@ export interface Feedback {
   updatedAt: string
   reply?: string
   status?: FeedbackStatus
+  user: any
 }
 
 export interface FeedbackDetailResponse {
@@ -58,4 +59,9 @@ export interface CreateFeedbackPayload {
   type: FeedbackType
   description: string
   images?: File[]
+}
+
+export interface UpdateFeedbackPayload {
+  status: FeedbackStatus
+  reply: string
 }

@@ -1,5 +1,11 @@
 import { feedbackService } from '~/services/FeedbackService'
-import type { Feedback, CreateFeedbackPayload, FeedbackDetailResponse, Pagination } from '~/types/feedback'
+import type {
+  Feedback,
+  CreateFeedbackPayload,
+  FeedbackDetailResponse,
+  Pagination,
+  UpdateFeedbackPayload
+} from '~/types/feedback'
 import type { FetchError } from 'ofetch'
 import type { ApiError } from '~/types/api'
 
@@ -10,10 +16,11 @@ interface FeedbackState {
   apiPagination: Ref<any>
   loading: Ref<boolean>
   error: Ref<string | null>
-  fetchFeedbacks: (search?: string, page?: number, limit?: number) => Promise<void>
+  fetchFeedbacks: (search?: string, page?: number, limit?: number, byUser?: boolean) => Promise<void>
   refreshFeedbacks: () => Promise<void>
   getFeedbackById: (id: string) => Promise<FeedbackDetailResponse | null>
   createFeedback: (payload: CreateFeedbackPayload) => Promise<Feedback | undefined>
+  updateFeedback: (id: string, payload: UpdateFeedbackPayload) => Promise<Feedback | undefined>
 }
 
 export const useFeedback = (): FeedbackState => {
@@ -26,11 +33,12 @@ export const useFeedback = (): FeedbackState => {
 
   const pagination = ref({ pageIndex: 0, pageSize: 10 })
 
-  async function fetchFeedbacks(search = '', page = 1, limit = 10): Promise<void> {
+  // 🟢 Tambahkan byUser (default: true)
+  async function fetchFeedbacks(search = '', page = 1, limit = 10, byUser = true): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      const res = await feedbackService.getFeedbacks(search, page, limit)
+      const res = await feedbackService.getFeedbacks(search, page, limit, byUser)
       feedbacks.value = res.data
       apiPagination.value = res.meta?.pagination ?? null
     } catch (err: unknown) {
@@ -81,6 +89,23 @@ export const useFeedback = (): FeedbackState => {
     }
   }
 
+  async function updateFeedback(id: string, payload: UpdateFeedbackPayload): Promise<Feedback | undefined> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await feedbackService.updateFeedback(id, payload)
+      await refreshFeedbacks()
+      toast.add({ title: 'Updated', description: 'Feedback updated successfully', color: 'success' })
+      return res
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiError>
+      error.value = fetchError.data?.message ?? 'Failed to update feedback'
+      toast.add({ title: 'Update failed', description: error.value, color: 'error' })
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     feedbacks,
     selectedFeedback,
@@ -91,6 +116,7 @@ export const useFeedback = (): FeedbackState => {
     fetchFeedbacks,
     refreshFeedbacks,
     getFeedbackById,
-    createFeedback
+    createFeedback,
+    updateFeedback
   }
 }
