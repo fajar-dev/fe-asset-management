@@ -33,7 +33,7 @@ function closeImageModal() {
 }
 
 function loadFeedbacks(page = pagination.value.pageIndex + 1) {
-  fetchFeedbacks(search.value, page, pagination.value.pageSize)
+  fetchFeedbacks(search.value, page, pagination.value.pageSize, false)
 }
 
 onMounted(() => loadFeedbacks())
