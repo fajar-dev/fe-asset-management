@@ -95,6 +95,11 @@ const items = computed<DropdownMenuItem[][]>(() => ([
       ]
     },
     {
+      label: 'My Feedback',
+      icon: 'i-lucide-message-square',
+      to: '/my-feedback'
+    },
+    {
       label: 'Log out',
       icon: 'i-lucide-log-out',
       onSelect: handleLogout
