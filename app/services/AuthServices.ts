@@ -8,10 +8,10 @@ export class AuthService {
     return $api
   }
 
-  async login(email: string, password: string) {
-    return this.api<{ data: LoginResponse }>(`${this.basePath}/login`, {
+  async login(username: string, password: string) {
+    return this.api<{ data: LoginResponse }>(`${this.basePath}/is5`, {
       method: 'POST',
-      body: { email, password }
+      body: { username, password }
     })
   }
 

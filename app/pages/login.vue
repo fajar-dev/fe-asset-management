@@ -49,13 +49,13 @@ const { isReady, login } = useCodeClient({
 })
 
 const fields = [
-  { name: 'email', type: 'text' as const, label: 'Email', placeholder: 'Enter your email', required: true },
+  { name: 'employeeId', type: 'text' as const, label: 'Employee ID', placeholder: 'Enter your employee ID', required: true },
   { name: 'password', type: 'password' as const, label: 'Password', placeholder: 'Enter your password', required: true },
   { name: 'remember', type: 'checkbox' as const, label: 'Remember me' }
 ]
 
 const schema = z.object({
-  email: z.string().email('Invalid email'),
+  employeeId: z.string().min(1, 'Employee ID is required'),
   password: z.string().min(1, 'Password is required').min(8, 'Must be at least 8 characters'),
   remember: z.boolean().optional()
 })
@@ -65,7 +65,7 @@ type Schema = z.output<typeof schema>
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
   loading.value = true
   try {
-    const success = await authLogin(payload.data.email, payload.data.password)
+    const success = await authLogin(payload.data.employeeId, payload.data.password)
     if (success) {
       const intendedRoute = router.currentRoute.value.query.redirect as string
       if (intendedRoute) await router.push(intendedRoute)

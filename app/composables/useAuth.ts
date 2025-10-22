@@ -9,7 +9,7 @@ interface AuthState {
   refreshToken: Ref<string | null>
   user: Ref<User | null>
   isAuthenticated: ComputedRef<boolean>
-  login: (email: string, password: string) => Promise<boolean>
+  login: (username: string, password: string) => Promise<boolean>
   google: (code: string) => Promise<boolean>
   logout: () => void
   refreshAccessToken: () => Promise<boolean>
@@ -66,9 +66,9 @@ export const useAuth = (): AuthState => {
     cookie.value = null
   }
 
-  async function login(email: string, password: string): Promise<boolean> {
+  async function login(username: string, password: string): Promise<boolean> {
     try {
-      const res = await authService.login(email, password)
+      const res = await authService.login(username, password)
       setTokens(res.data.accessToken, res.data.refreshToken)
       await getMe()
       toast.add({ title: 'Success', description: 'Logged in successfully' })
