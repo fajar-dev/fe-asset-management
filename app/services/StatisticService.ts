@@ -1,6 +1,7 @@
 import type {
   CountResponse,
   AssetByCategoryResponse,
+  AssetByLocationResponse,
   AssetBySubCategoryResponse
 } from '~/types/statistic'
 
@@ -36,6 +37,14 @@ export class StatisticService {
   // Get assets grouped by sub-category
   async getAssetsBySubCategory(): Promise<AssetBySubCategoryResponse> {
     return await this.api<AssetBySubCategoryResponse>(`${this.basePath}/assets-by-sub-category`, {
+      method: 'GET',
+      headers: this.getAuthHeader()
+    })
+  }
+
+  // Get assets grouped by location
+  async getAssetsByLocation(): Promise<AssetByLocationResponse> {
+    return await this.api<AssetByLocationResponse>(`${this.basePath}/assets-by-location`, {
       method: 'GET',
       headers: this.getAuthHeader()
     })

@@ -6,6 +6,7 @@ import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
 import { useCategory } from '~/composables/useCategory'
 import { useEmployee } from '~/composables/useEmployee'
+import { useLocation } from '~/composables/useLocation'
 import { useRole } from '~/composables/useRole'
 
 interface EmployeeItem {
@@ -41,18 +42,21 @@ const expanded = ref<Record<number | string, boolean>>({})
 const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset } = useAsset()
 const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
 const { employees, fetchEmployees } = useEmployee()
+const { locations: allLocations, getAllLocations } = useLocation()
 const { isAdmin } = useRole()
 
 const selectedCategoryId = ref<string | undefined>(undefined)
 const selectedSubCategoryId = ref<string | undefined>(undefined)
 const selectedStatus = ref<string | undefined>(undefined)
 const selectedEmployee = ref<string | undefined>(undefined)
+const selectedLocation = ref<string | undefined>(undefined)
 const previewImage = ref<string | null>(null)
 
 const tempCategoryId = ref<string | undefined>(undefined)
 const tempSubCategoryId = ref<string | undefined>(undefined)
 const tempStatus = ref<string | undefined>(undefined)
 const tempEmployee = ref<string | undefined>(undefined)
+const tempLocation = ref<string | undefined>(undefined)
 
 const statusItems: SelectMenuItem[] = [
   { label: 'Active', id: 'active' },
@@ -63,6 +67,11 @@ const statusItems: SelectMenuItem[] = [
 onMounted(async () => {
   await getAllCategories()
   await fetchEmployees()
+  await getAllLocations()
+  allLocations.value = allLocations.value.map(l => ({
+    ...l,
+    id: String(l.id)
+  }))
   loadAssets()
 })
 
@@ -110,7 +119,8 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     categoryId: selectedCategoryId.value,
     subCategoryId: selectedSubCategoryId.value,
     status: selectedStatus.value,
-    employeeId: selectedEmployee.value
+    employeeId: selectedEmployee.value,
+    locationId: selectedLocation.value
   })
 }
 
@@ -119,6 +129,7 @@ function applyFilters() {
   selectedSubCategoryId.value = tempSubCategoryId.value
   selectedStatus.value = tempStatus.value
   selectedEmployee.value = tempEmployee.value
+  selectedLocation.value = tempLocation.value
   isFilterOpen.value = false
   loadAssets(1)
 }
@@ -128,12 +139,14 @@ function resetFilters() {
   selectedSubCategoryId.value = undefined
   selectedStatus.value = undefined
   selectedEmployee.value = undefined
+  selectedLocation.value = undefined
   search.value = ''
 
   tempCategoryId.value = undefined
   tempSubCategoryId.value = undefined
   tempStatus.value = undefined
   tempEmployee.value = undefined
+  tempLocation.value = undefined
 
   subCategories.value = []
   isFilterOpen.value = false
@@ -162,6 +175,7 @@ const activeFiltersCount = computed(() => {
   if (selectedSubCategoryId.value) count++
   if (selectedStatus.value) count++
   if (selectedEmployee.value) count++
+  if (selectedLocation.value) count++
   return count
 })
 
@@ -171,6 +185,7 @@ watch(isFilterOpen, (isOpen) => {
     tempSubCategoryId.value = selectedSubCategoryId.value
     tempStatus.value = selectedStatus.value
     tempEmployee.value = selectedEmployee.value
+    tempLocation.value = selectedLocation.value
 
     if (tempCategoryId.value) {
       getSubCategoriesByCategory(tempCategoryId.value)
@@ -202,6 +217,14 @@ function getRowItems(row: Row<any>) {
   if (!category) return []
 
   const items: any[] = [{ type: 'label', label: 'Actions' }]
+
+  if (category.hasLocation) {
+    items.push({
+      label: 'Location',
+      icon: 'i-lucide-map-pin',
+      to: `/asset/${row.original.id}/location`
+    })
+  }
 
   if (category.hasMaintenance) {
     items.push({
@@ -315,6 +338,19 @@ const columns: TableColumn<any>[] = [
     cell: ({ row }) => row.original.model ?? '-'
   },
   {
+    accessorKey: 'lastLocation',
+    header: 'Last Location',
+    cell: ({ row }) => {
+      const loc = row.original.lastLocation
+      if (!loc) return h('span', { class: 'text-xs text-muted' }, '-')
+
+      return h('div', { class: 'flex flex-col' }, [
+        h('span', { class: 'text-highlighted font-medium text-xs' }, loc.name),
+        h('span', { class: 'text-xs' }, loc.branch?.name ?? '-')
+      ])
+    }
+  },
+  {
     accessorKey: 'employee',
     header: 'Active Holder',
     cell: ({ row }) => {
@@ -333,6 +369,39 @@ const columns: TableColumn<any>[] = [
     }
   },
   {
+    accessorKey: 'user',
+    header: 'User',
+    cell: ({ row }) => row.original.user ?? '-'
+  },
+  {
+    accessorKey: 'price',
+    header: 'Price',
+    cell: ({ row }) => {
+      const price = row.original.price
+      if (!price) return h('span', { class: 'text-xs text-muted' }, '-')
+      const formatted = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+      }).format(Number(price))
+      return h('span', { class: 'text-xs font-medium text-highlighted' }, formatted)
+    }
+  },
+  {
+    accessorKey: 'purchaseDate',
+    header: 'Purchase Date',
+    cell: ({ row }) => {
+      const date = row.original.purchaseDate
+      if (!date) return h('span', { class: 'text-xs text-muted' }, '-')
+      const formatted = new Date(date).toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+      return h('span', { class: 'text-xs' }, formatted)
+    }
+  },
+  {
     accessorKey: 'status',
     header: 'Status',
     filterFn: 'equals',
@@ -344,8 +413,15 @@ const columns: TableColumn<any>[] = [
         'disposed': 'error',
         'in repair': 'warning'
       }
-      const displayStatus = status.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color: colorMap[status] }, () => displayStatus)
+      const displayStatus = status
+        .split(' ')
+        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+        .join(' ')
+      return h(
+        UBadge,
+        { class: 'capitalize', variant: 'subtle', color: colorMap[status] },
+        () => displayStatus
+      )
     }
   },
   {
@@ -357,7 +433,13 @@ const columns: TableColumn<any>[] = [
         h(
           UDropdownMenu,
           { content: { align: 'end' }, items: getRowItems(row) },
-          () => h(UButton, { icon: 'i-lucide-ellipsis-vertical', color: 'neutral', variant: 'ghost', class: 'ml-auto' })
+          () =>
+            h(UButton, {
+              icon: 'i-lucide-ellipsis-vertical',
+              color: 'neutral',
+              variant: 'ghost',
+              class: 'ml-auto'
+            })
         )
       )
   }
@@ -479,6 +561,23 @@ const columns: TableColumn<any>[] = [
                       :items="statusItems"
                       placeholder="Select status"
                       searchable
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-1.5">Last Location</label>
+                    <USelectMenu
+                      v-model="tempLocation"
+                      class="w-full"
+                      value-key="id"
+                      :items="allLocations.map(l => ({
+                        label: `${l.name} - ${l.branch?.name ?? '-'}`,
+                        id: String(l.id)
+                      }))"
+                      placeholder="Select last location"
+                      searchable
+                      searchable-placeholder="Search location..."
+                      clearable
                     />
                   </div>
 

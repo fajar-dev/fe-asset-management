@@ -10,6 +10,7 @@ export interface CountData {
   assets: number
   categories: number
   subCategories: number
+  locations: number
 }
 
 export type CountResponse = ApiResponse<CountData>
@@ -29,3 +30,11 @@ export interface AssetBySubCategoryData {
 }
 
 export type AssetBySubCategoryResponse = ApiResponse<AssetBySubCategoryData[]>
+
+// ---- Asset By Location ----
+export interface AssetByLocationData {
+  name: string
+  value: number
+}
+
+export type AssetByLocationResponse = ApiResponse<AssetByLocationData[]>

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { useCategory } from '~/composables/useCategory'
+import { reactive, ref, watch } from 'vue'
+import { useLocation } from '~/composables/useLocation'
+import { useBranch } from '~/composables/useBranch'
 
 const props = defineProps<{
   id: string | null
@@ -13,42 +15,46 @@ const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
 
+// ✅ schema pakai branchId, sama seperti add
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
-  hasLocation: z.boolean().default(false),
-  hasMaintenance: z.boolean().default(false),
-  hasHolder: z.boolean().default(false)
+  branchId: z.string().min(1, 'Branch is required')
 })
 type Schema = z.output<typeof schema>
 
 const formData = reactive<Schema>({
   name: '',
-  hasLocation: false,
-  hasMaintenance: false,
-  hasHolder: false
+  branchId: ''
 })
 
 const saving = ref(false)
 const loading = ref(false)
+const items = ref<{ id: string, name: string }[]>([])
 
-const { getCategoryById, updateCategory } = useCategory()
+const { getLocationById, updateLocation } = useLocation()
+const { branches, fetchBranches } = useBranch()
 
-async function loadCategoryData() {
+async function loadLocationData() {
   if (!props.id) return
 
   loading.value = true
   try {
-    const response = await getCategoryById(props.id)
+    // load detail lokasi
+    const response = await getLocationById(props.id)
     if (response?.data) {
       Object.assign(formData, {
         name: response.data.name,
-        hasLocation: response.data.hasLocation,
-        hasMaintenance: response.data.hasMaintenance,
-        hasHolder: response.data.hasHolder
+        branchId: response.data.branch.branchId
       })
     }
+    // load daftar branch
+    await fetchBranches()
+    items.value = branches.value.map(b => ({
+      id: b.branchId,
+      name: `${b.branchId} - ${b.name}`
+    }))
   } catch (error) {
-    console.error('Failed to load category:', error)
+    console.error('Failed to load location:', error)
   } finally {
     loading.value = false
   }
@@ -58,7 +64,7 @@ watch(
   () => props.open,
   async (isOpen) => {
     if (isOpen && props.id) {
-      await loadCategoryData()
+      await loadLocationData()
     } else {
       resetForm()
     }
@@ -70,9 +76,7 @@ watch(
 function resetForm() {
   Object.assign(formData, {
     name: '',
-    hasLocation: false,
-    hasMaintenance: false,
-    hasHolder: false
+    branchId: ''
   })
 }
 
@@ -82,12 +86,12 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
 
   saving.value = true
   try {
-    await updateCategory(props.id, { ...formData })
+    await updateLocation(props.id, { ...formData })
     emit('updated')
     emit('update:open', false)
     resetForm()
   } catch (error) {
-    console.error('Failed to update category:', error)
+    console.error('Failed to update location:', error)
   } finally {
     saving.value = false
   }
@@ -97,8 +101,8 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
 <template>
   <UModal
     :open="props.open"
-    title="Edit Category"
-    description="Update category details"
+    title="Edit Location"
+    description="Update location details"
     @update:open="emit('update:open', $event)"
   >
     <template #body>
@@ -112,20 +116,19 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
           <UInput
             v-model="formData.name"
             class="w-full"
-            placeholder="Category name"
+            placeholder="Location name"
           />
         </UFormField>
 
-        <UFormField name="hasLocation">
-          <USwitch v-model="formData.hasLocation" label="Has Location" />
-        </UFormField>
-
-        <UFormField name="hasMaintenance">
-          <USwitch v-model="formData.hasMaintenance" label="Has Maintenance" />
-        </UFormField>
-
-        <UFormField name="hasHolder">
-          <USwitch v-model="formData.hasHolder" label="Has Holder" />
+        <UFormField label="Branch" name="branchId" required>
+          <UInputMenu
+            v-model="formData.branchId"
+            class="w-full"
+            value-key="id"
+            label-key="name"
+            :items="items"
+            placeholder="Select branch"
+          />
         </UFormField>
 
         <div class="flex justify-end gap-2">

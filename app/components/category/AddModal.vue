@@ -5,6 +5,7 @@ import { useCategory } from '~/composables/useCategory'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
+  hasLocation: z.boolean().default(false),
   hasMaintenance: z.boolean().default(false),
   hasHolder: z.boolean().default(false)
 })
@@ -17,6 +18,7 @@ const saving = ref(false)
 
 const state = reactive<Partial<Schema>>({
   name: '',
+  hasLocation: false,
   hasMaintenance: false,
   hasHolder: false
 })
@@ -25,6 +27,7 @@ const { createCategory } = useCategory()
 
 function resetForm() {
   state.name = ''
+  state.hasLocation = false
   state.hasMaintenance = false
   state.hasHolder = false
 }
@@ -33,6 +36,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   saving.value = true
   await createCategory({
     name: event.data.name,
+    hasLocation: event.data.hasLocation,
     hasMaintenance: event.data.hasMaintenance,
     hasHolder: event.data.hasHolder
   })
@@ -56,6 +60,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       >
         <UFormField label="Name" name="name">
           <UInput v-model="state.name" class="w-full" placeholder="Category name" />
+        </UFormField>
+
+        <UFormField name="hasLocation">
+          <USwitch v-model="state.hasLocation" label="Has Location" />
         </UFormField>
 
         <UFormField name="hasMaintenance">

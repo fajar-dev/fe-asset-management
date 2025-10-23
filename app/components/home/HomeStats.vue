@@ -27,6 +27,11 @@ const stats = computed(() => {
       title: 'Sub Categories',
       icon: 'i-lucide-list',
       value: formatNumber(count.value.subCategories)
+    },
+    {
+      title: 'Locations',
+      icon: 'i-lucide-map-pin',
+      value: formatNumber(count.value.locations)
     }
   ]
 })

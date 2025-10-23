@@ -46,6 +46,14 @@ const navigationItems = computed<NavigationMenuItem[][]>(() => {
     }
   ]
 
+  if (category.hasLocation) {
+    items.push({
+      label: 'Location',
+      icon: 'i-lucide-map-pin',
+      to: `/asset/${props.assetId}/location`
+    })
+  }
+
   if (category.hasHolder) {
     items.push({
       label: 'Holder',

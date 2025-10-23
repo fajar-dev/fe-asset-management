@@ -3,6 +3,7 @@ import type {
   CountResponse,
   AssetByCategoryResponse,
   AssetBySubCategoryResponse,
+  AssetByLocationResponse,
   ApiResponse
 } from '~/types/statistic'
 import type { FetchError } from 'ofetch'
@@ -16,6 +17,7 @@ export function useStatistic() {
   const count = ref<CountResponse['data'] | null>(null)
   const assetsByCategory = ref<AssetByCategoryResponse['data']>([])
   const assetsBySubCategory = ref<AssetBySubCategoryResponse['data']>([])
+  const assetsByLocation = ref<AssetByLocationResponse['data']>([])
 
   async function getCount(): Promise<void> {
     loading.value = true
@@ -62,14 +64,31 @@ export function useStatistic() {
     }
   }
 
+  async function getAssetsByLocation(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await statisticService.getAssetsByLocation()
+      assetsByLocation.value = res.data
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiResponse<unknown>>
+      error.value = fetchError.data?.message ?? 'Failed to fetch assets by location'
+      toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     loading,
     error,
     count,
     assetsByCategory,
     assetsBySubCategory,
+    assetsByLocation,
     getCount,
     getAssetsByCategory,
-    getAssetsBySubCategory
+    getAssetsBySubCategory,
+    getAssetsByLocation
   }
 }

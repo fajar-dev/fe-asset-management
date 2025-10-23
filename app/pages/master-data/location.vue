@@ -1,40 +1,32 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
-import { useCategory } from '~/composables/useCategory'
+import { useLocation } from '~/composables/useLocation'
 import { useRole } from '~/composables/useRole'
 
-// komponen global
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-const UIcon = resolveComponent('UIcon')
 
-// state
 const search = ref('')
 const isDeleteModalOpen = ref(false)
-const deletingCategoryId = ref<string | null>(null)
+const deletingLocationId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
-const editingCategoryId = ref<string | null>(null)
+const editingLocationId = ref<string | null>(null)
 
-// composable
-const { categories, apiPagination, pagination, loading, fetchCategories, deleteCategory } = useCategory()
+const { locations, apiPagination, pagination, loading, fetchLocations, deleteLocation } = useLocation()
 const { isAdmin } = useRole()
 
-// fetch wrapper
-function loadCategories(page = pagination.value.pageIndex + 1) {
-  fetchCategories(search.value, page, pagination.value.pageSize)
+function loadLocations(page = pagination.value.pageIndex + 1) {
+  fetchLocations(search.value, page, pagination.value.pageSize)
 }
 
-// lifecycle
-onMounted(() => loadCategories())
-watch(search, () => loadCategories(1))
+onMounted(() => loadLocations())
+watch(search, () => loadLocations(1))
 
-// pagination
 function handlePageChange(newPage: number) {
-  loadCategories(newPage)
+  loadLocations(newPage)
 }
 
-// info showing
 const showingFrom = computed(() =>
   apiPagination.value
     ? (apiPagination.value.currentPage - 1) * apiPagination.value.itemsPerPage + 1
@@ -47,12 +39,11 @@ const showingTo = computed(() =>
     : 0
 )
 
-// actions
 async function confirmDelete() {
-  if (!deletingCategoryId.value) return
-  await deleteCategory(deletingCategoryId.value)
-  deletingCategoryId.value = null
-  loadCategories()
+  if (!deletingLocationId.value) return
+  await deleteLocation(deletingLocationId.value)
+  deletingLocationId.value = null
+  loadLocations()
   isDeleteModalOpen.value = false
 }
 
@@ -63,7 +54,7 @@ function getRowItems(row: Row<any>) {
       label: 'Edit',
       icon: 'i-lucide-pencil',
       onSelect: () => {
-        editingCategoryId.value = row.original.id
+        editingLocationId.value = row.original.id
         isUpdateModalOpen.value = true
       }
     },
@@ -72,43 +63,21 @@ function getRowItems(row: Row<any>) {
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect: () => {
-        deletingCategoryId.value = row.original.id
+        deletingLocationId.value = row.original.id
         isDeleteModalOpen.value = true
       }
     }
   ]
 }
 
-// Boolean icon renderer
-const renderBooleanIcon = (value: boolean) => {
-  return h(
-    'div',
-    { class: 'flex justify-center' },
-    h(UIcon, {
-      name: value ? 'i-lucide-check-circle' : 'i-lucide-x-circle',
-      class: value
-        ? 'w-5 h-5 text-green-500'
-        : 'w-5 h-5 text-red-500'
-    })
-  )
-}
-
 const columns: TableColumn<any>[] = [
   { accessorKey: 'name', header: 'Name' },
   {
-    accessorKey: 'hasLocation',
-    header: () => h('div', { class: 'text-center' }, 'Has Location'),
-    cell: ({ row }) => renderBooleanIcon(row.original.hasLocation)
-  },
-  {
-    accessorKey: 'hasMaintenance',
-    header: () => h('div', { class: 'text-center' }, 'Has Maintenance'),
-    cell: ({ row }) => renderBooleanIcon(row.original.hasMaintenance)
-  },
-  {
-    accessorKey: 'hasHolder',
-    header: () => h('div', { class: 'text-center' }, 'Has Holder'),
-    cell: ({ row }) => renderBooleanIcon(row.original.hasHolder)
+    header: 'Branch',
+    cell: ({ row }) => {
+      const branch = row.original.branch
+      return `${branch.branchId} - ${branch.name}`
+    }
   },
   {
     id: 'actions',
@@ -135,15 +104,15 @@ const columns: TableColumn<any>[] = [
 </script>
 
 <template>
-  <UDashboardPanel id="categories">
+  <UDashboardPanel id="locations">
     <template #header>
-      <UDashboardNavbar title="Categories">
+      <UDashboardNavbar title="Locations">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
           <RoleWrapper role="admin">
-            <CategoryAddModal @created="fetchCategories()" />
+            <LocationAddModal @created="fetchLocations()" />
           </RoleWrapper>
         </template>
       </UDashboardNavbar>
@@ -153,35 +122,34 @@ const columns: TableColumn<any>[] = [
       <RoleWrapper role="admin">
         <ConfirmModal
           v-model:open="isDeleteModalOpen"
-          title="Delete Category"
+          title="Delete Location"
           description="Are you sure? This action cannot be undone."
           confirm-label="Delete"
           :on-confirm="confirmDelete"
         />
-        <CategoryUpdateModal
-          :id="editingCategoryId"
+        <LocationUpdateModal
+          :id="editingLocationId"
           v-model:open="isUpdateModalOpen"
-          @updated="fetchCategories()"
+          @updated="fetchLocations()"
         />
       </RoleWrapper>
-
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
         <UInput
           v-model="search"
           class="max-w-sm"
           icon="i-lucide-search"
-          placeholder="Search category..."
+          placeholder="Search locations..."
         />
       </div>
 
       <div class="overflow-x-auto">
         <UTable
           v-model:pagination="pagination"
-          :data="categories"
+          :data="locations"
           :columns="columns"
           :loading="loading"
           :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-          class="shrink-0"
+          class="min-w-full"
           :ui="{
             base: 'table-fixed border-separate border-spacing-0',
             thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',

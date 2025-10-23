@@ -52,6 +52,7 @@ export const useAsset = (): AssetState => {
     subCategoryId?: string | null
     status?: string | null
     employeeId?: string | null
+    locationId?: string | null
   }): Promise<void> {
     loading.value = true
     error.value = null
@@ -63,10 +64,11 @@ export const useAsset = (): AssetState => {
         categoryId = null,
         subCategoryId = null,
         status = null,
-        employeeId = null
+        employeeId = null,
+        locationId = null
       } = options || {}
 
-      const res = await assetService.getAssets(search, page, limit, categoryId, subCategoryId, status, employeeId)
+      const res = await assetService.getAssets(search, page, limit, categoryId, subCategoryId, status, employeeId, locationId)
       assets.value = res.data
       apiPagination.value = res.meta?.pagination ?? null
     } catch (err: unknown) {

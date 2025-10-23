@@ -2,6 +2,7 @@ export interface Category {
   data?: any
   id: string
   name: string
+  hasLocation: boolean
   hasMaintenance: boolean
   hasHolder: boolean
 }
@@ -33,6 +34,7 @@ export interface CategoryDetailResponse {
 
 export interface CreateCategoryPayload {
   name: string
+  hasLocation: boolean
   hasMaintenance: boolean
   hasHolder: boolean
 }

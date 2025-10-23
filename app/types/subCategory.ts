@@ -9,6 +9,7 @@ export interface AssetProperty {
 export interface Category {
   id: string
   name: string
+  hasLocation: boolean
   hasMaintenance: boolean
   hasHolder: boolean
 }
