@@ -71,7 +71,6 @@ const open = computed({
 
 const saving = ref(false)
 const isInitialLoad = ref(false)
-const isDataReady = ref(false)
 
 const state = reactive<{
   code: string
@@ -203,14 +202,12 @@ async function loadAssetData() {
   }
 
   isInitialLoad.value = true
-  isDataReady.value = false
 
   const response = await getAssetById(props.assetId)
 
   if (!response?.data) {
     open.value = false
     isInitialLoad.value = false
-    isDataReady.value = true
     return
   }
 
@@ -258,7 +255,6 @@ async function loadAssetData() {
   }
 
   isInitialLoad.value = false
-  isDataReady.value = true
   await nextTick()
 }
 
@@ -578,7 +574,6 @@ function resetState() {
   existingImageUrl.value = null
   imagePreview.value = null
   isInitialLoad.value = false
-  isDataReady.value = false
 }
 </script>
 
@@ -590,17 +585,7 @@ function resetState() {
     :ui="{ content: 'max-w-6xl' }"
   >
     <template #body>
-      <div v-if="!isDataReady" class="flex justify-center items-center py-20">
-        <div class="text-center space-y-3">
-          <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 mx-auto text-primary" />
-          <p class="text-sm text-gray-500">
-            Loading asset data...
-          </p>
-        </div>
-      </div>
-
       <UForm
-        v-else
         :schema="schema"
         :state="state"
         class="md:grid md:grid-cols-3 gap-6"
