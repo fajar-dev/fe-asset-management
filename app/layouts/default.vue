@@ -33,9 +33,9 @@ const links = computed<NavigationMenuItem[][]>(() => [[
     defaultOpen: true,
     type: 'trigger',
     children: [
-      { label: 'Category', to: '/master-data/category', onSelect: () => (open.value = false) },
-      { label: 'Sub Category', to: '/master-data/sub-category', onSelect: () => (open.value = false) },
-      { label: 'Location', to: '/master-data/location', onSelect: () => (open.value = false) }
+      { label: 'Category', to: '/setting/category', onSelect: () => (open.value = false) },
+      { label: 'Sub Category', to: '/setting/sub-category', onSelect: () => (open.value = false) },
+      { label: 'Location', to: '/setting/location', onSelect: () => (open.value = false) }
     ]
   }
 ], [

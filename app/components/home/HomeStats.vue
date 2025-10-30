@@ -16,22 +16,26 @@ const stats = computed(() => {
     {
       title: 'Assets',
       icon: 'i-lucide-box',
-      value: formatNumber(count.value.assets)
+      value: formatNumber(count.value.assets),
+      to: '/asset'
     },
     {
       title: 'Categories',
       icon: 'i-lucide-layers',
-      value: formatNumber(count.value.categories)
+      value: formatNumber(count.value.categories),
+      to: '/setting/category'
     },
     {
       title: 'Sub Categories',
       icon: 'i-lucide-list',
-      value: formatNumber(count.value.subCategories)
+      value: formatNumber(count.value.subCategories),
+      to: '/setting/sub-category'
     },
     {
       title: 'Locations',
       icon: 'i-lucide-map-pin',
-      value: formatNumber(count.value.locations)
+      value: formatNumber(count.value.locations),
+      to: '/setting/location'
     }
   ]
 })
@@ -53,7 +57,6 @@ const stats = computed(() => {
       </UPageCard>
     </template>
 
-    <!-- Kalau sudah ada data -->
     <template v-else>
       <UPageCard
         v-for="(stat, index) in stats"
@@ -61,13 +64,15 @@ const stats = computed(() => {
         :icon="stat.icon"
         :title="stat.title"
         variant="subtle"
+        as="NuxtLink"
+        :to="stat.to"
+        class="lg:rounded-none first:rounded-l-lg last:rounded-r-lg hover:z-1 hover:bg-muted/50 cursor-pointer transition-colors"
         :ui="{
           container: 'gap-y-1.5',
           wrapper: 'items-start',
           leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
           title: 'font-normal text-muted text-xs uppercase'
         }"
-        class="lg:rounded-none first:rounded-l-lg last:rounded-r-lg hover:z-1"
       >
         <span class="text-2xl font-semibold text-highlighted">
           {{ stat.value }}
