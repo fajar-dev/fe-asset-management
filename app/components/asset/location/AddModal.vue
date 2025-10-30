@@ -69,7 +69,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="New Location" name="locationId">
+        <UFormField label="New Location" name="locationId" required>
           <UInputMenu
             v-model="value"
             class="w-full"

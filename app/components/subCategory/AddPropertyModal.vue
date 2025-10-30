@@ -79,7 +79,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Name" name="name">
+        <!-- Property Name -->
+        <UFormField label="Name" name="name" required>
           <UInput
             v-model="state.name"
             class="w-full"
@@ -87,7 +88,23 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           />
         </UFormField>
 
-        <UFormField label="Type" name="dataType">
+        <!-- Type -->
+        <UFormField name="dataType">
+          <template #label>
+            <div class="flex items-center gap-1">
+              <span>Type<span class="text-red-500 ml-0.5">*</span></span>
+              <UTooltip
+                text="Select the data type for this property (e.g. text or numeric)"
+                :delay-duration="0"
+              >
+                <UIcon
+                  name="i-lucide-info"
+                  class="w-4 h-4 text-gray-500 cursor-pointer"
+                />
+              </UTooltip>
+            </div>
+          </template>
+
           <USelectMenu
             v-model="state.dataType"
             :items="['string', 'number']"
@@ -96,6 +113,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           />
         </UFormField>
 
+        <!-- Action Buttons -->
         <div class="flex justify-end gap-2">
           <UButton
             label="Cancel"
@@ -104,6 +122,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             :disabled="saving"
             @click="emit('update:modelValue', false)"
           />
+
           <UButton
             label="Add"
             color="primary"

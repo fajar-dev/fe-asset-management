@@ -66,7 +66,6 @@ watch(
   { immediate: true }
 )
 
-/** Reset form */
 function resetForm() {
   Object.assign(formData, {
     name: '',
@@ -76,21 +75,15 @@ function resetForm() {
   })
 }
 
-/** Submit */
 async function onSubmit(_event: FormSubmitEvent<Schema>) {
   if (!props.id) return
 
   saving.value = true
-  try {
-    await updateCategory(props.id, { ...formData })
-    emit('updated')
-    emit('update:open', false)
-    resetForm()
-  } catch (error) {
-    console.error('Failed to update category:', error)
-  } finally {
-    saving.value = false
-  }
+  await updateCategory(props.id, { ...formData })
+  emit('updated')
+  emit('update:open', false)
+  resetForm()
+  saving.value = false
 }
 </script>
 
@@ -108,6 +101,7 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
+        <!-- Name -->
         <UFormField label="Name" name="name" required>
           <UInput
             v-model="formData.name"
@@ -116,18 +110,37 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
           />
         </UFormField>
 
+        <!-- Has Location -->
         <UFormField name="hasLocation">
-          <USwitch v-model="formData.hasLocation" label="Has Location" />
+          <div class="flex items-center gap-2">
+            <USwitch v-model="formData.hasLocation" label="Has Location" />
+            <UTooltip text="Enable if this category involves asset locations" :delay-duration="0">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+            </UTooltip>
+          </div>
         </UFormField>
 
+        <!-- Has Maintenance -->
         <UFormField name="hasMaintenance">
-          <USwitch v-model="formData.hasMaintenance" label="Has Maintenance" />
+          <div class="flex items-center gap-2">
+            <USwitch v-model="formData.hasMaintenance" label="Has Maintenance" />
+            <UTooltip text="Enable if this category requires maintenance tracking" :delay-duration="0">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+            </UTooltip>
+          </div>
         </UFormField>
 
+        <!-- Has Holder -->
         <UFormField name="hasHolder">
-          <USwitch v-model="formData.hasHolder" label="Has Holder" />
+          <div class="flex items-center gap-2">
+            <USwitch v-model="formData.hasHolder" label="Has Holder" />
+            <UTooltip text="Enable if this category is assigned to a person or holder" :delay-duration="0">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+            </UTooltip>
+          </div>
         </UFormField>
 
+        <!-- Action Buttons -->
         <div class="flex justify-end gap-2">
           <UButton
             label="Cancel"

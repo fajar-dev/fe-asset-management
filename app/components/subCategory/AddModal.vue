@@ -96,11 +96,13 @@ function removeProperty(index: number) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Name" name="name">
+        <!-- Name -->
+        <UFormField label="Name" name="name" required>
           <UInput v-model="state.name" class="w-full" placeholder="Sub Category name" />
         </UFormField>
 
-        <UFormField label="Category" name="categoryId">
+        <!-- Category -->
+        <UFormField label="Category" name="categoryId" required>
           <UInputMenu
             v-model="value"
             class="w-full"
@@ -111,9 +113,22 @@ function removeProperty(index: number) {
           />
         </UFormField>
 
+        <!-- Properties -->
         <div class="space-y-2">
           <div class="flex justify-between items-center">
-            <label class="text-sm font-medium">Properties</label>
+            <div class="flex items-center gap-1">
+              <label class="text-sm font-medium">Properties</label>
+              <UTooltip
+                text="Define additional attributes for this sub category (e.g. serial number, size, capacity)"
+                :delay-duration="0"
+              >
+                <UIcon
+                  name="i-lucide-info"
+                  class="w-4 h-4 text-gray-500 cursor-pointer"
+                />
+              </UTooltip>
+            </div>
+
             <UButton
               label="Add Property"
               icon="i-lucide-plus"
@@ -122,7 +137,11 @@ function removeProperty(index: number) {
             />
           </div>
 
-          <div v-for="(prop, i) in state.properties" :key="i" class="flex gap-3 py-1 items-start">
+          <div
+            v-for="(prop, i) in state.properties"
+            :key="i"
+            class="flex gap-3 py-1 items-start"
+          >
             <UFormField :name="`properties.${i}.name`" class="flex-1">
               <UInput v-model="prop.name" placeholder="Property name" class="w-full" />
             </UFormField>
@@ -152,6 +171,7 @@ function removeProperty(index: number) {
           </div>
         </div>
 
+        <!-- Actions -->
         <div class="flex justify-end gap-2">
           <UButton
             label="Cancel"

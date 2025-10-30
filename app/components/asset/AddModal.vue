@@ -646,7 +646,7 @@ async function openModal() {
             />
           </UFormField>
 
-          <UFormField label="Status" name="status">
+          <UFormField label="Status" name="status" required>
             <USelectMenu
               v-model="state.status"
               :items="[
@@ -676,7 +676,27 @@ async function openModal() {
         </div>
 
         <div class="space-y-2">
-          <UFormField label="Category" name="categoryId" required>
+          <!-- Category -->
+          <UFormField name="categoryId">
+            <template #label>
+              <div class="flex items-center gap-1">
+                <span>
+                  Category
+                  <span class="text-red-500 ml-0.5">*</span>
+                </span>
+
+                <UTooltip
+                  text="Select the main category for this asset. You can also add or remove categories directly here."
+                  :delay-duration="0"
+                >
+                  <UIcon
+                    name="i-lucide-info"
+                    class="w-4 h-4 text-gray-500 cursor-pointer"
+                  />
+                </UTooltip>
+              </div>
+            </template>
+
             <div class="flex gap-2">
               <USelectMenu
                 v-model="state.categoryId"
@@ -699,6 +719,7 @@ async function openModal() {
                   </div>
                 </template>
               </USelectMenu>
+
               <UButton
                 icon="i-lucide-plus"
                 size="sm"
@@ -708,7 +729,27 @@ async function openModal() {
             </div>
           </UFormField>
 
-          <UFormField label="Sub Category" name="subCategoryId" required>
+          <!-- Sub Category -->
+          <UFormField name="subCategoryId">
+            <template #label>
+              <div class="flex items-center gap-1">
+                <span>
+                  Sub Category
+                  <span class="text-red-500 ml-0.5">*</span>
+                </span>
+
+                <UTooltip
+                  text="Select the subcategory that matches the main category. You can also add a new one if needed."
+                  :delay-duration="0"
+                >
+                  <UIcon
+                    name="i-lucide-info"
+                    class="w-4 h-4 text-gray-500 cursor-pointer"
+                  />
+                </UTooltip>
+              </div>
+            </template>
+
             <div class="flex gap-2">
               <USelectMenu
                 v-model="state.subCategoryId"
@@ -803,7 +844,20 @@ async function openModal() {
 
           <div class="space-y-2 pt-4">
             <div class="flex justify-between items-center">
-              <label class="text-sm font-medium text-gray-700">Custom Fields</label>
+              <div class="flex items-center gap-1">
+                <label class="text-sm font-medium text-gray-700">
+                  Custom Fields
+                </label>
+                <UTooltip
+                  text="Define additional attributes for this Asset (e.g. serial number, size, capacity)"
+                  :delay-duration="0"
+                >
+                  <UIcon
+                    name="i-lucide-info"
+                    class="w-4 h-4 text-gray-500 cursor-pointer"
+                  />
+                </UTooltip>
+              </div>
               <UButton
                 label="Add"
                 icon="i-lucide-plus"
@@ -908,16 +962,34 @@ async function openModal() {
           <UInput v-model="newCategory.name" class="w-full" placeholder="Category name" />
         </UFormField>
 
-        <UFormField name="hasMaintenance">
-          <USwitch v-model="newCategory.hasMaintenance" label="Has Maintenance" />
-        </UFormField>
-
-        <UFormField name="hasHolder">
-          <USwitch v-model="newCategory.hasHolder" label="Has Holder" />
-        </UFormField>
-
+        <!-- Has Location -->
         <UFormField name="hasLocation">
-          <USwitch v-model="newCategory.hasLocation" label="Has Location" />
+          <div class="flex items-center gap-2">
+            <USwitch v-model="newCategory.hasLocation" label="Has Location" />
+            <UTooltip text="Enable if this category involves asset locations" :delay-duration="0">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+            </UTooltip>
+          </div>
+        </UFormField>
+
+        <!-- Has Maintenance -->
+        <UFormField name="hasMaintenance">
+          <div class="flex items-center gap-2">
+            <USwitch v-model="newCategory.hasMaintenance" label="Has Maintenance" />
+            <UTooltip text="Enable if this category requires maintenance tracking" :delay-duration="0">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+            </UTooltip>
+          </div>
+        </UFormField>
+
+        <!-- Has Holder -->
+        <UFormField name="hasHolder">
+          <div class="flex items-center gap-2">
+            <USwitch v-model="newCategory.hasHolder" label="Has Holder" />
+            <UTooltip text="Enable if this category is assigned to a person or holder" :delay-duration="0">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+            </UTooltip>
+          </div>
         </UFormField>
 
         <div class="flex justify-end gap-2">
@@ -966,7 +1038,18 @@ async function openModal() {
 
         <div class="space-y-2">
           <div class="flex justify-between items-center">
-            <label class="text-sm font-medium">Properties</label>
+            <div class="flex items-center gap-1">
+              <label class="text-sm font-medium">Properties</label>
+              <UTooltip
+                text="Define additional attributes for this sub category (e.g. serial number, size, capacity)"
+                :delay-duration="0"
+              >
+                <UIcon
+                  name="i-lucide-info"
+                  class="w-4 h-4 text-gray-500 cursor-pointer"
+                />
+              </UTooltip>
+            </div>
             <UButton
               label="Add Property"
               icon="i-lucide-plus"

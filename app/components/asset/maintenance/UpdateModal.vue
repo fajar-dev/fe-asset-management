@@ -111,7 +111,7 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
           />
         </UFormField>
 
-        <UFormField label="Note" name="note">
+        <UFormField label="Note" name="note" required>
           <UTextarea
             v-model="formData.note"
             placeholder="Note"

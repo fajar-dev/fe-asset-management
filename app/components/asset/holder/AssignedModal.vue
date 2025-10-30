@@ -83,7 +83,7 @@ async function openModal() {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Assigned Date" name="assignedAt">
+        <UFormField label="Assigned Date" name="assignedAt" required>
           <UInput
             v-model="state.assignedAt"
             type="date"
@@ -91,7 +91,7 @@ async function openModal() {
           />
         </UFormField>
 
-        <UFormField label="Employee" name="employeeId">
+        <UFormField label="Employee" name="employeeId" required>
           <UInputMenu
             v-model="selectedEmployee"
             class="w-full"

@@ -53,7 +53,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Date" name="maintenanceAt">
+        <UFormField label="Date" name="maintenanceAt" required>
           <UInput
             v-model="state.maintenanceAt"
             type="date"
@@ -61,7 +61,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           />
         </UFormField>
 
-        <UFormField label="Note" name="note">
+        <UFormField label="Note" name="note" required>
           <UTextarea
             v-model="state.note"
             placeholder="Note"

@@ -62,7 +62,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Returned At" name="returnedAt">
+        <UFormField label="Returned At" name="returnedAt" required>
           <UInput
             v-model="state.returnedAt"
             type="date"

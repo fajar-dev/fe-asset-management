@@ -80,7 +80,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Name" name="name">
+        <UFormField label="Name" name="name" required>
           <UInput
             v-model="state.name"
             class="w-full"
@@ -88,7 +88,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           />
         </UFormField>
 
-        <UFormField label="Category" name="categoryId">
+        <UFormField label="Category" name="categoryId" required>
           <UInputMenu
             v-model="state.categoryId"
             class="w-full"

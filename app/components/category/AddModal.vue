@@ -58,22 +58,42 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Name" name="name">
+        <!-- Name -->
+        <UFormField label="Name" name="name" required>
           <UInput v-model="state.name" class="w-full" placeholder="Category name" />
         </UFormField>
 
+        <!-- Has Location -->
         <UFormField name="hasLocation">
-          <USwitch v-model="state.hasLocation" label="Has Location" />
+          <div class="flex items-center gap-2">
+            <USwitch v-model="state.hasLocation" label="Has Location" />
+            <UTooltip text="Enable if this category involves asset locations" :delay-duration="0">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+            </UTooltip>
+          </div>
         </UFormField>
 
+        <!-- Has Maintenance -->
         <UFormField name="hasMaintenance">
-          <USwitch v-model="state.hasMaintenance" label="Has Maintenance" />
+          <div class="flex items-center gap-2">
+            <USwitch v-model="state.hasMaintenance" label="Has Maintenance" />
+            <UTooltip text="Enable if this category requires maintenance tracking" :delay-duration="0">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+            </UTooltip>
+          </div>
         </UFormField>
 
+        <!-- Has Holder -->
         <UFormField name="hasHolder">
-          <USwitch v-model="state.hasHolder" label="Has Holder" />
+          <div class="flex items-center gap-2">
+            <USwitch v-model="state.hasHolder" label="Has Holder" />
+            <UTooltip text="Enable if this category is assigned to a person or holder" :delay-duration="0">
+              <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+            </UTooltip>
+          </div>
         </UFormField>
 
+        <!-- Action Buttons -->
         <div class="flex justify-end gap-2">
           <UButton
             label="Cancel"
