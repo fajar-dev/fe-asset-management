@@ -19,12 +19,14 @@ const links = computed<NavigationMenuItem[][]>(() => [[
     label: 'Home',
     icon: 'i-lucide-house',
     to: '/',
-    onSelect: () => (open.value = false)
+    onSelect: () => (open.value = false),
+    class: 'mt-1 py-1.5'
   },
   {
     label: 'Asset',
     icon: 'i-lucide-library-big',
     to: '/asset',
+    class: 'mt-1 py-1.5',
     onSelect: () => (open.value = false)
   },
   {
@@ -32,6 +34,7 @@ const links = computed<NavigationMenuItem[][]>(() => [[
     icon: 'i-lucide-settings',
     defaultOpen: true,
     type: 'trigger',
+    class: 'mt-1 py-1.5',
     children: [
       { label: 'Category', to: '/setting/category', onSelect: () => (open.value = false) },
       { label: 'Sub Category', to: '/setting/sub-category', onSelect: () => (open.value = false) },
@@ -113,7 +116,7 @@ onMounted(() => {
       v-model:open="open"
       collapsible
       resizable
-      class="bg-elevated/25"
+      class="bg-elevated/15 dark:bg-elevated/25"
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
       <template #header="{ collapsed }">

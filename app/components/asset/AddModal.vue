@@ -109,7 +109,7 @@ const { createCategory, deleteCategory, categories, subCategories, getAllCategor
 const { createSubCategory, deleteSubCategory, getSubCategoryById } = useSubCategory()
 const { createAsset } = useAsset()
 const { createProperty } = useProperty()
-const { locations, getAllLocations, createLocation } = useLocation()
+const { locations, getAllLocations, createLocation, deleteLocation } = useLocation()
 const { createLocation: createAssetLocationLink } = useAssetLocation()
 const { branches, fetchBranches } = useBranch()
 
@@ -159,6 +159,8 @@ const isDeleteCategoryModalOpen = ref(false)
 const deletingCategoryId = ref<string | null>(null)
 const isDeleteSubCategoryModalOpen = ref(false)
 const deletingSubCategoryId = ref<string | null>(null)
+const isDeleteLocationModalOpen = ref(false)
+const deletingLocationId = ref<string | null>(null)
 
 watch(() => state.categoryId, async (catId) => {
   if (catId) {
@@ -465,6 +467,26 @@ async function confirmDeleteSubCategory() {
   isDeleteSubCategoryModalOpen.value = false
 }
 
+function removeLocation(locationId: string) {
+  deletingLocationId.value = locationId
+  isDeleteLocationModalOpen.value = true
+}
+
+async function confirmDeleteLocation() {
+  if (!deletingLocationId.value) return
+
+  await deleteLocation(deletingLocationId.value)
+  await getAllLocations()
+  locationItems.value = locations.value.map(l => ({ id: l.id, name: l.name + ' - ' + l.branch.name }))
+
+  if (state.locationId === deletingLocationId.value) {
+    state.locationId = ''
+  }
+
+  deletingLocationId.value = null
+  isDeleteLocationModalOpen.value = false
+}
+
 const hasValidationErrors = computed(() => {
   if (!state.image) return true
   if (Object.keys(propertyErrors.value).length > 0) return true
@@ -730,7 +752,20 @@ async function openModal() {
                 label-key="name"
                 placeholder="Select location (optional)"
                 class="flex-1"
-              />
+              >
+                <template #item="{ item }">
+                  <div class="flex justify-between items-center w-full">
+                    <span>{{ item.name }}</span>
+                    <UButton
+                      icon="i-lucide-trash-2"
+                      color="error"
+                      size="xs"
+                      variant="ghost"
+                      @click.stop="removeLocation(item.id)"
+                    />
+                  </div>
+                </template>
+              </USelectMenu>
               <UButton
                 icon="i-lucide-plus"
                 size="sm"
@@ -851,6 +886,14 @@ async function openModal() {
     description="Are you sure you want to delete this sub category? This action cannot be undone."
     confirm-label="Delete"
     :on-confirm="confirmDeleteSubCategory"
+  />
+
+  <ConfirmModal
+    v-model:open="isDeleteLocationModalOpen"
+    title="Delete Location"
+    description="Are you sure you want to delete this location? This action cannot be undone."
+    confirm-label="Delete"
+    :on-confirm="confirmDeleteLocation"
   />
 
   <UModal v-model:open="openCategoryModal" title="Add Category" description="Create a new category">

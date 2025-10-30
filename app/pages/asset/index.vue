@@ -34,7 +34,7 @@ const editingAssetId = ref<string>('')
 const isFilterOpen = ref(false)
 const showDatePicker = ref(false)
 
-const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset } = useAsset()
+const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset, exportAssets } = useAsset()
 const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
 const { employees, fetchEmployees } = useEmployee()
 const { locations: allLocations, getAllLocations } = useLocation()
@@ -173,6 +173,23 @@ function toggleDatePicker(e: Event) {
 
 function handlePageChange(newPage: number) {
   loadAssets(newPage)
+}
+
+async function handleExport() {
+  const filters: any = {
+    categoryId: selectedCategoryId.value,
+    subCategoryId: selectedSubCategoryId.value,
+    status: selectedStatus.value,
+    employeeId: selectedEmployee.value,
+    locationId: selectedLocation.value
+  }
+
+  if (selectedDateRange.value?.start && selectedDateRange.value?.end) {
+    filters.startDate = `${selectedDateRange.value.start.year}-${String(selectedDateRange.value.start.month).padStart(2, '0')}-${String(selectedDateRange.value.start.day).padStart(2, '0')}`
+    filters.endDate = `${selectedDateRange.value.end.year}-${String(selectedDateRange.value.end.month).padStart(2, '0')}-${String(selectedDateRange.value.end.day).padStart(2, '0')}`
+  }
+
+  await exportAssets(filters)
 }
 
 const showingFrom = computed(() =>
@@ -520,6 +537,15 @@ const columns: TableColumn<any>[] = [
         />
 
         <div class="flex gap-2 items-center">
+          <UButton
+            color="primary"
+            variant="subtle"
+            icon="i-lucide-file-down"
+            :loading="loading"
+            @click="handleExport"
+          >
+            Export
+          </UButton>
           <UPopover v-model:open="isFilterOpen" :popper="{ placement: 'bottom-end' }">
             <UButton
               color="neutral"

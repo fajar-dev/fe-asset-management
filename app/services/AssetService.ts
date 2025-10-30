@@ -91,6 +91,56 @@ export class AssetService {
       headers: this.getAuthHeader()
     })
   }
+
+  async exportAssets(
+    categoryId: string | null = null,
+    subCategoryId: string | null = null,
+    status: string | null = null,
+    employeeId: string | null = null,
+    locationId: string | null = null,
+    startDate: string | null = null,
+    endDate: string | null = null
+  ): Promise<{ blob: Blob, filename: string }> {
+    const config = useRuntimeConfig()
+
+    const params: Record<string, string> = {}
+
+    if (categoryId) params.categoryId = categoryId
+    if (subCategoryId) params.subCategoryId = subCategoryId
+    if (status) params.status = status
+    if (employeeId) params.employeeId = employeeId
+    if (locationId) params.locationId = locationId
+    if (startDate) params.startDate = startDate
+    if (endDate) params.endDate = endDate
+
+    const queryString = new URLSearchParams(params).toString()
+    const url = `${config.public.apiUrl}${this.basePath}/export${queryString ? `?${queryString}` : ''}`
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getAuthHeader()
+    })
+
+    const blob = await response.blob()
+
+    const contentDisposition = response.headers.get('content-disposition')
+    let filename = ''
+
+    if (contentDisposition) {
+      const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition)
+      if (matches?.[1]) {
+        filename = matches[1].replace(/['"]/g, '')
+      }
+    }
+
+    if (!filename) {
+      const today = new Date()
+      const dateStr = today.toISOString().split('T')[0]
+      filename = `export-assets-${dateStr}.xlsx`
+    }
+
+    return { blob, filename }
+  }
 }
 
 export const assetService = new AssetService()

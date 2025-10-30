@@ -34,6 +34,15 @@ interface AssetState {
   createAsset: (payload: CreateAssetPayload | FormData) => Promise<Asset>
   updateAsset: (id: string, payload: UpdateAssetPayload | FormData) => Promise<void>
   deleteAsset: (id: string) => Promise<void>
+  exportAssets: (filters: {
+    categoryId?: string | undefined
+    subCategoryId?: string | undefined
+    status?: string | undefined
+    employeeId?: string | undefined
+    locationId?: string | undefined
+    startDate?: string | null
+    endDate?: string | null
+  }) => Promise<void>
 }
 
 export const useAsset = (): AssetState => {
@@ -191,6 +200,58 @@ export const useAsset = (): AssetState => {
     }
   }
 
+  async function exportAssets(filters: {
+    categoryId?: string | undefined
+    subCategoryId?: string | undefined
+    status?: string | undefined
+    employeeId?: string | undefined
+    locationId?: string | undefined
+    startDate?: string | null
+    endDate?: string | null
+  }): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const { blob, filename } = await assetService.exportAssets(
+        filters.categoryId || null,
+        filters.subCategoryId || null,
+        filters.status || null,
+        filters.employeeId || null,
+        filters.locationId || null,
+        filters.startDate || null,
+        filters.endDate || null
+      )
+
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+
+      document.body.appendChild(link)
+      link.click()
+
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast.add({
+        title: 'Success',
+        description: 'Assets exported successfully',
+        color: 'success'
+      })
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiError>
+      console.log(fetchError)
+      error.value = fetchError.data?.message ?? 'Failed to export assets'
+      toast.add({
+        title: 'Export failed',
+        description: error.value,
+        color: 'error'
+      })
+    } finally {
+      loading.value = false
+    }
+  }
+
   watch(searchTerm, () => {
     pagination.value.pageIndex = 0
     fetchAssets({ search: searchTerm.value, page: 1 })
@@ -209,6 +270,7 @@ export const useAsset = (): AssetState => {
     getAssetByCode,
     createAsset,
     updateAsset,
-    deleteAsset
+    deleteAsset,
+    exportAssets
   }
 }
