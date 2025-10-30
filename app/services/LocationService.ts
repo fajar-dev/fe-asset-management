@@ -1,4 +1,4 @@
-import type { Location, LocationDetailResponse, LocationResponse, CreateLocationPayload, UpdateLocationPayload } from '~/types/location'
+import type { LocationDetailResponse, LocationResponse, CreateLocationPayload, UpdateLocationPayload } from '~/types/location'
 
 export class LocationService {
   private basePath = '/v1/location'
@@ -36,8 +36,8 @@ export class LocationService {
     })
   }
 
-  async createLocation(payload: CreateLocationPayload): Promise<Location> {
-    return await this.api<Location>(this.basePath, {
+  async createLocation(payload: CreateLocationPayload): Promise<LocationDetailResponse> {
+    return await this.api<LocationDetailResponse>(this.basePath, {
       method: 'POST',
       body: payload,
       headers: this.getAuthHeader()

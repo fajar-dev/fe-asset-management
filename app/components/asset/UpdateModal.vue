@@ -12,6 +12,11 @@ const schema = z.object({
   description: z.string().optional(),
   brand: z.string().optional(),
   model: z.string().optional(),
+  user: z.string().min(1, 'User is required'),
+  price: z.union([z.string(), z.number()]).refine(val => val !== undefined && val !== '', {
+    message: 'Price is required'
+  }),
+  purchaseDate: z.string().min(1, 'Purchase date is required'),
   categoryId: z.string().min(1, 'Category is required'),
   subCategoryId: z.string().min(1, 'Sub category is required'),
   status: z.enum(['active', 'in repair', 'disposed']).default('active'),
@@ -33,7 +38,8 @@ const schema = z.object({
 const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   hasMaintenance: z.boolean().default(false),
-  hasHolder: z.boolean().default(false)
+  hasHolder: z.boolean().default(false),
+  hasLocation: z.boolean().default(false)
 })
 
 const subCategorySchema = z.object({
@@ -57,19 +63,25 @@ const props = defineProps<{
 
 const model = defineModel<boolean>()
 const emit = defineEmits<{ (e: 'updated'): void }>()
+
 const open = computed({
   get: () => model.value || false,
   set: (val) => { model.value = val }
 })
+
 const saving = ref(false)
-const loading = ref(false)
 const isInitialLoad = ref(false)
+const isDataReady = ref(false)
+
 const state = reactive<{
   code: string
   name: string
   description: string
   brand: string
   model: string
+  user: string
+  price: number | undefined
+  purchaseDate: string
   categoryId: string
   subCategoryId: string
   status: 'active' | 'in repair' | 'disposed'
@@ -82,6 +94,9 @@ const state = reactive<{
   description: '',
   brand: '',
   model: '',
+  user: '',
+  price: undefined,
+  purchaseDate: '',
   categoryId: '',
   subCategoryId: '',
   status: 'active',
@@ -105,7 +120,8 @@ const savingCategory = ref(false)
 const newCategory = reactive<CategorySchema>({
   name: '',
   hasMaintenance: false,
-  hasHolder: false
+  hasHolder: false,
+  hasLocation: false
 })
 
 const openSubCategoryModal = ref(false)
@@ -121,11 +137,12 @@ const imagePreview = ref<string | null>(null)
 const existingImageUrl = ref<string | null>(null)
 const hasImageChanged = ref(false)
 
-// Delete modals
 const isDeleteCategoryModalOpen = ref(false)
 const deletingCategoryId = ref<string | null>(null)
 const isDeleteSubCategoryModalOpen = ref(false)
 const deletingSubCategoryId = ref<string | null>(null)
+
+const hasValidationErrors = computed(() => Object.keys(propertyErrors.value).length > 0)
 
 watch(() => state.categoryId, async (catId) => {
   if (isInitialLoad.value) return
@@ -148,21 +165,16 @@ watch(() => state.categoryId, async (catId) => {
 
 watch(() => state.subCategoryId, async (subCatId) => {
   if (isInitialLoad.value) return
-
   propertyErrors.value = {}
 
   if (subCatId) {
     const subCategoryDetail = await getSubCategoryById(subCatId)
-    if (subCategoryDetail && subCategoryDetail.data.assetProperties) {
+    if (subCategoryDetail?.data?.assetProperties) {
       availableProperties.value = subCategoryDetail.data.assetProperties
-
       const existingProperties = state.properties || []
       state.properties = subCategoryDetail.data.assetProperties.map((p) => {
         const existing = existingProperties.find(ep => ep.id === p.id)
-        return {
-          id: p.id,
-          value: existing?.value || ''
-        }
+        return { id: p.id, value: existing?.value || '' }
       })
     } else {
       availableProperties.value = []
@@ -174,61 +186,80 @@ watch(() => state.subCategoryId, async (subCatId) => {
   }
 })
 
-async function loadAssetData() {
-  try {
-    loading.value = true
-    isInitialLoad.value = true
-
-    const response = await getAssetById(props.assetId)
-
-    if (response?.data) {
-      const asset = response.data
-
-      state.code = asset.code
-      state.name = asset.name
-      state.description = asset.description || ''
-      state.brand = asset.brand || ''
-      state.model = asset.model || ''
-      state.status = asset.status
-      state.categoryId = asset.subCategory.category.id
-
-      if (asset.imageUrl) {
-        existingImageUrl.value = asset.imageUrl
-        imagePreview.value = asset.imageUrl
-      }
-
-      await getSubCategoriesByCategory(asset.subCategory.category.id)
-      subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
-
-      state.subCategoryId = asset.subCategory.id
-
-      if (asset.properties && asset.properties.length > 0) {
-        state.properties = asset.properties.map(p => ({
-          id: p.property.id,
-          value: p.value
-        }))
-
-        availableProperties.value = asset.properties.map(p => ({
-          id: p.property.id,
-          name: p.property.name,
-          dataType: p.property.dataType
-        }))
-      }
-
-      if (asset.customValues && asset.customValues.length > 0) {
-        state.customValues = asset.customValues.map(cv => ({
-          name: cv.name,
-          value: cv.value.toString()
-        }))
-      }
-    }
-  } catch (err) {
-    console.error('Error loading asset:', err)
-  } finally {
-    loading.value = false
-    await nextTick()
-    isInitialLoad.value = false
+watchEffect(async () => {
+  if (open.value && props.assetId) {
+    await getAllCategories()
+    categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
+    await loadAssetData()
+  } else if (!open.value) {
+    resetState()
   }
+})
+
+async function loadAssetData() {
+  if (!props.assetId) {
+    open.value = false
+    return
+  }
+
+  isInitialLoad.value = true
+  isDataReady.value = false
+
+  const response = await getAssetById(props.assetId)
+
+  if (!response?.data) {
+    open.value = false
+    isInitialLoad.value = false
+    isDataReady.value = true
+    return
+  }
+
+  const asset = response.data
+
+  state.code = asset.code
+  state.name = asset.name
+  state.description = asset.description || ''
+  state.brand = asset.brand || ''
+  state.model = asset.model || ''
+  state.user = asset.user || ''
+  state.price = asset.price || undefined
+  state.purchaseDate = asset.purchaseDate || ''
+  state.status = asset.status
+  state.categoryId = asset.subCategory.category.id
+
+  if (asset.imageUrl) {
+    existingImageUrl.value = asset.imageUrl
+    imagePreview.value = asset.imageUrl
+  }
+
+  await getSubCategoriesByCategory(asset.subCategory.category.id)
+  subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
+
+  state.subCategoryId = asset.subCategory.id
+
+  if (asset.properties && asset.properties.length > 0) {
+    state.properties = asset.properties.map(p => ({
+      id: p.property.id,
+      value: p.value
+    }))
+
+    availableProperties.value = asset.properties.map(p => ({
+      id: p.property.id,
+      name: p.property.name,
+      dataType: p.property.dataType
+    }))
+  }
+
+  if (asset.customValues && asset.customValues.length > 0) {
+    state.customValues = asset.customValues.map(cv => ({
+      name: cv.name,
+      value: cv.value.toString()
+    }))
+  }
+
+  isInitialLoad.value = false
+  isDataReady.value = true
+  await nextTick()
 }
 
 function getPropertyInfo(propertyId: string) {
@@ -236,35 +267,26 @@ function getPropertyInfo(propertyId: string) {
 }
 
 function getPropertyName(propertyId: string) {
-  const property = getPropertyInfo(propertyId)
-  return property?.name || propertyId
+  return getPropertyInfo(propertyId)?.name || propertyId
 }
 
 function getPropertyDataType(propertyId: string) {
-  const property = getPropertyInfo(propertyId)
-  return property?.dataType || 'string'
+  return getPropertyInfo(propertyId)?.dataType || 'string'
 }
 
 function validateProperty(propertyId: string, value: any): string | null {
   const property = getPropertyInfo(propertyId)
-  if (!property) return null
+  if (!property || value === '' || value === null || value === undefined) return null
 
-  if (value === '' || value === null || value === undefined) {
-    return null
-  }
-
-  if (property.dataType === 'number') {
-    const numValue = Number(value)
-    if (isNaN(numValue)) {
-      return `${property.name} must be a valid number`
-    }
+  if (property.dataType === 'number' && isNaN(Number(value))) {
+    return `${property.name} must be a valid number`
   }
 
   return null
 }
 
 function handlePropertyChange(index: number, value: string) {
-  if (!state.properties || !state.properties[index]) return
+  if (!state.properties?.[index]) return
 
   const propertyId = state.properties[index].id
   const property = getPropertyInfo(propertyId)
@@ -286,43 +308,41 @@ function handlePropertyChange(index: number, value: string) {
 }
 
 async function onAddCategory() {
-  try {
-    savingCategory.value = true
-    const parsed = categorySchema.parse(newCategory)
-    const res = await createCategory(parsed)
+  savingCategory.value = true
+  const parsed = categorySchema.parse(newCategory)
+  const res = await createCategory(parsed)
+
+  if (res?.id) {
     await getAllCategories()
     categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
-    state.categoryId = res!.id
+    state.categoryId = res.id
+
     Object.assign(newCategory, {
       name: '',
       hasMaintenance: false,
-      hasHolder: false
+      hasHolder: false,
+      hasLocation: false
     })
+
     openCategoryModal.value = false
-  } catch (err) {
-    console.error('Failed to create category', err)
-    alert('Failed to create category')
-  } finally {
-    savingCategory.value = false
   }
+
+  savingCategory.value = false
 }
 
 async function onAddSubCategory() {
-  try {
-    savingSubCategory.value = true
-    newSubCategory.categoryId = state.categoryId
-    const parsed = subCategorySchema.parse(newSubCategory)
-    const subCategoryRes = await createSubCategory({
-      name: parsed.name,
-      categoryId: parsed.categoryId
-    })
+  savingSubCategory.value = true
+  newSubCategory.categoryId = state.categoryId
+  const parsed = subCategorySchema.parse(newSubCategory)
 
-    const subCategoryId = subCategoryRes?.id || subCategoryRes?.id
+  const subCategoryRes = await createSubCategory({
+    name: parsed.name,
+    categoryId: parsed.categoryId
+  })
 
-    if (!subCategoryId) {
-      throw new Error('Failed to get sub category ID')
-    }
+  const subCategoryId = subCategoryRes?.id
 
+  if (subCategoryId) {
     if (parsed.properties.length > 0) {
       for (const property of parsed.properties) {
         await createProperty(subCategoryId, {
@@ -341,13 +361,11 @@ async function onAddSubCategory() {
       categoryId: '',
       properties: []
     })
+
     openSubCategoryModal.value = false
-  } catch (err) {
-    console.error('Failed to create sub category', err)
-    alert('Failed to create sub category')
-  } finally {
-    savingSubCategory.value = false
   }
+
+  savingSubCategory.value = false
 }
 
 function showSubCategoryModal() {
@@ -370,38 +388,33 @@ function triggerFileUpload() {
 function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
+  if (!file) return
 
-  if (file) {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-    if (!allowedTypes.includes(file.type)) {
-      alert('Please select a valid image file (JPEG, PNG, WebP)')
-      return
-    }
-
-    const maxSize = 5 * 1024 * 1024
-    if (file.size > maxSize) {
-      alert('File size must be less than 5MB')
-      return
-    }
-
-    state.image = file
-    hasImageChanged.value = true
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      imagePreview.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    return
   }
+
+  const maxSize = 5 * 1024 * 1024
+  if (file.size > maxSize) {
+    return
+  }
+
+  state.image = file
+  hasImageChanged.value = true
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    imagePreview.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
 }
 
 function resetImageToOriginal() {
   state.image = null
   hasImageChanged.value = false
   imagePreview.value = existingImageUrl.value
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
+  if (fileInput.value) fileInput.value.value = ''
 }
 
 function addCustomValue() {
@@ -419,26 +432,21 @@ function removeCategory(categoryId: string) {
 
 async function confirmDeleteCategory() {
   if (!deletingCategoryId.value) return
-  try {
-    await deleteCategory(deletingCategoryId.value)
-    await getAllCategories()
-    categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
 
-    // Reset category selection if deleted category was selected
-    if (state.categoryId === deletingCategoryId.value) {
-      state.categoryId = ''
-      state.subCategoryId = ''
-      subCategoryItems.value = []
-      availableProperties.value = []
-      state.properties = []
-    }
+  await deleteCategory(deletingCategoryId.value)
+  await getAllCategories()
+  categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
 
-    deletingCategoryId.value = null
-    isDeleteCategoryModalOpen.value = false
-  } catch (err) {
-    console.error('Failed to delete category', err)
-    alert('Failed to delete category')
+  if (state.categoryId === deletingCategoryId.value) {
+    state.categoryId = ''
+    state.subCategoryId = ''
+    subCategoryItems.value = []
+    availableProperties.value = []
+    state.properties = []
   }
+
+  deletingCategoryId.value = null
+  isDeleteCategoryModalOpen.value = false
 }
 
 function removeSubCategory(subCategoryId: string) {
@@ -448,143 +456,130 @@ function removeSubCategory(subCategoryId: string) {
 
 async function confirmDeleteSubCategory() {
   if (!deletingSubCategoryId.value) return
-  try {
-    await deleteSubCategory(deletingSubCategoryId.value)
-    await getSubCategoriesByCategory(state.categoryId)
-    subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
 
-    // Reset sub category selection if deleted sub category was selected
-    if (state.subCategoryId === deletingSubCategoryId.value) {
-      state.subCategoryId = ''
-      availableProperties.value = []
-      state.properties = []
-    }
+  await deleteSubCategory(deletingSubCategoryId.value)
+  await getSubCategoriesByCategory(state.categoryId)
+  subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
 
-    deletingSubCategoryId.value = null
-    isDeleteSubCategoryModalOpen.value = false
-  } catch (err) {
-    console.error('Failed to delete sub category', err)
-    alert('Failed to delete sub category')
+  if (state.subCategoryId === deletingSubCategoryId.value) {
+    state.subCategoryId = ''
+    availableProperties.value = []
+    state.properties = []
   }
-}
 
-const hasValidationErrors = computed(() => {
-  return Object.keys(propertyErrors.value).length > 0
-})
+  deletingSubCategoryId.value = null
+  isDeleteSubCategoryModalOpen.value = false
+}
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  try {
-    saving.value = true
-    propertyErrors.value = {}
-    let hasErrors = false
+  saving.value = true
+  propertyErrors.value = {}
+  let hasErrors = false
 
-    if (availableProperties.value.length > 0) {
-      for (const property of availableProperties.value) {
-        const propertyValue = state.properties?.find(p => p.id === property.id)
-        const errorMessage = validateProperty(property.id, propertyValue?.value)
+  if (availableProperties.value.length > 0) {
+    for (const property of availableProperties.value) {
+      const propertyValue = state.properties?.find(p => p.id === property.id)
+      const errorMessage = validateProperty(property.id, propertyValue?.value)
 
-        if (errorMessage) {
-          propertyErrors.value[property.id] = errorMessage
-          hasErrors = true
-        }
+      if (errorMessage) {
+        propertyErrors.value[property.id] = errorMessage
+        hasErrors = true
       }
     }
+  }
 
-    if (hasErrors) return
-
-    const processedProperties = event.data.properties?.map((prop) => {
-      const property = availableProperties.value.find(p => p.id === prop.id)
-      if (property?.dataType === 'number') {
-        return { id: prop.id, value: Number(prop.value) }
-      }
-      return { id: prop.id, value: prop.value?.toString() || '' }
-    }).filter(prop => prop.value !== '') || []
-
-    if (hasImageChanged.value && state.image) {
-      const formData = new FormData()
-
-      formData.append('code', event.data.code)
-      formData.append('subCategoryId', event.data.subCategoryId)
-      formData.append('name', event.data.name)
-
-      if (event.data.description) {
-        formData.append('description', event.data.description)
-      }
-      if (event.data.brand) {
-        formData.append('brand', event.data.brand)
-      }
-      if (event.data.model) {
-        formData.append('model', event.data.model)
-      }
-
-      formData.append('status', event.data.status || 'active')
-      formData.append('properties', JSON.stringify(processedProperties))
-
-      if (state.customValues && state.customValues.length > 0) {
-        const validCustomValues = state.customValues.filter(cv => cv.name && cv.value)
-        if (validCustomValues.length > 0) {
-          formData.append('customValues', JSON.stringify(validCustomValues))
-        }
-      }
-
-      formData.append('image', state.image)
-
-      await updateAsset(props.assetId, formData)
-    } else {
-      const payload = {
-        code: event.data.code,
-        subCategoryId: event.data.subCategoryId,
-        name: event.data.name,
-        description: event.data.description || '',
-        brand: event.data.brand || '',
-        model: event.data.model || '',
-        status: event.data.status || 'active',
-        properties: processedProperties,
-        customValues: state.customValues.filter(cv => cv.name && cv.value)
-      }
-
-      await updateAsset(props.assetId, payload)
-    }
-
-    open.value = false
-    emit('updated')
-  } catch (err) {
-    console.error(err)
-  } finally {
+  if (hasErrors) {
     saving.value = false
+    return
   }
-}
 
-async function openModalHandler() {
-  await getAllCategories()
-  categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
-  await loadAssetData()
-}
+  const processedProperties = event.data.properties?.filter(prop =>
+    prop.value !== '' && prop.value !== null && prop.value !== undefined
+  ).map((prop) => {
+    const property = availableProperties.value.find(p => p.id === prop.id)
+    if (property?.dataType === 'number') {
+      return { id: prop.id, value: Number(prop.value) }
+    }
+    return { id: prop.id, value: prop.value?.toString() || '' }
+  }) || []
 
-watch(open, async (isOpen) => {
-  if (isOpen) {
-    await openModalHandler()
+  if (hasImageChanged.value && state.image) {
+    const formData = new FormData()
+    formData.append('code', event.data.code)
+    formData.append('subCategoryId', event.data.subCategoryId)
+    formData.append('name', event.data.name)
+
+    if (event.data.description) formData.append('description', event.data.description)
+    if (event.data.brand) formData.append('brand', event.data.brand)
+    if (event.data.model) formData.append('model', event.data.model)
+
+    formData.append('user', event.data.user)
+    formData.append('purchaseDate', event.data.purchaseDate)
+
+    if (state.price !== undefined && state.price !== null) {
+      formData.append('price', state.price.toString())
+    }
+
+    formData.append('status', event.data.status || 'active')
+    formData.append('properties', JSON.stringify(processedProperties))
+
+    if (state.customValues?.length > 0) {
+      const validCustomValues = state.customValues.filter(cv => cv.name && cv.value)
+      if (validCustomValues.length > 0) {
+        formData.append('customValues', JSON.stringify(validCustomValues))
+      }
+    }
+
+    formData.append('image', state.image)
+    await updateAsset(props.assetId, formData)
   } else {
-    Object.assign(state, {
-      code: '',
-      name: '',
-      description: '',
-      brand: '',
-      model: '',
-      categoryId: '',
-      subCategoryId: '',
-      status: 'active',
-      image: null,
-      properties: [],
-      customValues: []
-    })
+    const payload = {
+      code: event.data.code,
+      subCategoryId: event.data.subCategoryId,
+      name: event.data.name,
+      description: event.data.description || '',
+      brand: event.data.brand || '',
+      model: event.data.model || '',
+      user: event.data.user,
+      price: state.price,
+      purchaseDate: event.data.purchaseDate,
+      status: event.data.status || 'active',
+      properties: processedProperties,
+      customValues: state.customValues.filter(cv => cv.name && cv.value)
+    }
 
-    hasImageChanged.value = false
-    existingImageUrl.value = null
-    imagePreview.value = null
-    isInitialLoad.value = false
+    await updateAsset(props.assetId, payload)
   }
-})
+
+  open.value = false
+  emit('updated')
+  saving.value = false
+}
+
+function resetState() {
+  Object.assign(state, {
+    code: '',
+    name: '',
+    description: '',
+    brand: '',
+    model: '',
+    user: '',
+    price: undefined,
+    purchaseDate: '',
+    categoryId: '',
+    subCategoryId: '',
+    status: 'active',
+    image: null,
+    properties: [],
+    customValues: []
+  })
+
+  hasImageChanged.value = false
+  existingImageUrl.value = null
+  imagePreview.value = null
+  isInitialLoad.value = false
+  isDataReady.value = false
+}
 </script>
 
 <template>
@@ -595,23 +590,28 @@ watch(open, async (isOpen) => {
     :ui="{ content: 'max-w-6xl' }"
   >
     <template #body>
-      <div v-if="loading" class="flex justify-center items-center py-8">
-        <UIcon name="i-lucide-loader-2" class="animate-spin w-6 h-6" />
+      <div v-if="!isDataReady" class="flex justify-center items-center py-20">
+        <div class="text-center space-y-3">
+          <UIcon name="i-lucide-loader-2" class="animate-spin w-8 h-8 mx-auto text-primary" />
+          <p class="text-sm text-gray-500">
+            Loading asset data...
+          </p>
+        </div>
       </div>
 
       <UForm
         v-else
         :schema="schema"
         :state="state"
-        class="md:grid md:grid-cols-2 gap-6"
+        class="md:grid md:grid-cols-3 gap-6"
         @submit="onSubmit"
       >
         <div class="space-y-2">
-          <UFormField label="Serial ID" name="code">
+          <UFormField label="Serial ID" name="code" required>
             <UInput v-model="state.code" class="w-full" placeholder="Serial ID" />
           </UFormField>
 
-          <UFormField label="Name" name="name">
+          <UFormField label="Name" name="name" required>
             <UInput v-model="state.name" class="w-full" placeholder="Asset name" />
           </UFormField>
 
@@ -625,6 +625,29 @@ watch(open, async (isOpen) => {
 
           <UFormField label="Model" name="model">
             <UInput v-model="state.model" class="w-full" placeholder="Model (optional)" />
+          </UFormField>
+
+          <UFormField label="User" name="user" required>
+            <UInput v-model="state.user" class="w-full" placeholder="User" />
+          </UFormField>
+        </div>
+
+        <div class="space-y-2">
+          <UFormField label="Price" name="price" required>
+            <UInput
+              v-model="state.price"
+              class="w-full"
+              placeholder="Price"
+              type="number"
+            >
+              <template #leading>
+                <span class="text-gray-500">Rp</span>
+              </template>
+            </UInput>
+          </UFormField>
+
+          <UFormField label="Purchase Date" name="purchaseDate" required>
+            <UInput v-model="state.purchaseDate" class="w-full" type="date" />
           </UFormField>
 
           <UFormField label="Status" name="status">
@@ -683,11 +706,11 @@ watch(open, async (isOpen) => {
                     alt="Asset preview"
                     class="mx-auto max-h-48 rounded-lg shadow-md"
                   >
-                  <div class="mt-2">
-                    <p v-if="hasImageChanged && state.image" class="text-sm text-gray-500">
-                      {{ state.image?.name }}
+                  <div v-if="hasImageChanged && state.image" class="mt-2">
+                    <p class="text-sm text-gray-500">
+                      {{ state.image.name }}
                       <span class="text-xs text-gray-400">
-                        ({{ Math.round((state.image?.size || 0) / 1024) }} KB)
+                        ({{ Math.round((state.image.size || 0) / 1024) }} KB)
                       </span>
                     </p>
                   </div>
@@ -703,7 +726,7 @@ watch(open, async (isOpen) => {
         </div>
 
         <div class="space-y-2">
-          <UFormField label="Category" name="categoryId">
+          <UFormField label="Category" name="categoryId" required>
             <div class="flex gap-2">
               <USelectMenu
                 v-model="state.categoryId"
@@ -735,7 +758,7 @@ watch(open, async (isOpen) => {
             </div>
           </UFormField>
 
-          <UFormField label="Sub Category" name="subCategoryId">
+          <UFormField label="Sub Category" name="subCategoryId" required>
             <div class="flex gap-2">
               <USelectMenu
                 v-model="state.subCategoryId"
@@ -845,7 +868,7 @@ watch(open, async (isOpen) => {
           </div>
         </div>
 
-        <div class="col-span-2 flex justify-end gap-2 pt-4">
+        <div class="col-span-3 flex justify-end gap-2 pt-4">
           <UButton
             label="Cancel"
             color="neutral"
@@ -866,7 +889,6 @@ watch(open, async (isOpen) => {
     </template>
   </UModal>
 
-  <!-- Delete Confirmation Modals -->
   <ConfirmModal
     v-model:open="isDeleteCategoryModalOpen"
     title="Delete Category"
@@ -901,6 +923,10 @@ watch(open, async (isOpen) => {
 
         <UFormField name="hasHolder">
           <USwitch v-model="newCategory.hasHolder" label="Has Holder" />
+        </UFormField>
+
+        <UFormField name="hasLocation">
+          <USwitch v-model="newCategory.hasLocation" label="Has Location" />
         </UFormField>
 
         <div class="flex justify-end gap-2">

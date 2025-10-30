@@ -5,6 +5,9 @@ import { useCategory } from '~/composables/useCategory'
 import { useSubCategory } from '~/composables/useSubCategory'
 import { useAsset } from '~/composables/useAsset'
 import { useProperty } from '~/composables/useProperty'
+import { useLocation } from '~/composables/useLocation'
+import { useAssetLocation } from '~/composables/useAssetLocation'
+import { useBranch } from '~/composables/useBranch'
 
 const schema = z.object({
   code: z.string().min(1, 'Asset code is required'),
@@ -19,6 +22,8 @@ const schema = z.object({
   purchaseDate: z.string().min(1, 'Purchase date is required'),
   categoryId: z.string().min(1, 'Category is required'),
   subCategoryId: z.string().min(1, 'Sub category is required'),
+  locationId: z.string().optional(),
+
   status: z.enum(['active', 'in repair', 'disposed']).default('active'),
   image: z.any().refine(file => file !== null && file !== undefined, {
     message: 'Asset image is required'
@@ -56,6 +61,11 @@ const subCategorySchema = z.object({
   )
 })
 
+const locationSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  branchId: z.string().min(1, 'Branch is required')
+})
+
 type CategorySchema = z.infer<typeof categorySchema>
 
 const emit = defineEmits<{ (e: 'created'): void }>()
@@ -72,6 +82,7 @@ const state = reactive<{
   purchaseDate: string
   categoryId: string
   subCategoryId: string
+  locationId: string
   status: 'active' | 'in repair' | 'disposed'
   image: File | null
   properties: { id: string, value: string | number }[]
@@ -88,20 +99,27 @@ const state = reactive<{
   categoryId: '',
   subCategoryId: '',
   status: 'active',
+  locationId: '',
   image: null,
   properties: [],
   customValues: []
 })
 
-const { createCategory, deleteCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
+const { createCategory, deleteCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory, getCategoryById } = useCategory()
 const { createSubCategory, deleteSubCategory, getSubCategoryById } = useSubCategory()
 const { createAsset } = useAsset()
 const { createProperty } = useProperty()
+const { locations, getAllLocations, createLocation } = useLocation()
+const { createLocation: createAssetLocationLink } = useAssetLocation()
+const { branches, fetchBranches } = useBranch()
 
 const categoryItems = ref<{ id: string, name: string }[]>([])
 const subCategoryItems = ref<{ id: string, name: string }[]>([])
+const locationItems = ref<{ id: string, name: string }[]>([])
+const branchItems = ref<{ id: string, name: string }[]>([])
 const availableProperties = ref<any[]>([])
 const propertyErrors = ref<Record<string, string>>({})
+const showLocationField = ref(false)
 
 const openCategoryModal = ref(false)
 const savingCategory = ref(false)
@@ -124,6 +142,16 @@ const newSubCategory = reactive<{
   properties: []
 })
 
+const openLocationModal = ref(false)
+const savingLocation = ref(false)
+const newLocation = reactive<{
+  name: string
+  branchId: string
+}>({
+  name: '',
+  branchId: ''
+})
+
 const imageError = ref<string>('')
 const imageInteracted = ref(false)
 
@@ -134,6 +162,16 @@ const deletingSubCategoryId = ref<string | null>(null)
 
 watch(() => state.categoryId, async (catId) => {
   if (catId) {
+    const categoryDetail = await getCategoryById(catId)
+    showLocationField.value = categoryDetail?.data?.hasLocation || false
+
+    if (showLocationField.value) {
+      await getAllLocations()
+      locationItems.value = locations.value.map(l => ({ id: l.id, name: l.name + ' - ' + l.branch.name }))
+    } else {
+      locationItems.value = []
+      state.locationId = ''
+    }
     await getSubCategoriesByCategory(catId)
     subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
     state.subCategoryId = ''
@@ -143,9 +181,11 @@ watch(() => state.categoryId, async (catId) => {
   } else {
     subCategoryItems.value = []
     state.subCategoryId = ''
+    state.locationId = ''
     state.properties = []
     availableProperties.value = []
     propertyErrors.value = {}
+    showLocationField.value = false
   }
 })
 
@@ -181,6 +221,7 @@ function resetForm() {
   state.purchaseDate = ''
   state.categoryId = ''
   state.subCategoryId = ''
+  state.locationId = ''
   state.status = 'active'
   state.image = null
   state.properties = []
@@ -188,7 +229,9 @@ function resetForm() {
   availableProperties.value = []
   categoryItems.value = []
   subCategoryItems.value = []
+  locationItems.value = []
   propertyErrors.value = {}
+  showLocationField.value = false
   imageError.value = ''
   imageInteracted.value = false
 }
@@ -297,9 +340,35 @@ async function onAddSubCategory() {
   savingSubCategory.value = false
 }
 
+async function onAddLocation() {
+  savingLocation.value = true
+  const parsed = locationSchema.parse(newLocation)
+  const res = await createLocation({
+    name: parsed.name,
+    branchId: parsed.branchId
+  })
+
+  await getAllLocations()
+  locationItems.value = locations.value.map(l => ({ id: l.id, name: l.name + ' - ' + l.branch.name }))
+  state.locationId = res?.data?.id || ''
+
+  Object.assign(newLocation, {
+    name: '',
+    branchId: ''
+  })
+  openLocationModal.value = false
+  savingLocation.value = false
+}
+
 function showSubCategoryModal() {
   newSubCategory.categoryId = state.categoryId
   openSubCategoryModal.value = true
+}
+
+async function showLocationModal() {
+  await fetchBranches()
+  branchItems.value = branches.value.map(b => ({ id: b.branchId, name: b.branchId + ' - ' + b.name }))
+  openLocationModal.value = true
 }
 
 function addSubCategoryProperty() {
@@ -446,6 +515,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   if (event.data.description) formData.append('description', event.data.description)
   if (event.data.brand) formData.append('brand', event.data.brand)
   if (event.data.model) formData.append('model', event.data.model)
+  if (event.data.locationId) formData.append('locationId', event.data.locationId)
 
   formData.append('user', event.data.user)
   formData.append('purchaseDate', event.data.purchaseDate)
@@ -466,7 +536,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
   if (state.image) formData.append('image', state.image)
 
-  await createAsset(formData)
+  const asset = await createAsset(formData)
+
+  if (event.data.locationId) {
+    await createAssetLocationLink(asset.id, { locationId: event.data.locationId })
+  }
 
   resetForm()
   open.value = false
@@ -547,7 +621,6 @@ async function openModal() {
               v-model="state.purchaseDate"
               class="w-full"
               type="date"
-              icon="i-lucide-calendar"
             />
           </UFormField>
 
@@ -644,6 +717,25 @@ async function openModal() {
                 variant="soft"
                 :disabled="!state.categoryId"
                 @click="showSubCategoryModal()"
+              />
+            </div>
+          </UFormField>
+
+          <UFormField v-if="showLocationField" label="Location" name="locationId">
+            <div class="flex gap-2">
+              <USelectMenu
+                v-model="state.locationId"
+                :items="locationItems"
+                value-key="id"
+                label-key="name"
+                placeholder="Select location (optional)"
+                class="flex-1"
+              />
+              <UButton
+                icon="i-lucide-plus"
+                size="sm"
+                variant="soft"
+                @click="showLocationModal()"
               />
             </div>
           </UFormField>
@@ -884,6 +976,49 @@ async function openModal() {
             variant="solid"
             type="submit"
             :loading="savingSubCategory"
+          />
+        </div>
+      </UForm>
+    </template>
+  </UModal>
+
+  <UModal v-model:open="openLocationModal" title="Add Location" description="Create a new location">
+    <template #body>
+      <UForm
+        :schema="locationSchema"
+        :state="newLocation"
+        class="space-y-4"
+        @submit="onAddLocation"
+      >
+        <UFormField label="Name" name="name" required>
+          <UInput v-model="newLocation.name" class="w-full" placeholder="Location name" />
+        </UFormField>
+
+        <UFormField label="Branch" name="branchId" required>
+          <UInputMenu
+            v-model="newLocation.branchId"
+            class="w-full"
+            value-key="id"
+            label-key="name"
+            :items="branchItems"
+            placeholder="Select branch"
+          />
+        </UFormField>
+
+        <div class="flex justify-end gap-2">
+          <UButton
+            label="Cancel"
+            color="neutral"
+            variant="subtle"
+            :disabled="savingLocation"
+            @click="openLocationModal = false"
+          />
+          <UButton
+            label="Save"
+            color="primary"
+            variant="solid"
+            type="submit"
+            :loading="savingLocation"
           />
         </div>
       </UForm>

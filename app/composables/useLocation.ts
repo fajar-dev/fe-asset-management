@@ -14,7 +14,7 @@ interface LocationState {
   fetchLocations: (search?: string, page?: number, limit?: number) => Promise<void>
   refreshLocations: () => Promise<void>
   getLocationById: (id: string) => Promise<LocationDetailResponse | null>
-  createLocation: (payload: CreateLocationPayload) => Promise<void>
+  createLocation: (payload: CreateLocationPayload) => Promise<LocationDetailResponse | null>
   updateLocation: (id: string, payload: UpdateLocationPayload) => Promise<void>
   deleteLocation: (id: string) => Promise<void>
   getAllLocations: () => Promise<void>
@@ -31,7 +31,6 @@ export const useLocation = (): LocationState => {
   const pagination = ref({ pageIndex: 0, pageSize: 10 })
   const searchTerm = ref('')
 
-  // Helper error handler
   const handleError = (err: unknown, defaultMessage: string) => {
     const fetchError = err as FetchError<ApiError>
     const msg = fetchError?.data?.message ?? defaultMessage
@@ -71,15 +70,17 @@ export const useLocation = (): LocationState => {
     await fetchLocations(searchTerm.value, pagination.value.pageIndex + 1, pagination.value.pageSize)
   }
 
-  const createLocation = async (payload: CreateLocationPayload): Promise<void> => {
+  const createLocation = async (payload: CreateLocationPayload): Promise<LocationDetailResponse | null> => {
     loading.value = true
     error.value = null
     try {
-      await locationService.createLocation(payload)
+      const res = await locationService.createLocation(payload)
       await refreshLocations()
       toast.add({ title: 'Created', description: 'Location created successfully', color: 'success' })
+      return res
     } catch (err) {
       handleError(err, 'Failed to create location')
+      return null
     } finally {
       loading.value = false
     }

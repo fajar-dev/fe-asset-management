@@ -14,58 +14,43 @@ const emit = defineEmits<{
   (e: 'updated'): void
 }>()
 
-// schema validasi
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
   categoryId: z.string().min(1, 'Category is required')
 })
+
 type Schema = z.output<typeof schema>
 
-// state
 const saving = ref(false)
 const state = reactive<Partial<Schema>>({
   name: '',
   categoryId: ''
 })
 
-// dropdown items + value
 const items = ref<{ id: string, name: string }[]>([])
-const value = ref('')
 
-// composables
 const { getSubCategoryById, updateSubCategory } = useSubCategory()
 const { categories, getAllCategories } = useCategory()
 
-// sinkronisasi dropdown ke state
-watch(value, (v) => {
-  state.categoryId = v
-})
+watchEffect(async () => {
+  if (props.modelValue && props.id) {
+    await getAllCategories()
+    items.value = categories.value.map(c => ({
+      id: c.id,
+      name: c.name
+    }))
 
-// load data ketika modal dibuka
-watch(
-  () => props.modelValue,
-  async (isOpen) => {
-    if (isOpen && props.id) {
-      await getAllCategories()
-      items.value = categories.value.map(c => ({
-        id: c.id,
-        name: c.name
-      }))
-
-      const detail = await getSubCategoryById(props.id)
-      if (detail) {
-        state.name = detail.data.name
-        state.categoryId = detail.data.category?.id ?? ''
-        value.value = detail.data.category?.id ?? ''
-      }
+    const detail = await getSubCategoryById(props.id)
+    if (detail) {
+      state.name = detail.data.name
+      state.categoryId = detail.data.category?.id ?? ''
     }
   }
-)
+})
 
 function resetForm() {
   state.name = ''
   state.categoryId = ''
-  value.value = ''
 }
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
@@ -95,7 +80,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <!-- Name -->
         <UFormField label="Name" name="name">
           <UInput
             v-model="state.name"
@@ -104,10 +88,9 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           />
         </UFormField>
 
-        <!-- Category -->
         <UFormField label="Category" name="categoryId">
           <UInputMenu
-            v-model="value"
+            v-model="state.categoryId"
             class="w-full"
             value-key="id"
             label-key="name"

@@ -43,6 +43,9 @@ export interface Asset {
   description?: string
   brand?: string
   model?: string
+  user: string
+  price?: number
+  purchaseDate: string
   status: 'active' | 'in repair' | 'disposed'
   subCategory: {
     id: string
