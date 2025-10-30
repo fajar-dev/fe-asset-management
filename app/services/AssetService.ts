@@ -26,14 +26,20 @@ export class AssetService {
     subCategoryId: string | null = null,
     status: string | null = null,
     employeeId: string | null = null,
-    LocationId: string | null = null
+    locationId: string | null = null,
+    startDate: string | null = null,
+    endDate: string | null = null
   ): Promise<AssetResponse> {
     const params: Record<string, any> = { search, page, limit }
+
     if (categoryId) params.categoryId = categoryId
     if (subCategoryId) params.subCategoryId = subCategoryId
     if (status) params.status = status
     if (employeeId) params.employeeId = employeeId
-    if (LocationId) params.locationId = LocationId
+    if (locationId) params.locationId = locationId
+    if (startDate) params.startDate = startDate
+    if (endDate) params.endDate = endDate
+
     return await this.api<AssetResponse>(this.basePath, {
       method: 'GET',
       params,

@@ -32,8 +32,8 @@ const deletingAssetId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
 const editingAssetId = ref<string>('')
 const isFilterOpen = ref(false)
+const showDatePicker = ref(false)
 
-// composables
 const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset } = useAsset()
 const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
 const { employees, fetchEmployees } = useEmployee()
@@ -45,6 +45,7 @@ const selectedSubCategoryId = ref<string | undefined>(undefined)
 const selectedStatus = ref<string | undefined>(undefined)
 const selectedEmployee = ref<string | undefined>(undefined)
 const selectedLocation = ref<string | undefined>(undefined)
+const selectedDateRange = ref<any>(undefined)
 const previewImage = ref<string | null>(null)
 
 const tempCategoryId = ref<string | undefined>(undefined)
@@ -52,6 +53,7 @@ const tempSubCategoryId = ref<string | undefined>(undefined)
 const tempStatus = ref<string | undefined>(undefined)
 const tempEmployee = ref<string | undefined>(undefined)
 const tempLocation = ref<string | undefined>(undefined)
+const tempDateRange = ref<any>(undefined)
 
 const statusItems: SelectMenuItem[] = [
   { label: 'Active', id: 'active' },
@@ -107,7 +109,7 @@ const selectedEmployeeAvatar = computed(() => {
 })
 
 function loadAssets(page = pagination.value.pageIndex + 1) {
-  fetchAssets({
+  const params: any = {
     search: search.value,
     page,
     limit: pagination.value.pageSize,
@@ -116,7 +118,14 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     status: selectedStatus.value,
     employeeId: selectedEmployee.value,
     locationId: selectedLocation.value
-  })
+  }
+
+  if (selectedDateRange.value?.start && selectedDateRange.value?.end) {
+    params.startDate = `${selectedDateRange.value.start.year}-${String(selectedDateRange.value.start.month).padStart(2, '0')}-${String(selectedDateRange.value.start.day).padStart(2, '0')}`
+    params.endDate = `${selectedDateRange.value.end.year}-${String(selectedDateRange.value.end.month).padStart(2, '0')}-${String(selectedDateRange.value.end.day).padStart(2, '0')}`
+  }
+
+  fetchAssets(params)
 }
 
 function applyFilters() {
@@ -125,6 +134,8 @@ function applyFilters() {
   selectedStatus.value = tempStatus.value
   selectedEmployee.value = tempEmployee.value
   selectedLocation.value = tempLocation.value
+  selectedDateRange.value = tempDateRange.value
+  showDatePicker.value = false
   isFilterOpen.value = false
   loadAssets(1)
 }
@@ -135,6 +146,7 @@ function resetFilters() {
   selectedStatus.value = undefined
   selectedEmployee.value = undefined
   selectedLocation.value = undefined
+  selectedDateRange.value = undefined
   search.value = ''
 
   tempCategoryId.value = undefined
@@ -142,10 +154,21 @@ function resetFilters() {
   tempStatus.value = undefined
   tempEmployee.value = undefined
   tempLocation.value = undefined
+  tempDateRange.value = undefined
 
   subCategories.value = []
+  showDatePicker.value = false
   isFilterOpen.value = false
   loadAssets(1)
+}
+
+function clearDateRange() {
+  tempDateRange.value = undefined
+}
+
+function toggleDatePicker(e: Event) {
+  e.stopPropagation()
+  showDatePicker.value = !showDatePicker.value
 }
 
 function handlePageChange(newPage: number) {
@@ -171,7 +194,28 @@ const activeFiltersCount = computed(() => {
   if (selectedStatus.value) count++
   if (selectedEmployee.value) count++
   if (selectedLocation.value) count++
+  if (selectedDateRange.value?.start && selectedDateRange.value?.end) count++
   return count
+})
+
+const formattedDateRange = computed(() => {
+  if (!tempDateRange.value?.start || !tempDateRange.value?.end) return 'Select date range'
+  const start = new Date(
+    tempDateRange.value.start.year,
+    tempDateRange.value.start.month - 1,
+    tempDateRange.value.start.day
+  )
+  const end = new Date(
+    tempDateRange.value.end.year,
+    tempDateRange.value.end.month - 1,
+    tempDateRange.value.end.day
+  )
+  const formatter = new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
+  return `${formatter.format(start)} - ${formatter.format(end)}`
 })
 
 watch(isFilterOpen, (isOpen) => {
@@ -181,6 +225,8 @@ watch(isFilterOpen, (isOpen) => {
     tempStatus.value = selectedStatus.value
     tempEmployee.value = selectedEmployee.value
     tempLocation.value = selectedLocation.value
+    tempDateRange.value = selectedDateRange.value
+    showDatePicker.value = false
 
     if (tempCategoryId.value) {
       getSubCategoriesByCategory(tempCategoryId.value)
@@ -494,7 +540,7 @@ const columns: TableColumn<any>[] = [
             </UButton>
 
             <template #content>
-              <div class="p-4 w-80 space-y-4">
+              <div class="p-4 w-80 space-y-4 max-h-[80vh] overflow-y-auto" @click.stop>
                 <div class="flex items-center justify-between mb-3">
                   <h3 class="font-semibold text-sm">
                     Filter Assets
@@ -510,7 +556,7 @@ const columns: TableColumn<any>[] = [
                   </UButton>
                 </div>
 
-                <div class="space-y-2">
+                <div class="space-y-3">
                   <div>
                     <label class="block text-sm font-medium mb-1.5">Category</label>
                     <USelectMenu
@@ -579,6 +625,40 @@ const columns: TableColumn<any>[] = [
                       searchable
                       searchable-placeholder="Search employee..."
                     />
+                  </div>
+
+                  <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                      <label class="block text-sm font-medium">Purchase Date</label>
+                      <UButton
+                        v-if="tempDateRange"
+                        color="error"
+                        variant="link"
+                        size="xs"
+                        @click.stop="clearDateRange"
+                      >
+                        Clear
+                      </UButton>
+                    </div>
+
+                    <UButton
+                      color="neutral"
+                      variant="outline"
+                      block
+                      icon="i-lucide-calendar"
+                      :trailing-icon="showDatePicker ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                      class="justify-start"
+                      @click="toggleDatePicker"
+                    >
+                      <span class="truncate text-sm">{{ formattedDateRange }}</span>
+                    </UButton>
+
+                    <div v-if="showDatePicker" class="mt-2 p-3 border border-default rounded-lg bg-elevated" @click.stop>
+                      <UCalendar
+                        v-model="tempDateRange"
+                        range
+                      />
+                    </div>
                   </div>
                 </div>
 
