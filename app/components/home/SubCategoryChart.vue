@@ -19,10 +19,6 @@ const chartLabels = computed(() =>
   }))
 )
 
-const total = computed(() =>
-  assetsBySubCategory.value.reduce((acc, cur) => acc + cur.value, 0)
-)
-
 onMounted(() => {
   getAssetsBySubCategory()
 })
@@ -52,16 +48,7 @@ onMounted(() => {
       :height="275"
       :hide-legend="false"
       :radius="0"
-    >
-      <div class="absolute text-center">
-        <div class="font-semibold">
-          {{ total }} Assets
-        </div>
-        <div class="text-muted text-xs">
-          Updated just now
-        </div>
-      </div>
-    </DonutChart>
+    />
 
     <div v-else class="flex justify-center items-center h-[275px] text-muted">
       No data available

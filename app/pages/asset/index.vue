@@ -2,7 +2,7 @@
 import type { TableColumn, SelectMenuItem } from '@nuxt/ui'
 
 import { NuxtLink } from '#components'
-import { getPaginationRowModel, type Row } from '@tanstack/table-core'
+import type { Row } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
 import { useCategory } from '~/composables/useCategory'
 import { useEmployee } from '~/composables/useEmployee'
@@ -18,7 +18,6 @@ interface EmployeeItem {
   }
 }
 
-// global components
 const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
@@ -27,16 +26,12 @@ const ConfirmModal = resolveComponent('ConfirmModal')
 const AssetAddModal = resolveComponent('AssetAddModal')
 const AssetUpdateModal = resolveComponent('AssetUpdateModal')
 
-// state
 const search = ref('')
 const isDeleteModalOpen = ref(false)
 const deletingAssetId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
 const editingAssetId = ref<string>('')
 const isFilterOpen = ref(false)
-
-// expanded rows
-const expanded = ref<Record<number | string, boolean>>({})
 
 // composables
 const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset } = useAsset()
@@ -278,19 +273,6 @@ function getRowItems(row: Row<any>) {
 
 const columns: TableColumn<any>[] = [
   {
-    id: 'expand',
-    cell: ({ row }) =>
-      h(UButton, {
-        'color': 'neutral',
-        'variant': 'ghost',
-        'icon': 'i-lucide-chevron-right',
-        'square': true,
-        'aria-label': 'Expand',
-        'ui': { leadingIcon: [row.getIsExpanded() ? 'rotate-90 duration-200' : 'duration-200'] },
-        'onClick': () => row.toggleExpanded()
-      })
-  },
-  {
     accessorKey: 'name',
     header: 'Asset',
     cell: ({ row }) =>
@@ -384,7 +366,7 @@ const columns: TableColumn<any>[] = [
         currency: 'IDR',
         minimumFractionDigits: 0
       }).format(Number(price))
-      return h('span', { class: 'text-xs font-medium text-highlighted' }, formatted)
+      return h('span', { class: 'text-xs font-medium' }, formatted)
     }
   },
   {
@@ -392,13 +374,17 @@ const columns: TableColumn<any>[] = [
     header: 'Purchase Date',
     cell: ({ row }) => {
       const date = row.original.purchaseDate
+      const age = row.original.age
       if (!date) return h('span', { class: 'text-xs text-muted' }, '-')
       const formatted = new Date(date).toLocaleDateString('id-ID', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       })
-      return h('span', { class: 'text-xs' }, formatted)
+      return h('div', { class: 'flex flex-col' }, [
+        h('span', { class: 'text-xs text-highlighted' }, formatted),
+        h('span', { class: 'text-xs' }, age ?? '-')
+      ])
     }
   },
   {
@@ -614,49 +600,11 @@ const columns: TableColumn<any>[] = [
 
       <UTable
         v-model:pagination="pagination"
-        v-model:expanded="expanded"
         :data="assets"
         :columns="columns"
         :loading="loading"
-        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
-        :ui="{ base: 'table-fixed border-separate border-spacing-0', thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none', tbody: '[&>tr]:last:[&>td]:border-b-0', th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r', td: 'border-b border-default', tr: 'data-[expanded=true]:bg-elevated/30' }"
-      >
-        <template #expanded="{ row }">
-          <div class="p-0">
-            <div v-if="row.original.properties?.length || row.original.customValues?.length">
-              <table class="w-full text-sm border border-default rounded-lg overflow-hidden bg-muted">
-                <tbody>
-                  <tr v-for="prop in row.original.properties" :key="prop.id" class="border-t border-default hover:bg-muted/30">
-                    <td class="px-3 py-2 font-medium text-highlighted">
-                      {{ prop.property.name }}
-                    </td>
-                    <td class="px-3 py-2">
-                      :
-                    </td>
-                    <td class="px-3 py-2 capitalize">
-                      {{ prop.value }}
-                    </td>
-                  </tr>
-                  <tr v-for="field in row.original.customValues" :key="field.name" class="border-t border-default hover:bg-muted/30">
-                    <td class="px-3 py-2 font-medium text-highlighted">
-                      {{ field.name }}
-                    </td>
-                    <td class="px-3 py-2">
-                      :
-                    </td>
-                    <td class="px-3 py-2 capitalize">
-                      {{ field.value }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div v-else class="text-sm text-muted italic">
-              No properties for this asset.
-            </div>
-          </div>
-        </template>
-      </UTable>
+        :ui="{ base: 'table-fixed border-separate border-spacing-0', thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none', tbody: '[&>tr]:last:[&>td]:border-b-0', th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r', td: 'border-b border-default' }"
+      />
 
       <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 border-t border-default pt-4 mt-auto">
         <UPagination

@@ -26,6 +26,17 @@ const links = computed<NavigationMenuItem[][]>(() => [[
     icon: 'i-lucide-library-big',
     to: '/asset',
     onSelect: () => (open.value = false)
+  },
+  {
+    label: 'Setting',
+    icon: 'i-lucide-settings',
+    defaultOpen: true,
+    type: 'trigger',
+    children: [
+      { label: 'Category', to: '/master-data/category', onSelect: () => (open.value = false) },
+      { label: 'Sub Category', to: '/master-data/sub-category', onSelect: () => (open.value = false) },
+      { label: 'Location', to: '/master-data/location', onSelect: () => (open.value = false) }
+    ]
   }
 ], [
   {

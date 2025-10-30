@@ -12,6 +12,11 @@ const schema = z.object({
   description: z.string().optional(),
   brand: z.string().optional(),
   model: z.string().optional(),
+  user: z.string().min(1, 'User is required'),
+  price: z.union([z.string(), z.number()]).refine(val => val !== undefined && val !== '', {
+    message: 'Price is required'
+  }),
+  purchaseDate: z.string().min(1, 'Purchase date is required'),
   categoryId: z.string().min(1, 'Category is required'),
   subCategoryId: z.string().min(1, 'Sub category is required'),
   status: z.enum(['active', 'in repair', 'disposed']).default('active'),
@@ -36,7 +41,8 @@ type Schema = z.output<typeof schema>
 const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   hasMaintenance: z.boolean().default(false),
-  hasHolder: z.boolean().default(false)
+  hasHolder: z.boolean().default(false),
+  hasLocation: z.boolean().default(false)
 })
 
 const subCategorySchema = z.object({
@@ -61,6 +67,9 @@ const state = reactive<{
   description: string
   brand: string
   model: string
+  user: string
+  price: number | undefined
+  purchaseDate: string
   categoryId: string
   subCategoryId: string
   status: 'active' | 'in repair' | 'disposed'
@@ -73,6 +82,9 @@ const state = reactive<{
   description: '',
   brand: '',
   model: '',
+  user: '',
+  price: undefined,
+  purchaseDate: '',
   categoryId: '',
   subCategoryId: '',
   status: 'active',
@@ -96,7 +108,8 @@ const savingCategory = ref(false)
 const newCategory = reactive<CategorySchema>({
   name: '',
   hasMaintenance: false,
-  hasHolder: false
+  hasHolder: false,
+  hasLocation: false
 })
 
 const openSubCategoryModal = ref(false)
@@ -111,12 +124,9 @@ const newSubCategory = reactive<{
   properties: []
 })
 
-const fileInput = ref<HTMLInputElement | null>(null)
-const imagePreview = ref<string | null>(null)
 const imageError = ref<string>('')
 const imageInteracted = ref(false)
 
-// Delete modals
 const isDeleteCategoryModalOpen = ref(false)
 const deletingCategoryId = ref<string | null>(null)
 const isDeleteSubCategoryModalOpen = ref(false)
@@ -166,6 +176,9 @@ function resetForm() {
   state.description = ''
   state.brand = ''
   state.model = ''
+  state.user = ''
+  state.price = undefined
+  state.purchaseDate = ''
   state.categoryId = ''
   state.subCategoryId = ''
   state.status = 'active'
@@ -176,12 +189,8 @@ function resetForm() {
   categoryItems.value = []
   subCategoryItems.value = []
   propertyErrors.value = {}
-  imagePreview.value = null
   imageError.value = ''
   imageInteracted.value = false
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
 }
 
 function getPropertyInfo(propertyId: string) {
@@ -239,68 +248,53 @@ function handlePropertyChange(index: number, value: string) {
 }
 
 async function onAddCategory() {
-  try {
-    savingCategory.value = true
-    const parsed = categorySchema.parse(newCategory)
-    const res = await createCategory(parsed)
-    await getAllCategories()
-    categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
-    state.categoryId = res!.id
-    Object.assign(newCategory, {
-      name: '',
-      hasMaintenance: false,
-      hasHolder: false
-    })
-    openCategoryModal.value = false
-  } catch (err) {
-    console.error('Failed to create category', err)
-    alert('Failed to create category')
-  } finally {
-    savingCategory.value = false
-  }
+  savingCategory.value = true
+  const parsed = categorySchema.parse(newCategory)
+  const res = await createCategory(parsed)
+  await getAllCategories()
+  categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
+  state.categoryId = res!.id
+  Object.assign(newCategory, {
+    name: '',
+    hasMaintenance: false,
+    hasHolder: false,
+    hasLocation: false
+  })
+  openCategoryModal.value = false
+  savingCategory.value = false
 }
 
 async function onAddSubCategory() {
-  try {
-    savingSubCategory.value = true
-    newSubCategory.categoryId = state.categoryId
-    const parsed = subCategorySchema.parse(newSubCategory)
-    const subCategoryRes = await createSubCategory({
-      name: parsed.name,
-      categoryId: parsed.categoryId
-    })
+  savingSubCategory.value = true
+  newSubCategory.categoryId = state.categoryId
+  const parsed = subCategorySchema.parse(newSubCategory)
+  const subCategoryRes = await createSubCategory({
+    name: parsed.name,
+    categoryId: parsed.categoryId
+  })
 
-    const subCategoryId = subCategoryRes?.id || subCategoryRes?.id
+  const subCategoryId = subCategoryRes?.id
 
-    if (!subCategoryId) {
-      throw new Error('Failed to get sub category ID')
+  if (subCategoryId && parsed.properties.length > 0) {
+    for (const property of parsed.properties) {
+      await createProperty(subCategoryId, {
+        name: property.name,
+        dataType: property.dataType
+      })
     }
-
-    if (parsed.properties.length > 0) {
-      for (const property of parsed.properties) {
-        await createProperty(subCategoryId, {
-          name: property.name,
-          dataType: property.dataType
-        })
-      }
-    }
-
-    await getSubCategoriesByCategory(state.categoryId)
-    subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
-    state.subCategoryId = subCategoryId
-
-    Object.assign(newSubCategory, {
-      name: '',
-      categoryId: '',
-      properties: []
-    })
-    openSubCategoryModal.value = false
-  } catch (err) {
-    console.error('Failed to create sub category', err)
-    alert('Failed to create sub category')
-  } finally {
-    savingSubCategory.value = false
   }
+
+  await getSubCategoriesByCategory(state.categoryId)
+  subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
+  state.subCategoryId = subCategoryId || ''
+
+  Object.assign(newSubCategory, {
+    name: '',
+    categoryId: '',
+    properties: []
+  })
+  openSubCategoryModal.value = false
+  savingSubCategory.value = false
 }
 
 function showSubCategoryModal() {
@@ -320,52 +314,31 @@ function validateImage(): string {
   if (!imageInteracted.value) {
     return ''
   }
-  if (!state.image) {
-    return 'Asset image is required'
-  }
   return ''
 }
 
-function triggerFileUpload() {
+function handleFileSelect(file: File | null | undefined) {
   imageInteracted.value = true
-  fileInput.value?.click()
-}
-
-function handleFileChange(event: Event) {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-
   if (file) {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
     if (!allowedTypes.includes(file.type)) {
-      imageError.value = 'Please select a valid image file (JPEG, PNG, WebP)'
+      imageError.value = 'Please select a valid image file (JPEG, PNG, GIF)'
+      state.image = null
       return
     }
 
-    const maxSize = 5 * 1024 * 1024
+    const maxSize = 2 * 1024 * 1024
     if (file.size > maxSize) {
-      imageError.value = 'File size must be less than 5MB'
+      imageError.value = 'File size must be less than 2MB'
+      state.image = null
       return
     }
 
     state.image = file
     imageError.value = ''
-
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      imagePreview.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-  }
-}
-
-function removeImage() {
-  state.image = null
-  imagePreview.value = null
-  imageInteracted.value = true
-  imageError.value = validateImage()
-  if (fileInput.value) {
-    fileInput.value.value = ''
+  } else {
+    state.image = null
+    imageError.value = validateImage()
   }
 }
 
@@ -384,26 +357,21 @@ function removeCategory(categoryId: string) {
 
 async function confirmDeleteCategory() {
   if (!deletingCategoryId.value) return
-  try {
-    await deleteCategory(deletingCategoryId.value)
-    await getAllCategories()
-    categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
 
-    // Reset category selection if deleted category was selected
-    if (state.categoryId === deletingCategoryId.value) {
-      state.categoryId = ''
-      state.subCategoryId = ''
-      subCategoryItems.value = []
-      availableProperties.value = []
-      state.properties = []
-    }
+  await deleteCategory(deletingCategoryId.value)
+  await getAllCategories()
+  categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
 
-    deletingCategoryId.value = null
-    isDeleteCategoryModalOpen.value = false
-  } catch (err) {
-    console.error('Failed to delete category', err)
-    alert('Failed to delete category')
+  if (state.categoryId === deletingCategoryId.value) {
+    state.categoryId = ''
+    state.subCategoryId = ''
+    subCategoryItems.value = []
+    availableProperties.value = []
+    state.properties = []
   }
+
+  deletingCategoryId.value = null
+  isDeleteCategoryModalOpen.value = false
 }
 
 function removeSubCategory(subCategoryId: string) {
@@ -413,24 +381,19 @@ function removeSubCategory(subCategoryId: string) {
 
 async function confirmDeleteSubCategory() {
   if (!deletingSubCategoryId.value) return
-  try {
-    await deleteSubCategory(deletingSubCategoryId.value)
-    await getSubCategoriesByCategory(state.categoryId)
-    subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
 
-    // Reset sub category selection if deleted sub category was selected
-    if (state.subCategoryId === deletingSubCategoryId.value) {
-      state.subCategoryId = ''
-      availableProperties.value = []
-      state.properties = []
-    }
+  await deleteSubCategory(deletingSubCategoryId.value)
+  await getSubCategoriesByCategory(state.categoryId)
+  subCategoryItems.value = subCategories.value.map(s => ({ id: s.id, name: s.name }))
 
-    deletingSubCategoryId.value = null
-    isDeleteSubCategoryModalOpen.value = false
-  } catch (err) {
-    console.error('Failed to delete sub category', err)
-    alert('Failed to delete sub category')
+  if (state.subCategoryId === deletingSubCategoryId.value) {
+    state.subCategoryId = ''
+    availableProperties.value = []
+    state.properties = []
   }
+
+  deletingSubCategoryId.value = null
+  isDeleteSubCategoryModalOpen.value = false
 }
 
 const hasValidationErrors = computed(() => {
@@ -440,69 +403,75 @@ const hasValidationErrors = computed(() => {
 })
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  try {
-    saving.value = true
-    propertyErrors.value = {}
-    imageError.value = validateImage()
-    let hasErrors = false
+  saving.value = true
+  propertyErrors.value = {}
+  imageError.value = validateImage()
+  let hasErrors = false
 
-    if (!state.image) {
-      hasErrors = true
-      return
-    }
-
-    if (availableProperties.value.length > 0) {
-      for (const property of availableProperties.value) {
-        const propertyValue = state.properties?.find(p => p.id === property.id)
-        const errorMessage = validateProperty(property.id, propertyValue?.value)
-        if (errorMessage) {
-          propertyErrors.value[property.id] = errorMessage
-          hasErrors = true
-        }
-      }
-    }
-
-    if (hasErrors) return
-
-    const processedProperties = event.data.properties?.filter(prop => prop.value !== '' && prop.value !== null && prop.value !== undefined).map((prop) => {
-      const property = availableProperties.value.find(p => p.id === prop.id)
-      if (property?.dataType === 'number') {
-        return { id: prop.id, value: Number(prop.value) }
-      }
-      return { id: prop.id, value: prop.value?.toString() || '' }
-    }) || []
-
-    const formData = new FormData()
-    formData.append('code', event.data.code)
-    formData.append('subCategoryId', event.data.subCategoryId)
-    formData.append('name', event.data.name)
-
-    if (event.data.description) formData.append('description', event.data.description)
-    if (event.data.brand) formData.append('brand', event.data.brand)
-    if (event.data.model) formData.append('model', event.data.model)
-
-    formData.append('status', event.data.status || 'active')
-    formData.append('properties', JSON.stringify(processedProperties))
-
-    if (state.customValues?.length > 0) {
-      const validCustomValues = state.customValues.filter(cv => cv.name && cv.value)
-      if (validCustomValues.length > 0) {
-        formData.append('customValues', JSON.stringify(validCustomValues))
-      }
-    }
-
-    if (state.image) formData.append('image', state.image)
-
-    await createAsset(formData)
-
-    resetForm()
-    open.value = false
-    emit('created')
-  } catch (err) {
-    console.error(err)
-  } finally {
+  if (!state.image) {
+    hasErrors = true
     saving.value = false
+    return
   }
+
+  if (availableProperties.value.length > 0) {
+    for (const property of availableProperties.value) {
+      const propertyValue = state.properties?.find(p => p.id === property.id)
+      const errorMessage = validateProperty(property.id, propertyValue?.value)
+      if (errorMessage) {
+        propertyErrors.value[property.id] = errorMessage
+        hasErrors = true
+      }
+    }
+  }
+
+  if (hasErrors) {
+    saving.value = false
+    return
+  }
+
+  const processedProperties = event.data.properties?.filter(prop => prop.value !== '' && prop.value !== null && prop.value !== undefined).map((prop) => {
+    const property = availableProperties.value.find(p => p.id === prop.id)
+    if (property?.dataType === 'number') {
+      return { id: prop.id, value: Number(prop.value) }
+    }
+    return { id: prop.id, value: prop.value?.toString() || '' }
+  }) || []
+
+  const formData = new FormData()
+  formData.append('code', event.data.code)
+  formData.append('subCategoryId', event.data.subCategoryId)
+  formData.append('name', event.data.name)
+
+  if (event.data.description) formData.append('description', event.data.description)
+  if (event.data.brand) formData.append('brand', event.data.brand)
+  if (event.data.model) formData.append('model', event.data.model)
+
+  formData.append('user', event.data.user)
+  formData.append('purchaseDate', event.data.purchaseDate)
+
+  if (state.price !== undefined && state.price !== null) {
+    formData.append('price', state.price.toString())
+  }
+
+  formData.append('status', event.data.status || 'active')
+  formData.append('properties', JSON.stringify(processedProperties))
+
+  if (state.customValues?.length > 0) {
+    const validCustomValues = state.customValues.filter(cv => cv.name && cv.value)
+    if (validCustomValues.length > 0) {
+      formData.append('customValues', JSON.stringify(validCustomValues))
+    }
+  }
+
+  if (state.image) formData.append('image', state.image)
+
+  await createAsset(formData)
+
+  resetForm()
+  open.value = false
+  emit('created')
+  saving.value = false
 }
 
 async function openModal() {
@@ -526,15 +495,15 @@ async function openModal() {
       <UForm
         :schema="schema"
         :state="state"
-        class="md:grid md:grid-cols-2 gap-6"
+        class="md:grid md:grid-cols-3 gap-6"
         @submit="onSubmit"
       >
         <div class="space-y-2">
-          <UFormField label="Serial ID" name="code">
+          <UFormField label="Serial ID" name="code" required>
             <UInput v-model="state.code" class="w-full" placeholder="Serial ID" />
           </UFormField>
 
-          <UFormField label="Name" name="name">
+          <UFormField label="Name" name="name" required>
             <UInput v-model="state.name" class="w-full" placeholder="Asset name" />
           </UFormField>
 
@@ -548,6 +517,38 @@ async function openModal() {
 
           <UFormField label="Model" name="model">
             <UInput v-model="state.model" class="w-full" placeholder="Model (optional)" />
+          </UFormField>
+
+          <UFormField label="User" name="user" required>
+            <UInput
+              v-model="state.user"
+              class="w-full"
+              placeholder="User"
+            />
+          </UFormField>
+        </div>
+
+        <div class="space-y-2">
+          <UFormField label="Price" name="price" required>
+            <UInput
+              v-model="state.price"
+              class="w-full"
+              placeholder="Price"
+              type="number"
+            >
+              <template #leading>
+                <span class="text-gray-500">Rp</span>
+              </template>
+            </UInput>
+          </UFormField>
+
+          <UFormField label="Purchase Date" name="purchaseDate" required>
+            <UInput
+              v-model="state.purchaseDate"
+              class="w-full"
+              type="date"
+              icon="i-lucide-calendar"
+            />
           </UFormField>
 
           <UFormField label="Status" name="status">
@@ -566,71 +567,21 @@ async function openModal() {
           </UFormField>
 
           <UFormField label="Asset Image" name="image" required>
-            <div class="space-y-3">
-              <div class="flex items-center gap-3">
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  icon="i-lucide-upload"
-                  :disabled="saving"
-                  :class="{ 'border-red-500': imageError }"
-                  @click="triggerFileUpload"
-                >
-                  {{ imagePreview ? 'Change Image' : 'Upload Image' }}
-                </UButton>
-
-                <UButton
-                  v-if="imagePreview"
-                  color="error"
-                  variant="ghost"
-                  icon="i-lucide-trash-2"
-                  size="sm"
-                  :disabled="saving"
-                  @click="removeImage"
-                >
-                  Remove
-                </UButton>
-              </div>
-
-              <p v-if="imageError" class="text-red-500 text-sm">
-                {{ imageError }}
-              </p>
-
-              <input
-                ref="fileInput"
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                class="hidden"
-                @change="handleFileChange"
-              >
-
-              <div v-if="imagePreview" class="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                <div class="text-center">
-                  <img
-                    :src="imagePreview"
-                    alt="Asset preview"
-                    class="mx-auto max-h-48 rounded-lg shadow-md"
-                  >
-                  <p class="mt-2 text-sm text-gray-700">
-                    {{ state.image?.name }}
-                    <span class="text-xs text-gray-500">
-                      ({{ Math.round((state.image?.size || 0) / 1024) }} KB)
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              <div class="text-xs text-gray-500 mt-2">
-                <p>• <strong>Required field:</strong> You must upload an image</p>
-                <p>• Supported formats: JPEG, PNG, WebP</p>
-                <p>• Maximum file size: 5MB</p>
-              </div>
-            </div>
+            <UFileUpload
+              label="Drop your image here"
+              description="SVG, PNG, JPG or GIF (max. 2MB)"
+              class="w-full min-h-48"
+              accept="image/jpeg,image/jpg,image/png,image/gif"
+              @update:model-value="handleFileSelect"
+            />
+            <p v-if="imageError" class="text-red-500 text-sm mt-1">
+              {{ imageError }}
+            </p>
           </UFormField>
         </div>
 
         <div class="space-y-2">
-          <UFormField label="Category" name="categoryId">
+          <UFormField label="Category" name="categoryId" required>
             <div class="flex gap-2">
               <USelectMenu
                 v-model="state.categoryId"
@@ -662,7 +613,7 @@ async function openModal() {
             </div>
           </UFormField>
 
-          <UFormField label="Sub Category" name="subCategoryId">
+          <UFormField label="Sub Category" name="subCategoryId" required>
             <div class="flex gap-2">
               <USelectMenu
                 v-model="state.subCategoryId"
@@ -773,7 +724,7 @@ async function openModal() {
           </div>
         </div>
 
-        <div class="col-span-2 flex justify-end gap-2 pt-4">
+        <div class="col-span-3 flex justify-end gap-2 pt-4">
           <UButton
             label="Cancel"
             color="neutral"
@@ -794,7 +745,6 @@ async function openModal() {
     </template>
   </UModal>
 
-  <!-- Delete Confirmation Modals -->
   <ConfirmModal
     v-model:open="isDeleteCategoryModalOpen"
     title="Delete Category"
@@ -829,6 +779,10 @@ async function openModal() {
 
         <UFormField name="hasHolder">
           <USwitch v-model="newCategory.hasHolder" label="Has Holder" />
+        </UFormField>
+
+        <UFormField name="hasLocation">
+          <USwitch v-model="newCategory.hasLocation" label="Has Location" />
         </UFormField>
 
         <div class="flex justify-end gap-2">

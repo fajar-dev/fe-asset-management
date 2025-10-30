@@ -3,7 +3,6 @@ const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
 
-// state untuk menampung detail asset
 const assetDetail = ref<any>(null)
 const loading = ref(false)
 const previewImage = ref<string | null>(null)
@@ -54,19 +53,14 @@ onMounted(async () => {
 
     <template #body>
       <div v-if="loading">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-2">
-            <USkeleton class="h-64 w-full rounded-lg" />
-          </div>
-          <div>
-            <USkeleton class="h-40 w-full rounded-lg" />
-          </div>
+        <div class="grid grid-cols-1 gap-6">
+          <USkeleton class="h-64 w-full rounded-lg" />
         </div>
       </div>
 
       <div v-else-if="assetDetail">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <UCard class="lg:col-span-2">
+        <div class="grid grid-cols-1 gap-6">
+          <UCard>
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -77,7 +71,6 @@ onMounted(async () => {
             </template>
 
             <div class="space-y-6 mt-4">
-              <!-- Basic Details -->
               <div class="flex flex-col md:flex-row md:items-start md:gap-6">
                 <div v-if="assetDetail.imageUrl" class="flex justify-center md:justify-start mb-4 md:mb-0">
                   <div class="relative group">
@@ -87,7 +80,6 @@ onMounted(async () => {
                       class="w-100 h-50 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer transition"
                       @click="openImageModal(assetDetail.imageUrl)"
                     >
-                    <!-- Hover Overlay -->
                     <div
                       class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition rounded-lg pointer-events-none"
                     >
@@ -99,8 +91,7 @@ onMounted(async () => {
                     </div>
                   </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 w-full">
-                  <!-- Item -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 w-full">
                   <div>
                     <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Asset Name</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
@@ -149,6 +140,35 @@ onMounted(async () => {
                       </span>
                     </div>
                   </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">User</label>
+                    <p class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ assetDetail.user?.name ?? '-' }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Price</label>
+                    <p class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ assetDetail.price ? `Rp ${assetDetail.price.toLocaleString('id-ID')}` : '-' }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Purchase Date</label>
+                    <p class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ assetDetail.purchaseDate ? new Date(assetDetail.purchaseDate).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : '-' }}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Age</label>
+                    <p class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ assetDetail.age ?? '-' }}
+                    </p>
+                  </div>
+
                   <div
                     v-for="(item, idx) in assetDetail.customValues"
                     :key="idx"
@@ -160,10 +180,25 @@ onMounted(async () => {
                       {{ item.value ?? '-' }}
                     </p>
                   </div>
+
+                  <!-- Properties -->
+                  <div
+                    v-for="prop in assetDetail.properties"
+                    :key="prop.id"
+                  >
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      {{ prop.property.name }}
+                    </label>
+                    <p v-if="prop.property.dataType === 'number'" class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ prop.value.toLocaleString() }}
+                    </p>
+                    <p v-else class="text-gray-900 dark:text-white font-medium text-sm">
+                      {{ prop.value }}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <!-- Description -->
               <div v-if="assetDetail.description">
                 <UDivider class="my-4" />
                 <div>
@@ -175,36 +210,9 @@ onMounted(async () => {
               </div>
             </div>
           </UCard>
-
-          <!-- Properties Card -->
-          <UCard>
-            <template #header>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <UIcon name="i-lucide-settings" class="w-5 h-5" />
-                Properties
-              </h3>
-            </template>
-
-            <div class="space-y-4 mt-4">
-              <div
-                v-for="prop in assetDetail.properties"
-                :key="prop.id"
-                class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-              >
-                <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ prop.property.name }}</label>
-                <div class="mt-1">
-                  <span v-if="prop.property.dataType === 'number'" class="text-gray-900 dark:text-white font-semibold text-lg">
-                    {{ prop.value.toLocaleString() }}
-                  </span>
-                  <span v-else class="text-gray-900 dark:text-white font-medium">{{ prop.value }}</span>
-                </div>
-              </div>
-            </div>
-          </UCard>
         </div>
       </div>
     </template>
-    <!-- Image Preview Modal -->
   </UDashboardPanel>
   <div
     v-if="previewImage"

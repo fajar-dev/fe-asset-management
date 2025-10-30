@@ -24,6 +24,7 @@ interface AssetState {
     subCategoryId?: string | null
     status?: string | null
     employeeId?: string | null
+    locationId?: string | null
   }) => Promise<void>
   refreshAssets: () => Promise<void>
   getAssetById: (id: string) => Promise<AssetDetailResponse | null>
