@@ -229,7 +229,6 @@ const columns: TableColumn<any>[] = [
           tr: 'data-[expanded=true]:bg-elevated/30'
         }"
       >
-        <!-- expanded slot: render properties table -->
         <template #expanded="{ row }">
           <div class="p-0">
             <div v-if="row.original.assetProperties && row.original.assetProperties.length">
