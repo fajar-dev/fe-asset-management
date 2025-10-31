@@ -8,6 +8,7 @@ import { useRole } from '~/composables/useRole'
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UIcon = resolveComponent('UIcon')
+const UTooltip = resolveComponent('UTooltip')
 
 // state
 const search = ref('')
@@ -97,17 +98,74 @@ const columns: TableColumn<any>[] = [
   { accessorKey: 'name', header: 'Name' },
   {
     accessorKey: 'hasLocation',
-    header: () => h('div', { class: 'text-center' }, 'Has Location'),
+    header: () =>
+      h(
+        'div',
+        { class: 'flex items-center justify-center gap-1' },
+        [
+          h('span', 'Has Location'),
+          h(
+            UTooltip,
+            {
+              text: 'Indicates whether this category is associated with a location.',
+              delayDuration: 0
+            },
+            () =>
+              h(UIcon, {
+                name: 'i-lucide-info',
+                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+              })
+          )
+        ]
+      ),
     cell: ({ row }) => renderBooleanIcon(row.original.hasLocation)
   },
   {
     accessorKey: 'hasMaintenance',
-    header: () => h('div', { class: 'text-center' }, 'Has Maintenance'),
+    header: () =>
+      h(
+        'div',
+        { class: 'flex items-center justify-center gap-1' },
+        [
+          h('span', 'Has Maintenance'),
+          h(
+            UTooltip,
+            {
+              text: 'Indicates whether this category includes maintenance tracking.',
+              delayDuration: 0
+            },
+            () =>
+              h(UIcon, {
+                name: 'i-lucide-info',
+                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+              })
+          )
+        ]
+      ),
     cell: ({ row }) => renderBooleanIcon(row.original.hasMaintenance)
   },
   {
     accessorKey: 'hasHolder',
-    header: () => h('div', { class: 'text-center' }, 'Has Holder'),
+    header: () =>
+      h(
+        'div',
+        { class: 'flex items-center justify-center gap-1' },
+        [
+          h('span', 'Has Holder'),
+          h(
+            UTooltip,
+            {
+              text: 'Indicates whether this category has asset holders or assigned users.',
+              delayDuration: 0
+            },
+            () =>
+              h(UIcon, {
+                name: 'i-lucide-info',
+                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+              })
+          )
+        ]
+      ),
     cell: ({ row }) => renderBooleanIcon(row.original.hasHolder)
   },
   {

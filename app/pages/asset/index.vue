@@ -379,7 +379,7 @@ const columns: TableColumn<any>[] = [
             }
           }),
           h('div', { class: 'flex flex-col' }, [
-            h('p', { class: 'font-medium text-highlighted' }, row.original.name),
+            h('p', { class: 'font-medium text-highlighted pe-10' }, row.original.name),
             h('p', { class: 'text-xs text-muted' }, row.original.code)
           ])
         ]
