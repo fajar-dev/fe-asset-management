@@ -185,30 +185,6 @@ function resetFilters() {
   loadAssets(1)
 }
 
-function clearCategoryFilter() {
-  selectedCategoryId.value = undefined
-  tempCategoryId.value = undefined
-  selectedSubCategoryId.value = undefined
-  tempSubCategoryId.value = undefined
-  subCategories.value = []
-  router.push('/asset')
-  loadAssets(1)
-}
-
-function clearSubCategoryFilter() {
-  selectedSubCategoryId.value = undefined
-  tempSubCategoryId.value = undefined
-  router.push('/asset')
-  loadAssets(1)
-}
-
-function clearLocationFilter() {
-  selectedLocation.value = undefined
-  tempLocation.value = undefined
-  router.push('/asset')
-  loadAssets(1)
-}
-
 function clearDateRange() {
   tempDateRange.value = undefined
 }
@@ -280,25 +256,6 @@ const formattedDateRange = computed(() => {
     year: 'numeric'
   })
   return `${formatter.format(start)} - ${formatter.format(end)}`
-})
-
-// Get selected filter names for display
-const selectedCategoryName = computed(() => {
-  if (!selectedCategoryId.value) return null
-  const category = categories.value.find(c => c.id === selectedCategoryId.value)
-  return category?.name
-})
-
-const selectedSubCategoryName = computed(() => {
-  if (!selectedSubCategoryId.value) return null
-  const subCategory = subCategories.value.find(sc => sc.id === selectedSubCategoryId.value)
-  return subCategory?.name
-})
-
-const selectedLocationName = computed(() => {
-  if (!selectedLocation.value) return null
-  const location = allLocations.value.find(l => String(l.id) === selectedLocation.value)
-  return location ? `${location.name} - ${location.branch?.name ?? '-'}` : null
 })
 
 watch(isFilterOpen, (isOpen) => {
@@ -593,72 +550,6 @@ const columns: TableColumn<any>[] = [
           @updated="handleUpdated"
         />
       </RoleWrapper>
-
-      <!-- Active filter badges -->
-      <div v-if="selectedCategoryName || selectedSubCategoryName || selectedLocationName" class="mb-4">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-sm text-muted">Filtered by:</span>
-
-          <UBadge
-            v-if="selectedCategoryName"
-            color="primary"
-            variant="soft"
-            size="md"
-            class="flex items-center gap-2"
-          >
-            <span class="text-xs">Category: {{ selectedCategoryName }}</span>
-            <button
-              class="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
-              @click="clearCategoryFilter"
-            >
-              <span class="i-lucide-x w-3 h-3" />
-            </button>
-          </UBadge>
-
-          <UBadge
-            v-if="selectedSubCategoryName"
-            color="primary"
-            variant="soft"
-            size="md"
-            class="flex items-center gap-2"
-          >
-            <span class="text-xs">Sub Category: {{ selectedSubCategoryName }}</span>
-            <button
-              class="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
-              @click="clearSubCategoryFilter"
-            >
-              <span class="i-lucide-x w-3 h-3" />
-            </button>
-          </UBadge>
-
-          <UBadge
-            v-if="selectedLocationName"
-            color="primary"
-            variant="soft"
-            size="md"
-            class="flex items-center gap-2"
-          >
-            <span class="text-xs">Location: {{ selectedLocationName }}</span>
-            <button
-              class="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
-              @click="clearLocationFilter"
-            >
-              <span class="i-lucide-x w-3 h-3" />
-            </button>
-          </UBadge>
-
-          <UButton
-            v-if="activeFiltersCount > 1"
-            color="error"
-            variant="link"
-            size="xs"
-            @click="resetFilters"
-          >
-            Clear All Filters
-          </UButton>
-        </div>
-      </div>
-
       <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
         <UInput
           v-model="search"

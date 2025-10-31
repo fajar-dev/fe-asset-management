@@ -635,7 +635,7 @@ function resetState() {
             <UInput v-model="state.purchaseDate" class="w-full" type="date" />
           </UFormField>
 
-          <UFormField label="Status" name="status">
+          <UFormField label="Status" name="status" required>
             <USelectMenu
               v-model="state.status"
               :items="[
@@ -711,7 +711,25 @@ function resetState() {
         </div>
 
         <div class="space-y-2">
-          <UFormField label="Category" name="categoryId" required>
+          <UFormField name="categoryId">
+            <template #label>
+              <div class="flex items-center gap-1">
+                <span>
+                  Category
+                  <span class="text-red-500 ml-0.5">*</span>
+                </span>
+
+                <UTooltip
+                  text="Select the main category for this asset. You can also add or remove categories directly here."
+                  :delay-duration="0"
+                >
+                  <UIcon
+                    name="i-lucide-info"
+                    class="w-4 h-4 text-gray-500 cursor-pointer"
+                  />
+                </UTooltip>
+              </div>
+            </template>
             <div class="flex gap-2">
               <USelectMenu
                 v-model="state.categoryId"
@@ -743,7 +761,25 @@ function resetState() {
             </div>
           </UFormField>
 
-          <UFormField label="Sub Category" name="subCategoryId" required>
+          <UFormField name="subCategoryId">
+            <template #label>
+              <div class="flex items-center gap-1">
+                <span>
+                  Sub Category
+                  <span class="text-red-500 ml-0.5">*</span>
+                </span>
+
+                <UTooltip
+                  text="Select the subcategory that matches the main category. You can also add a new one if needed."
+                  :delay-duration="0"
+                >
+                  <UIcon
+                    name="i-lucide-info"
+                    class="w-4 h-4 text-gray-500 cursor-pointer"
+                  />
+                </UTooltip>
+              </div>
+            </template>
             <div class="flex gap-2">
               <USelectMenu
                 v-model="state.subCategoryId"
@@ -805,8 +841,20 @@ function resetState() {
 
           <div class="space-y-2 pt-4">
             <div class="flex justify-between items-center">
-              <label class="text-sm font-medium text-gray-700">Custom Fields</label>
-              <UButton
+              <div class="flex items-center gap-1">
+                <label class="text-sm font-medium text-gray-700">
+                  Custom Fields
+                </label>
+                <UTooltip
+                  text="Define additional attributes for this Asset (e.g. serial number, size, capacity)"
+                  :delay-duration="0"
+                >
+                  <UIcon
+                    name="i-lucide-info"
+                    class="w-4 h-4 text-gray-500 cursor-pointer"
+                  />
+                </UTooltip>
+              </div>              <UButton
                 label="Add"
                 icon="i-lucide-plus"
                 size="xs"
