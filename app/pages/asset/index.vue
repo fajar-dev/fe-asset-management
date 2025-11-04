@@ -25,6 +25,8 @@ const UBadge = resolveComponent('UBadge')
 const ConfirmModal = resolveComponent('ConfirmModal')
 const AssetAddModal = resolveComponent('AssetAddModal')
 const AssetUpdateModal = resolveComponent('AssetUpdateModal')
+const UTooltip = resolveComponent('UTooltip')
+const UIcon = resolveComponent('UIcon')
 
 const route = useRoute()
 const router = useRouter()
@@ -387,12 +389,50 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'category',
-    header: 'Category',
+    header: () =>
+      h(
+        'div',
+        { class: 'flex items-center gap-1' },
+        [
+          h('span', 'Category'),
+          h(
+            UTooltip,
+            {
+              text: 'Shows the main category this asset belongs to.',
+              delayDuration: 0
+            },
+            () =>
+              h(UIcon, {
+                name: 'i-lucide-info',
+                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+              })
+          )
+        ]
+      ),
     cell: ({ row }) => row.original.subCategory?.category.name ?? '-'
   },
   {
     accessorKey: 'subCategory',
-    header: 'Sub Category',
+    header: () =>
+      h(
+        'div',
+        { class: 'flex items-center gap-1' },
+        [
+          h('span', 'Sub Category'),
+          h(
+            UTooltip,
+            {
+              text: 'Shows the specific subcategory this asset belongs to.',
+              delayDuration: 0
+            },
+            () =>
+              h(UIcon, {
+                name: 'i-lucide-info',
+                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+              })
+          )
+        ]
+      ),
     cell: ({ row }) => row.original.subCategory?.name ?? '-'
   },
   {
@@ -407,7 +447,26 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'lastLocation',
-    header: 'Last Location',
+    header: () =>
+      h(
+        'div',
+        { class: 'flex items-center gap-1' },
+        [
+          h('span', 'Last Location'),
+          h(
+            UTooltip,
+            {
+              text: 'Shows the most recent location where this asset was recorded.',
+              delayDuration: 0
+            },
+            () =>
+              h(UIcon, {
+                name: 'i-lucide-info',
+                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+              })
+          )
+        ]
+      ),
     cell: ({ row }) => {
       const loc = row.original.lastLocation
       if (!loc) return h('span', { class: 'text-xs text-muted' }, '-')
@@ -420,7 +479,26 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'employee',
-    header: 'Active Holder',
+    header: () =>
+      h(
+        'div',
+        { class: 'flex items-center gap-1' },
+        [
+          h('span', 'Active Holder'),
+          h(
+            UTooltip,
+            {
+              text: 'Displays the current employee responsible for this asset.',
+              delayDuration: 0
+            },
+            () =>
+              h(UIcon, {
+                name: 'i-lucide-info',
+                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+              })
+          )
+        ]
+      ),
     cell: ({ row }) => {
       const holder = row.original.activeHolder
       if (!holder) return h('span', '-')
@@ -559,6 +637,9 @@ const columns: TableColumn<any>[] = [
         />
 
         <div class="flex gap-2 items-center">
+          <RoleWrapper role="admin">
+            <AssetImportModal />
+          </RoleWrapper>
           <UButton
             color="primary"
             variant="subtle"
