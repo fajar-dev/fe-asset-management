@@ -15,7 +15,13 @@ function openImageModal(url: string) {
 function closeImageModal() {
   previewImage.value = null
 }
-
+function IDRFormat(value: number) {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0
+  }).format(Number(value))
+}
 onMounted(async () => {
   loading.value = true
   const res = await getAssetById(assetId)
@@ -151,7 +157,7 @@ onMounted(async () => {
                   <div>
                     <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Price</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ assetDetail.price ? `Rp ${assetDetail.price.toLocaleString('id-ID')}` : '-' }}
+                      {{ IDRFormat(assetDetail.price) }}
                     </p>
                   </div>
 
