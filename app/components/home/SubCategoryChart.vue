@@ -1,5 +1,15 @@
 <script lang="ts" setup>
 import { useStatistic } from '~/composables/useStatistic'
+import { Doughnut } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend
+} from 'chart.js'
+
+// register chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend)
 
 const router = useRouter()
 
@@ -10,23 +20,36 @@ function getRandomColor(index: number): string {
   return `hsl(${hue}, 65%, 55%)`
 }
 
-const chartData = computed(() =>
-  assetsBySubCategory.value.map(item => item.value)
-)
+const chartData = computed(() => ({
+  labels: assetsBySubCategory.value.map(item => item.name),
+  datasets: [
+    {
+      data: assetsBySubCategory.value.map(item => item.value),
+      backgroundColor: assetsBySubCategory.value.map((_, i) => getRandomColor(i)),
+      borderWidth: 0
+    }
+  ]
+}))
 
-const chartLabels = computed(() =>
-  assetsBySubCategory.value.map((item, idx) => ({
-    name: item.name,
-    color: getRandomColor(idx)
-  }))
-)
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false
+    },
+    tooltip: {
+      callbacks: {
+        label: (ctx: any) => `${ctx.label}: ${ctx.formattedValue}`
+      }
+    }
+  }
+}
 
 function navigateToSubCategory(subCategoryId: string) {
   router.push({
     path: '/asset',
-    query: {
-      subCategoryId
-    }
+    query: { subCategoryId }
   })
 }
 
@@ -52,14 +75,10 @@ onMounted(() => {
       <USkeleton class="w-40 h-40 rounded-full" />
     </div>
 
-    <div v-else-if="chartData.length" class="space-y-4">
-      <DonutChart
-        :data="chartData"
-        :labels="chartLabels"
-        :height="275"
-        :hide-legend="true"
-        :radius="0"
-      />
+    <div v-else-if="assetsBySubCategory.length" class="space-y-4">
+      <div class="h-[275px]">
+        <Doughnut :data="chartData" :options="chartOptions" />
+      </div>
 
       <div class="space-y-1">
         <div class="flex flex-wrap gap-1">

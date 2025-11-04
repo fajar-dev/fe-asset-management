@@ -1,5 +1,14 @@
 <script lang="ts" setup>
 import { useStatistic } from '~/composables/useStatistic'
+import { Doughnut } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend
+} from 'chart.js'
+
+ChartJS.register(ArcElement, Tooltip, Legend)
 
 const router = useRouter()
 
@@ -10,16 +19,29 @@ function getRandomColor(index: number): string {
   return `hsl(${hue}, 65%, 55%)`
 }
 
-const chartData = computed(() =>
-  assetsByLocation.value.map(item => item.value)
-)
+// data dan label
+const chartData = computed(() => ({
+  labels: assetsByLocation.value.map(item => item.name),
+  datasets: [
+    {
+      data: assetsByLocation.value.map(item => item.value),
+      backgroundColor: assetsByLocation.value.map((_, idx) => getRandomColor(idx)),
+      borderWidth: 2,
+      borderColor: '#fff',
+      hoverOffset: 8
+    }
+  ]
+}))
 
-const chartLabels = computed(() =>
-  assetsByLocation.value.map((item, idx) => ({
-    name: item.name,
-    color: getRandomColor(idx)
-  }))
-)
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { enabled: true }
+  },
+  cutout: '65%'
+}
 
 function navigateToLocation(locationId: string) {
   router.push({
@@ -52,31 +74,24 @@ onMounted(() => {
       <USkeleton class="w-40 h-40 rounded-full" />
     </div>
 
-    <div v-else-if="chartData.length" class="space-y-4">
-      <DonutChart
-        :data="chartData"
-        :labels="chartLabels"
-        :height="275"
-        :hide-legend="true"
-        :radius="0"
-      />
+    <div v-else-if="assetsByLocation.length" class="space-y-4">
+      <div class="h-[275px]">
+        <Doughnut :data="chartData" :options="chartOptions" />
+      </div>
 
-      <!-- Custom clickable legend -->
-      <div class="space-y-1">
-        <div class="flex flex-wrap gap-1">
-          <button
-            v-for="(location, index) in assetsByLocation"
-            :key="location.id"
-            class="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-muted/20 hover:bg-elevated hover:text-primary transition-all cursor-pointer"
-            @click="navigateToLocation(location.id)"
-          >
-            <div
-              class="w-2 h-2 rounded-full"
-              :style="{ backgroundColor: getRandomColor(index) }"
-            />
-            <span>{{ location.name }} - {{ location.branch }} ({{ location.value }})</span>
-          </button>
-        </div>
+      <div class="flex flex-wrap gap-1">
+        <button
+          v-for="(location, index) in assetsByLocation"
+          :key="location.id"
+          class="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-muted/20 hover:bg-elevated hover:text-primary transition-all cursor-pointer"
+          @click="navigateToLocation(location.id)"
+        >
+          <div
+            class="w-2 h-2 rounded-full"
+            :style="{ backgroundColor: getRandomColor(index) }"
+          />
+          <span>{{ location.name }} - {{ location.branch }} ({{ location.value }})</span>
+        </button>
       </div>
     </div>
 
