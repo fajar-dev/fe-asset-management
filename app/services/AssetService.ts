@@ -2,6 +2,7 @@ import type {
   AssetDetailResponse,
   AssetResponse,
   CreateAssetPayload,
+  ImportAssetPayload,
   UpdateAssetPayload
 } from '~/types/asset'
 
@@ -71,6 +72,14 @@ export class AssetService {
 
   async createAsset(payload: CreateAssetPayload | FormData): Promise<AssetDetailResponse> {
     return await this.api<AssetDetailResponse>(this.basePath, {
+      method: 'POST',
+      body: payload,
+      headers: this.getAuthHeader()
+    })
+  }
+
+  async importAsset(payload: FormData): Promise<any> {
+    return await this.api<any>(`${this.basePath}/import`, {
       method: 'POST',
       body: payload,
       headers: this.getAuthHeader()

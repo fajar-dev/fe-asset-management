@@ -206,7 +206,6 @@ onMounted(async () => {
               </div>
 
               <div v-if="assetDetail.description">
-                <UDivider class="my-4" />
                 <div>
                   <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Description</label>
                   <p class="text-gray-900 dark:text-white mt-1 text-sm whitespace-pre-wrap">

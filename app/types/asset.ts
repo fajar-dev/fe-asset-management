@@ -8,6 +8,10 @@ export interface customValues {
   value: string
 }
 
+export interface ImportAssetPayload {
+  file: File | null
+}
+
 export interface CreateAssetPayload {
   subCategoryId: string
   code: string

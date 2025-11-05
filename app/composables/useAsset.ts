@@ -32,6 +32,7 @@ interface AssetState {
   getAssetById: (id: string) => Promise<AssetDetailResponse | null>
   getAssetByCode: (code: string) => Promise<AssetDetailResponse | null>
   createAsset: (payload: CreateAssetPayload | FormData) => Promise<Asset>
+  importAsset: (payload: FormData) => Promise<any>
   updateAsset: (id: string, payload: UpdateAssetPayload | FormData) => Promise<void>
   deleteAsset: (id: string) => Promise<void>
   exportAssets: (filters: {
@@ -166,6 +167,24 @@ export const useAsset = (): AssetState => {
     }
   }
 
+  async function importAsset(payload: FormData): Promise<any> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await assetService.importAsset(payload)
+      toast.add({ title: 'Created', description: 'Asset created successfully', color: 'success' })
+      await refreshAssets()
+      return res.data
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiError>
+      error.value = fetchError.data?.message ?? 'Failed to create asset'
+      toast.add({ title: 'Create failed', description: error.value, color: 'error' })
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function updateAsset(id: string, payload: UpdateAssetPayload | FormData): Promise<void> {
     loading.value = true
     error.value = null
@@ -269,6 +288,7 @@ export const useAsset = (): AssetState => {
     getAssetById,
     getAssetByCode,
     createAsset,
+    importAsset,
     updateAsset,
     deleteAsset,
     exportAssets
