@@ -12,10 +12,13 @@ const UTooltip = resolveComponent('UTooltip')
 
 // state
 const search = ref('')
+const pageLimit = ref(10)
 const isDeleteModalOpen = ref(false)
 const deletingCategoryId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
 const editingCategoryId = ref<string | null>(null)
+
+const pageLimitOptions = [10, 25, 50, 100]
 
 // composable
 const { categories, apiPagination, pagination, loading, fetchCategories, deleteCategory } = useCategory()
@@ -23,12 +26,17 @@ const { isAdmin } = useRole()
 
 // fetch wrapper
 function loadCategories(page = pagination.value.pageIndex + 1) {
-  fetchCategories(search.value, page, pagination.value.pageSize)
+  fetchCategories(search.value, page, pageLimit.value)
 }
 
 // lifecycle
 onMounted(() => loadCategories())
 watch(search, () => loadCategories(1))
+
+watch(pageLimit, (newLimit) => {
+  pagination.value.pageSize = newLimit
+  loadCategories(1)
+})
 
 // pagination
 function handlePageChange(newPage: number) {
@@ -113,7 +121,7 @@ const columns: TableColumn<any>[] = [
             () =>
               h(UIcon, {
                 name: 'i-lucide-info',
-                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+                class: 'min-w-4 min-h-4 text-gray-500 cursor-help'
               })
           )
         ]
@@ -137,7 +145,7 @@ const columns: TableColumn<any>[] = [
             () =>
               h(UIcon, {
                 name: 'i-lucide-info',
-                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+                class: 'min-w-4 min-h-4 text-gray-500 cursor-help'
               })
           )
         ]
@@ -161,7 +169,7 @@ const columns: TableColumn<any>[] = [
             () =>
               h(UIcon, {
                 name: 'i-lucide-info',
-                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+                class: 'min-w-4 min-h-4 text-gray-500 cursor-help'
               })
           )
         ]
@@ -224,12 +232,19 @@ const columns: TableColumn<any>[] = [
       </RoleWrapper>
 
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-        <UInput
-          v-model="search"
-          class="max-w-sm"
-          icon="i-lucide-search"
-          placeholder="Search category..."
-        />
+        <div class="flex gap-2 items-center max-w-lg">
+          <UInput
+            v-model="search"
+            class="w-full"
+            icon="i-lucide-search"
+            placeholder="Search category..."
+          />
+          <USelect
+            v-model="pageLimit"
+            class="w-24"
+            :items="pageLimitOptions"
+          />
+        </div>
       </div>
 
       <div class="overflow-x-auto">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TableColumn, SelectMenuItem } from '@nuxt/ui'
+import type { SelectMenuItem, TableColumn } from '@nuxt/ui'
 
 import { NuxtLink } from '#components'
 import type { Row } from '@tanstack/table-core'
@@ -31,6 +31,7 @@ const UIcon = resolveComponent('UIcon')
 const route = useRoute()
 const router = useRouter()
 const search = ref('')
+const pageLimit = ref(10)
 const isDeleteModalOpen = ref(false)
 const deletingAssetId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
@@ -58,6 +59,8 @@ const tempStatus = ref<string | undefined>(undefined)
 const tempEmployee = ref<string | undefined>(undefined)
 const tempLocation = ref<string | undefined>(undefined)
 const tempDateRange = ref<any>(undefined)
+
+const pageLimitOptions = [10, 25, 50, 100]
 
 const statusItems: SelectMenuItem[] = [
   { label: 'Active', id: 'active' },
@@ -104,6 +107,11 @@ watch(tempCategoryId, async (newId) => {
 
 watch(search, () => loadAssets(1))
 
+watch(pageLimit, (newLimit) => {
+  pagination.value.pageSize = newLimit
+  loadAssets(1)
+})
+
 const categoryItems = computed<SelectMenuItem[]>(() =>
   categories.value.map(c => ({ label: c.name, id: c.id }))
 )
@@ -133,7 +141,7 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
   const params: any = {
     search: search.value,
     page,
-    limit: pagination.value.pageSize,
+    limit: pageLimit.value,
     categoryId: selectedCategoryId.value,
     subCategoryId: selectedSubCategoryId.value,
     status: selectedStatus.value,
@@ -404,7 +412,7 @@ const columns: TableColumn<any>[] = [
             () =>
               h(UIcon, {
                 name: 'i-lucide-info',
-                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+                class: 'min-w-4 min-h-4 flex text-muted cursor-help'
               })
           )
         ]
@@ -428,7 +436,7 @@ const columns: TableColumn<any>[] = [
             () =>
               h(UIcon, {
                 name: 'i-lucide-info',
-                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+                class: 'min-w-4 min-h-4 flex text-muted cursor-help'
               })
           )
         ]
@@ -462,7 +470,7 @@ const columns: TableColumn<any>[] = [
             () =>
               h(UIcon, {
                 name: 'i-lucide-info',
-                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+                class: 'min-w-4 min-h-4 flex text-muted cursor-help'
               })
           )
         ]
@@ -494,7 +502,7 @@ const columns: TableColumn<any>[] = [
             () =>
               h(UIcon, {
                 name: 'i-lucide-info',
-                class: 'w-4 h-4 text-gray-500 cursor-pointer'
+                class: 'min-w-4 min-h-4 text-muted cursor-help'
               })
           )
         ]
@@ -629,12 +637,19 @@ const columns: TableColumn<any>[] = [
         />
       </RoleWrapper>
       <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-        <UInput
-          v-model="search"
-          class="max-w-lg"
-          icon="i-lucide-search"
-          placeholder="Search assets..."
-        />
+        <div class="flex gap-2 items-center max-w-lg flex-1">
+          <UInput
+            v-model="search"
+            class="flex-1"
+            icon="i-lucide-search"
+            placeholder="Search assets..."
+          />
+          <USelect
+            v-model="pageLimit"
+            class="w-24"
+            :items="pageLimitOptions"
+          />
+        </div>
 
         <div class="flex gap-2 items-center">
           <RoleWrapper role="admin">

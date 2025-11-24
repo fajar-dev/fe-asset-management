@@ -12,6 +12,7 @@ const UBadge = resolveComponent('UBadge')
 
 // state
 const search = ref('')
+const pageLimit = ref(10)
 const isDeleteModalOpen = ref(false)
 const deletingSubCategoryId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
@@ -24,16 +25,23 @@ const expanded = ref<Record<number | string, boolean>>({})
 const isDeletePropertyModalOpen = ref(false)
 const deletingProperty = ref<{ subCategoryId: string, propertyId: string } | null>(null)
 
+const pageLimitOptions = [10, 25, 50, 100]
+
 const { subCategories, apiPagination, pagination, loading, fetchSubCategories, deleteSubCategory } = useSubCategory()
 const { deleteProperty } = useProperty()
 const { isAdmin } = useRole()
 
 function loadSubCategories(page = pagination.value.pageIndex + 1) {
-  fetchSubCategories(search.value, page, pagination.value.pageSize)
+  fetchSubCategories(search.value, page, pageLimit.value)
 }
 
 onMounted(() => loadSubCategories())
 watch(search, () => loadSubCategories(1))
+
+watch(pageLimit, (newLimit) => {
+  pagination.value.pageSize = newLimit
+  loadSubCategories(1)
+})
 
 function handlePageChange(newPage: number) {
   loadSubCategories(newPage)
@@ -204,12 +212,19 @@ const columns: TableColumn<any>[] = [
 
       <!-- Search -->
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-        <UInput
-          v-model="search"
-          class="max-w-sm"
-          icon="i-lucide-search"
-          placeholder="Search sub categories..."
-        />
+        <div class="flex gap-2 items-center max-w-lg">
+          <UInput
+            v-model="search"
+            class="w-full"
+            icon="i-lucide-search"
+            placeholder="Search sub categories..."
+          />
+          <USelect
+            v-model="pageLimit"
+            class="w-24"
+            :items="pageLimitOptions"
+          />
+        </div>
       </div>
 
       <!-- Table -->

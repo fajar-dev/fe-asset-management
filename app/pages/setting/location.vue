@@ -8,20 +8,28 @@ const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 
 const search = ref('')
+const pageLimit = ref(10)
 const isDeleteModalOpen = ref(false)
 const deletingLocationId = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
 const editingLocationId = ref<string | null>(null)
 
+const pageLimitOptions = [10, 25, 50, 100]
+
 const { locations, apiPagination, pagination, loading, fetchLocations, deleteLocation } = useLocation()
 const { isAdmin } = useRole()
 
 function loadLocations(page = pagination.value.pageIndex + 1) {
-  fetchLocations(search.value, page, pagination.value.pageSize)
+  fetchLocations(search.value, page, pageLimit.value)
 }
 
 onMounted(() => loadLocations())
 watch(search, () => loadLocations(1))
+
+watch(pageLimit, (newLimit) => {
+  pagination.value.pageSize = newLimit
+  loadLocations(1)
+})
 
 function handlePageChange(newPage: number) {
   loadLocations(newPage)
@@ -134,12 +142,19 @@ const columns: TableColumn<any>[] = [
         />
       </RoleWrapper>
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-        <UInput
-          v-model="search"
-          class="max-w-sm"
-          icon="i-lucide-search"
-          placeholder="Search locations..."
-        />
+        <div class="flex gap-2 items-center max-w-lg">
+          <UInput
+            v-model="search"
+            class="w-full"
+            icon="i-lucide-search"
+            placeholder="Search locations..."
+          />
+          <USelect
+            v-model="pageLimit"
+            class="w-24"
+            :items="pageLimitOptions"
+          />
+        </div>
       </div>
 
       <div class="overflow-x-auto">
