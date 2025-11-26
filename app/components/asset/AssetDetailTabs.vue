@@ -43,6 +43,12 @@ const navigationItems = computed<NavigationMenuItem[][]>(() => {
       icon: 'i-lucide-notebook-tabs',
       to: `/asset/${props.assetId}/detail`,
       exact: true
+    },
+    {
+      label: 'Note',
+      icon: 'i-lucide-notebook-pen',
+      to: `/asset/${props.assetId}/note`,
+      exact: true
     }
   ]
 
