@@ -298,7 +298,7 @@ const maintenanceColumns: TableColumn<any>[] = [
                     color="primary"
                     size="sm"
                     trailing-icon="i-lucide-arrow-right"
-                    :to="`/asset/${assetId}/holders`"
+                    :to="`/asset/${assetId}/holder`"
                   />
                 </div>
               </template>
@@ -333,7 +333,7 @@ const maintenanceColumns: TableColumn<any>[] = [
                     color="primary"
                     size="sm"
                     trailing-icon="i-lucide-arrow-right"
-                    :to="`/asset/${assetId}/maintenances`"
+                    :to="`/asset/${assetId}/maintenance`"
                   />
                 </div>
               </template>
