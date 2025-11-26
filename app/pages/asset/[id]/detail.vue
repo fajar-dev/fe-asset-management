@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import type { TableColumn } from '@nuxt/ui'
+import { useAssetHolder } from '~/composables/useAssetHolder'
+import { useAssetMaintenance } from '~/composables/useAssetMaintenance'
+
+const UAvatar = resolveComponent('UAvatar')
 const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
@@ -8,6 +13,8 @@ const loading = ref(false)
 const previewImage = ref<string | null>(null)
 
 const { getAssetById } = useAsset()
+const { holders, loading: holderLoading, fetchHolders } = useAssetHolder()
+const { maintenances, loading: maintenanceLoading, fetchMaintenances } = useAssetMaintenance()
 
 function openImageModal(url: string) {
   previewImage.value = url
@@ -22,16 +29,72 @@ function IDRFormat(value: number) {
     minimumFractionDigits: 0
   }).format(Number(value))
 }
+
+async function loadHolders() {
+  await fetchHolders(assetId, '', 1, 10)
+}
+
+async function loadMaintenances() {
+  await fetchMaintenances(assetId, undefined, 1, 10)
+}
+
+const hasHolder = computed(() => {
+  return assetDetail.value?.subCategory?.category?.hasHolder ?? false
+})
+
+const hasMaintenance = computed(() => {
+  return assetDetail.value?.subCategory?.category?.hasMaintenance ?? false
+})
+
 onMounted(async () => {
   loading.value = true
   const res = await getAssetById(assetId)
   if (res) {
     assetDetail.value = res.data
+    if (hasHolder.value) {
+      await loadHolders()
+    }
+    if (hasMaintenance.value) {
+      await loadMaintenances()
+    }
   } else {
     await router.push(`/asset`)
   }
   loading.value = false
 })
+
+const holderColumns: TableColumn<any>[] = [
+  {
+    accessorKey: 'employeeId',
+    header: 'Employee',
+    cell: ({ row }) => {
+      return h('div', { class: 'flex items-center gap-3' }, [
+        h(UAvatar, {
+          src: row.original.employee.photoProfile,
+          size: 'lg'
+        }),
+        h('div', undefined, [
+          h('p', { class: 'font-medium text-highlighted text-xs' }, row.original.employee.fullName),
+          h('p', { class: 'text-xs' }, row.original.employee.employeeId)
+        ])
+      ])
+    }
+  },
+  { accessorKey: 'purpose', header: 'Purpose' },
+  { accessorKey: 'assignedAt', header: 'Assigned At' },
+  {
+    accessorKey: 'returnedAt',
+    header: 'Returned At',
+    cell: ({ row }) => {
+      return row.original.returnedAt || '-'
+    }
+  }
+]
+
+const maintenanceColumns: TableColumn<any>[] = [
+  { accessorKey: 'maintenanceAt', header: 'Date' },
+  { accessorKey: 'note', header: 'Note' }
+]
 </script>
 
 <template>
@@ -215,6 +278,82 @@ onMounted(async () => {
               </div>
             </div>
           </UCard>
+        </div>
+
+        <div
+          v-if="hasHolder || hasMaintenance"
+          class="grid gap-6 mt-6 lg:grid-cols-2 grid-cols-1"
+        >
+          <div v-if="hasHolder">
+            <UCard>
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <UIcon name="i-lucide-users" class="w-5 h-5" />
+                    Asset Holders
+                  </h3>
+                  <UButton
+                    label="See More"
+                    variant="ghost"
+                    color="primary"
+                    size="sm"
+                    trailing-icon="i-lucide-arrow-right"
+                    :to="`/asset/${assetId}/holders`"
+                  />
+                </div>
+              </template>
+              <div class="overflow-x-auto">
+                <UTable
+                  :data="holders"
+                  :columns="holderColumns"
+                  :loading="holderLoading"
+                  class="w-full"
+                  :ui="{
+                    base: 'table-fixed border-separate border-spacing-0',
+                    thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+                    tbody: '[&>tr]:last:[&>td]:border-b-0',
+                    th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap',
+                    td: 'border-b border-default whitespace-nowrap'
+                  }"
+                />
+              </div>
+            </UCard>
+          </div>
+          <div v-if="hasMaintenance">
+            <UCard>
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <UIcon name="i-lucide-wrench" class="w-5 h-5" />
+                    Maintenance History
+                  </h3>
+                  <UButton
+                    label="See More"
+                    variant="ghost"
+                    color="primary"
+                    size="sm"
+                    trailing-icon="i-lucide-arrow-right"
+                    :to="`/asset/${assetId}/maintenances`"
+                  />
+                </div>
+              </template>
+              <div class="overflow-x-auto">
+                <UTable
+                  :data="maintenances"
+                  :columns="maintenanceColumns"
+                  :loading="maintenanceLoading"
+                  class="w-full"
+                  :ui="{
+                    base: 'table-fixed border-separate border-spacing-0',
+                    thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+                    tbody: '[&>tr]:last:[&>td]:border-b-0',
+                    th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap',
+                    td: 'border-b border-default whitespace-nowrap'
+                  }"
+                />
+              </div>
+            </UCard>
+          </div>
         </div>
       </div>
     </template>
