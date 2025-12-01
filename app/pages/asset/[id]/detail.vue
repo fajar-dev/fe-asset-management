@@ -11,6 +11,7 @@ const assetId = route.params.id as string
 const assetDetail = ref<any>(null)
 const loading = ref(false)
 const previewImage = ref<string | null>(null)
+const isUpdateModalOpen = ref(false)
 
 const { getAssetById } = useAsset()
 const { holders, loading: holderLoading, fetchHolders } = useAssetHolder()
@@ -19,9 +20,11 @@ const { maintenances, loading: maintenanceLoading, fetchMaintenances } = useAsse
 function openImageModal(url: string) {
   previewImage.value = url
 }
+
 function closeImageModal() {
   previewImage.value = null
 }
+
 function IDRFormat(value: number) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -38,15 +41,7 @@ async function loadMaintenances() {
   await fetchMaintenances(assetId, undefined, 1, 10)
 }
 
-const hasHolder = computed(() => {
-  return assetDetail.value?.subCategory?.category?.hasHolder ?? false
-})
-
-const hasMaintenance = computed(() => {
-  return assetDetail.value?.subCategory?.category?.hasMaintenance ?? false
-})
-
-onMounted(async () => {
+async function loadAssetData() {
   loading.value = true
   const res = await getAssetById(assetId)
   if (res) {
@@ -61,6 +56,22 @@ onMounted(async () => {
     await router.push(`/asset`)
   }
   loading.value = false
+}
+
+async function handleAssetUpdated() {
+  await loadAssetData()
+}
+
+const hasHolder = computed(() => {
+  return assetDetail.value?.subCategory?.category?.hasHolder ?? false
+})
+
+const hasMaintenance = computed(() => {
+  return assetDetail.value?.subCategory?.category?.hasMaintenance ?? false
+})
+
+onMounted(async () => {
+  await loadAssetData()
 })
 
 const holderColumns: TableColumn<any>[] = [
@@ -104,7 +115,16 @@ const maintenanceColumns: TableColumn<any>[] = [
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-
+        <template #right>
+          <UButton
+            label="Edit Asset"
+            icon="i-lucide-pencil"
+            color="primary"
+            variant="solid"
+            :disabled="loading"
+            @click="isUpdateModalOpen = true"
+          />
+        </template>
         <template #title>
           <AssetDetailHeader
             :asset-detail="assetDetail"
@@ -358,6 +378,8 @@ const maintenanceColumns: TableColumn<any>[] = [
       </div>
     </template>
   </UDashboardPanel>
+
+  <!-- Image Preview Modal -->
   <div
     v-if="previewImage"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
@@ -375,4 +397,11 @@ const maintenanceColumns: TableColumn<any>[] = [
       &times;
     </button>
   </div>
+
+  <!-- Update Asset Modal -->
+  <AssetUpdateModal
+    v-model="isUpdateModalOpen"
+    :asset-id="assetId"
+    @updated="handleAssetUpdated"
+  />
 </template>
