@@ -10,6 +10,7 @@ const scannedResult = ref<string>('')
 const videoRef = ref<HTMLVideoElement>()
 const codeReader = ref<BrowserMultiFormatReader>()
 const scanning = ref(false)
+const currentStream = ref<MediaStream | null>(null)
 
 const videoDevices = ref<MediaDeviceInfo[]>([])
 const selectedDeviceIndex = ref(0)
@@ -21,36 +22,6 @@ const { getAssetByCode } = useAsset()
 onMounted(() => {
   codeReader.value = new BrowserMultiFormatReader()
 })
-
-const startScanning = async () => {
-  if (!codeReader.value || !videoRef.value) return
-
-  try {
-    loading.value = true
-    cameraError.value = ''
-
-    const videoInputDevices = await codeReader.value.listVideoInputDevices()
-
-    if (videoInputDevices.length === 0) {
-      throw new Error('No camera found on this device')
-    }
-
-    videoDevices.value = videoInputDevices
-
-    const selectedDeviceId = videoInputDevices[selectedDeviceIndex.value]?.deviceId
-
-    const result = await codeReader.value.decodeOnceFromVideoDevice(selectedDeviceId, videoRef.value)
-
-    if (result) {
-      await handleScanSuccess(result.getText())
-    }
-  } catch (err: any) {
-    console.error('Barcode Scanner Error:', err)
-    handleCameraError(err)
-  } finally {
-    loading.value = false
-  }
-}
 
 const handleScanSuccess = async (result: string) => {
   scannedResult.value = result
@@ -95,6 +66,7 @@ const handleScanError = (errorMessage: string) => {
 
 const handleCameraError = (err: any) => {
   scanning.value = false
+  loading.value = false
 
   if (err.name === 'NotAllowedError' || err.message?.includes('Permission denied')) {
     cameraError.value = 'Camera access denied. Please allow camera permissions and try again.'
@@ -109,6 +81,37 @@ const handleCameraError = (err: any) => {
   } else {
     cameraError.value = 'Failed to access camera. Please check your permissions and try again.'
   }
+}
+
+const stopVideoStream = () => {
+  try {
+    if (currentStream.value) {
+      currentStream.value.getTracks().forEach((track) => {
+        track.stop()
+      })
+      currentStream.value = null
+    }
+
+    if (videoRef.value && videoRef.value.srcObject) {
+      const stream = videoRef.value.srcObject as MediaStream
+      stream.getTracks().forEach((track) => {
+        track.stop()
+      })
+      videoRef.value.srcObject = null
+    }
+  } catch (err) {
+    console.error('Error stopping video stream:', err)
+  }
+}
+
+const stopScanning = () => {
+  scanning.value = false
+
+  if (codeReader.value) {
+    codeReader.value.reset()
+  }
+
+  stopVideoStream()
 }
 
 const closeModal = () => {
@@ -126,37 +129,53 @@ const openModal = async () => {
   open.value = true
 
   await nextTick()
-  await startScanning()
+  await continuousScanning()
 }
 
 const retryCamera = async () => {
   cameraError.value = ''
+  error.value = ''
   loading.value = true
-  await startScanning()
-}
 
-const stopScanning = () => {
-  if (codeReader.value) {
-    codeReader.value.reset()
-  }
-  scanning.value = false
+  stopScanning()
+
+  await nextTick()
+
+  await continuousScanning()
 }
 
 const switchCamera = async () => {
   if (videoDevices.value.length <= 1) return
-  stopScanning()
-  selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
-  await nextTick()
-  await continuousScanning()
+
+  try {
+    loading.value = true
+
+    stopScanning()
+
+    selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
+
+    await new Promise(resolve => setTimeout(resolve, 300))
+
+    await continuousScanning()
+  } catch (err) {
+    console.error('Error switching camera:', err)
+    handleCameraError(err)
+  } finally {
+    loading.value = false
+  }
 }
 
 const continuousScanning = async () => {
   if (!codeReader.value || !videoRef.value) return
 
   try {
-    scanning.value = true
-    loading.value = false
+    scanning.value = false
+    loading.value = true
     cameraError.value = ''
+
+    stopScanning()
+
+    await new Promise(resolve => setTimeout(resolve, 100))
 
     const videoInputDevices = await codeReader.value.listVideoInputDevices()
 
@@ -166,9 +185,16 @@ const continuousScanning = async () => {
 
     videoDevices.value = videoInputDevices
 
+    if (selectedDeviceIndex.value >= videoInputDevices.length) {
+      selectedDeviceIndex.value = 0
+    }
+
     const selectedDeviceId = videoInputDevices[selectedDeviceIndex.value]?.deviceId
 
-    codeReader.value.decodeFromVideoDevice(
+    scanning.value = true
+    loading.value = false
+
+    await codeReader.value.decodeFromVideoDevice(
       selectedDeviceId ?? null,
       videoRef.value,
       (result, error) => {
@@ -181,6 +207,10 @@ const continuousScanning = async () => {
         }
       }
     )
+
+    if (videoRef.value && videoRef.value.srcObject) {
+      currentStream.value = videoRef.value.srcObject as MediaStream
+    }
   } catch (err: any) {
     console.error('Continuous Barcode Scanner Error:', err)
     handleCameraError(err)
@@ -206,6 +236,13 @@ const currentCameraName = computed(() => {
   const device = videoDevices.value[selectedDeviceIndex.value]
   return device?.label || `Camera ${selectedDeviceIndex.value + 1}`
 })
+
+const isFrontCamera = computed(() => {
+  if (videoDevices.value.length === 0) return true
+  const device = videoDevices.value[selectedDeviceIndex.value]
+  const label = device?.label?.toLowerCase() || ''
+  return label.includes('front') || label.includes('user') || label.includes('facing')
+})
 </script>
 
 <template>
@@ -229,6 +266,7 @@ const currentCameraName = computed(() => {
             v-if="open"
             ref="videoRef"
             class="w-full h-full object-cover"
+            :class="{ mirror: isFrontCamera }"
             autoplay
             muted
             playsinline
@@ -355,7 +393,7 @@ const currentCameraName = computed(() => {
 </template>
 
 <style scoped>
-video {
+video.mirror {
   transform: scaleX(-1);
 }
 </style>
