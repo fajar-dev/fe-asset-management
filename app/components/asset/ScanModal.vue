@@ -11,6 +11,7 @@ const videoRef = ref<HTMLVideoElement>()
 const codeReader = ref<BrowserMultiFormatReader>()
 const scanning = ref(false)
 const currentStream = ref<MediaStream | null>(null)
+const isInitializing = ref(false)
 
 const videoDevices = ref<MediaDeviceInfo[]>([])
 const selectedDeviceIndex = ref(0)
@@ -20,10 +21,8 @@ const { getAssetByCode } = useAsset()
 
 onMounted(() => {
   const hints = new Map()
-
   hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128])
   hints.set(DecodeHintType.TRY_HARDER, false)
-
   codeReader.value = new BrowserMultiFormatReader(hints)
 })
 
@@ -51,8 +50,12 @@ const handleScanError = () => {
   showLoadingModal.value = false
   scanning.value = false
 
-  setTimeout(() => {
-    openModal()
+  setTimeout(async () => {
+    if (open.value) {
+      loading.value = true
+      await nextTick()
+      await continuousScanning()
+    }
   }, 1000)
 }
 
@@ -98,6 +101,7 @@ const stopVideoStream = () => {
 
 const stopScanning = () => {
   scanning.value = false
+  isInitializing.value = false
 
   if (codeReader.value) {
     codeReader.value.reset()
@@ -119,20 +123,14 @@ const openModal = async () => {
   cameraError.value = ''
   error.value = ''
   open.value = true
-
-  await nextTick()
-  await continuousScanning()
 }
 
 const retryCamera = async () => {
   cameraError.value = ''
   error.value = ''
   loading.value = true
-
   stopScanning()
-
   await nextTick()
-
   await continuousScanning()
 }
 
@@ -141,33 +139,27 @@ const switchCamera = async () => {
 
   try {
     loading.value = true
-
+    cameraError.value = ''
     stopScanning()
-
+    await new Promise(resolve => setTimeout(resolve, 500))
     selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
-
-    await new Promise(resolve => setTimeout(resolve, 300))
-
     await continuousScanning()
   } catch (err) {
-    console.error('Error switching camera:', err)
     handleCameraError(err)
-  } finally {
-    loading.value = false
   }
 }
 
 const continuousScanning = async () => {
   if (!codeReader.value || !videoRef.value) return
+  if (isInitializing.value || scanning.value) return
 
   try {
-    scanning.value = false
+    isInitializing.value = true
     loading.value = true
     cameraError.value = ''
 
     stopScanning()
-
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 200))
 
     const videoInputDevices = await codeReader.value.listVideoInputDevices()
 
@@ -185,48 +177,14 @@ const continuousScanning = async () => {
 
     scanning.value = true
     loading.value = false
-
-    const constraints: MediaStreamConstraints = {
-      video: {
-        deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
-        facingMode: selectedDeviceId ? undefined : 'environment',
-        width: { ideal: 1920, max: 1920 },
-        height: { ideal: 1080, max: 1080 },
-        frameRate: { ideal: 30, max: 60 }
-      }
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
-
-      if (videoRef.value) {
-        videoRef.value.srcObject = stream
-        currentStream.value = stream
-
-        await new Promise<void>((resolve) => {
-          if (videoRef.value) {
-            videoRef.value.onloadedmetadata = () => {
-              videoRef.value?.play()
-              resolve()
-            }
-          }
-        })
-      }
-    } catch (streamErr) {
-      console.error('Error getting video stream:', streamErr)
-      throw streamErr
-    }
+    isInitializing.value = false
 
     await codeReader.value.decodeFromVideoDevice(
       selectedDeviceId || null,
       videoRef.value,
-      (result, error) => {
+      (result) => {
         if (result && scanning.value) {
           handleScanSuccess(result.getText())
-        }
-
-        if (error && !scanning.value) {
-          console.warn('Scanning stopped or error occurred:', error)
         }
       }
     )
@@ -235,7 +193,7 @@ const continuousScanning = async () => {
       currentStream.value = videoRef.value.srcObject as MediaStream
     }
   } catch (err: any) {
-    console.error('Continuous Barcode Scanner Error:', err)
+    isInitializing.value = false
     handleCameraError(err)
   }
 }
