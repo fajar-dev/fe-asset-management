@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library'
+import { BrowserMultiFormatReader } from '@zxing/library'
 
 const open = ref(false)
 const loading = ref(false)
@@ -10,22 +10,67 @@ const scannedResult = ref<string>('')
 const videoRef = ref<HTMLVideoElement>()
 const codeReader = ref<BrowserMultiFormatReader>()
 const scanning = ref(false)
-const currentStream = ref<MediaStream | null>(null)
-const isInitializing = ref(false)
-const isSwitching = ref(false)
 
 const videoDevices = ref<MediaDeviceInfo[]>([])
 const selectedDeviceIndex = ref(0)
+const isFrontCamera = ref(true) // Track if current camera is front-facing
 
+const toast = useToast()
 const router = useRouter()
 const { getAssetByCode } = useAsset()
 
 onMounted(() => {
-  const hints = new Map()
-  hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128])
-  hints.set(DecodeHintType.TRY_HARDER, false)
-  codeReader.value = new BrowserMultiFormatReader(hints)
+  codeReader.value = new BrowserMultiFormatReader()
 })
+
+const detectCameraFacing = (device: MediaDeviceInfo): boolean => {
+  const label = device.label.toLowerCase()
+  // Check if it's a front camera
+  if (label.includes('front') || label.includes('user') || label.includes('depan')) {
+    return true
+  }
+  // Check if it's a back camera
+  if (label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('belakang')) {
+    return false
+  }
+  // Default to front camera if can't determine
+  return true
+}
+
+const startScanning = async () => {
+  if (!codeReader.value || !videoRef.value) return
+
+  try {
+    loading.value = true
+    cameraError.value = ''
+
+    const videoInputDevices = await codeReader.value.listVideoInputDevices()
+
+    if (videoInputDevices.length === 0) {
+      throw new Error('No camera found on this device')
+    }
+
+    videoDevices.value = videoInputDevices
+
+    // Detect camera facing
+    if (videoInputDevices[selectedDeviceIndex.value]) {
+      isFrontCamera.value = detectCameraFacing(videoInputDevices[selectedDeviceIndex.value]!)
+    }
+
+    const selectedDeviceId = videoInputDevices[selectedDeviceIndex.value]?.deviceId
+
+    const result = await codeReader.value.decodeOnceFromVideoDevice(selectedDeviceId, videoRef.value)
+
+    if (result) {
+      await handleScanSuccess(result.getText())
+    }
+  } catch (err: any) {
+    console.error('Barcode Scanner Error:', err)
+    handleCameraError(err)
+  } finally {
+    loading.value = false
+  }
+}
 
 const handleScanSuccess = async (result: string) => {
   scannedResult.value = result
@@ -37,25 +82,34 @@ const handleScanSuccess = async (result: string) => {
     const data = await getAssetByCode(result)
 
     if (data) {
+      toast.add({
+        title: 'Barcode Scanned Successfully',
+        description: `Serial ID: ${result}`,
+        color: 'success'
+      })
       showLoadingModal.value = false
       await router.push(`/asset/${data.data.id}/detail`)
     } else {
-      handleScanError()
+      handleScanError('Asset not found or invalid barcode')
     }
-  } catch {
-    handleScanError()
+  } catch (err) {
+    console.error('API Error:', err)
+    handleScanError('Failed to fetch asset data. Please try again.')
   }
 }
 
-const handleScanError = () => {
+const handleScanError = (errorMessage: string) => {
   showLoadingModal.value = false
   scanning.value = false
 
+  toast.add({
+    title: 'Scan Failed',
+    description: errorMessage,
+    color: 'error'
+  })
+
   setTimeout(() => {
-    closeModal()
-    setTimeout(() => {
-      openModal()
-    }, 300)
+    openModal()
   }, 1000)
 }
 
@@ -78,105 +132,79 @@ const handleCameraError = (err: any) => {
   }
 }
 
-const stopVideoStream = () => {
-  try {
-    if (currentStream.value) {
-      currentStream.value.getTracks().forEach((track) => {
-        track.stop()
-      })
-      currentStream.value = null
-    }
-
-    if (videoRef.value) {
-      if (videoRef.value.srcObject) {
-        const stream = videoRef.value.srcObject as MediaStream
-        stream.getTracks().forEach((track) => {
-          track.stop()
-        })
-      }
-      videoRef.value.srcObject = null
-      videoRef.value.load()
-    }
-  } catch (err) {
-    console.error('Error stopping video stream:', err)
-  }
-}
-
-const stopScanning = () => {
-  scanning.value = false
-  isInitializing.value = false
-  isSwitching.value = false
-
-  if (codeReader.value) {
-    try {
-      codeReader.value.reset()
-    } catch (e) {
-      // Ignore
-    }
-  }
-
-  stopVideoStream()
-}
-
 const closeModal = () => {
   stopScanning()
   open.value = false
   error.value = ''
   cameraError.value = ''
   loading.value = false
+  scanning.value = false
 }
 
 const openModal = async () => {
   loading.value = true
   cameraError.value = ''
   error.value = ''
+  scanning.value = false
   open.value = true
-}
 
-const retryCamera = async () => {
-  cameraError.value = ''
-  error.value = ''
-  loading.value = true
-  stopScanning()
   await nextTick()
   await continuousScanning()
 }
 
+const retryCamera = async () => {
+  cameraError.value = ''
+  loading.value = true
+  scanning.value = false
+
+  // Reset the video element
+  if (videoRef.value) {
+    videoRef.value.srcObject = null
+  }
+
+  await nextTick()
+  await continuousScanning()
+}
+
+const stopScanning = () => {
+  if (codeReader.value) {
+    codeReader.value.reset()
+  }
+
+  // Stop all video tracks
+  if (videoRef.value && videoRef.value.srcObject) {
+    const stream = videoRef.value.srcObject as MediaStream
+    stream.getTracks().forEach(track => track.stop())
+    videoRef.value.srcObject = null
+  }
+
+  scanning.value = false
+}
+
 const switchCamera = async () => {
   if (videoDevices.value.length <= 1) return
-  if (isSwitching.value) return
 
-  try {
-    isSwitching.value = true
-    loading.value = true
-    cameraError.value = ''
+  // Stop current scanning completely
+  stopScanning()
 
-    stopScanning()
+  // Update selected device index
+  selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
+  // Wait a bit to ensure everything is cleaned up
+  await new Promise(resolve => setTimeout(resolve, 300))
 
-    selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
-
-    await continuousScanning()
-
-    isSwitching.value = false
-  } catch (err) {
-    isSwitching.value = false
-    handleCameraError(err)
-  }
+  // Start scanning with new camera
+  await nextTick()
+  await continuousScanning()
 }
 
 const continuousScanning = async () => {
   if (!codeReader.value || !videoRef.value) return
-  if (isInitializing.value || scanning.value) return
 
   try {
-    isInitializing.value = true
+    scanning.value = false
     loading.value = true
     cameraError.value = ''
-
-    stopScanning()
-    await new Promise(resolve => setTimeout(resolve, 200))
 
     const videoInputDevices = await codeReader.value.listVideoInputDevices()
 
@@ -186,97 +214,31 @@ const continuousScanning = async () => {
 
     videoDevices.value = videoInputDevices
 
-    if (selectedDeviceIndex.value >= videoInputDevices.length) {
-      selectedDeviceIndex.value = 0
+    // Detect camera facing
+    if (videoInputDevices[selectedDeviceIndex.value]) {
+      isFrontCamera.value = detectCameraFacing(videoInputDevices[selectedDeviceIndex.value]!)
     }
 
     const selectedDeviceId = videoInputDevices[selectedDeviceIndex.value]?.deviceId
 
-    const constraints: MediaStreamConstraints = {
-      video: {
-        deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
-        facingMode: selectedDeviceId ? undefined : 'environment',
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
-        frameRate: { ideal: 30 }
-      }
-    }
-
-    let stream: MediaStream | null = null
-    let retryCount = 0
-    const maxRetries = 5
-
-    while (retryCount < maxRetries && !stream) {
-      try {
-        if (retryCount > 0) {
-          await new Promise(resolve => setTimeout(resolve, 1000))
-        }
-
-        stream = await navigator.mediaDevices.getUserMedia(constraints)
-      } catch (streamErr: any) {
-        retryCount++
-
-        if (retryCount >= maxRetries) {
-          throw streamErr
-        }
-
-        stopVideoStream()
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-    }
-
-    if (!stream) {
-      throw new Error('Failed to get camera stream after multiple retries')
-    }
-
-    if (videoRef.value) {
-      videoRef.value.srcObject = stream
-      currentStream.value = stream
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Video loading timeout'))
-        }, 15000)
-
-        if (videoRef.value) {
-          videoRef.value.onloadedmetadata = async () => {
-            clearTimeout(timeout)
-            try {
-              await videoRef.value?.play()
-              await new Promise(resolve => setTimeout(resolve, 500))
-              resolve()
-            } catch (playErr) {
-              reject(playErr)
-            }
-          }
-        }
-      })
-    }
-
     scanning.value = true
     loading.value = false
-    isInitializing.value = false
 
-    await codeReader.value.decodeFromVideoDevice(
-      selectedDeviceId || null,
+    codeReader.value.decodeFromVideoDevice(
+      selectedDeviceId ?? null,
       videoRef.value,
       (result, error) => {
         if (result && scanning.value) {
           handleScanSuccess(result.getText())
         }
 
-        if (error && scanning.value) {
-          // Keep trying
+        if (error && !scanning.value) {
+          console.warn('Scanning stopped or error occurred:', error)
         }
       }
     )
-
-    if (videoRef.value && videoRef.value.srcObject) {
-      currentStream.value = videoRef.value.srcObject as MediaStream
-    }
   } catch (err: any) {
-    isInitializing.value = false
-    loading.value = false
+    console.error('Continuous Barcode Scanner Error:', err)
     handleCameraError(err)
   }
 }
@@ -301,11 +263,8 @@ const currentCameraName = computed(() => {
   return device?.label || `Camera ${selectedDeviceIndex.value + 1}`
 })
 
-const isFrontCamera = computed(() => {
-  if (videoDevices.value.length === 0) return true
-  const device = videoDevices.value[selectedDeviceIndex.value]
-  const label = device?.label?.toLowerCase() || ''
-  return label.includes('front') || label.includes('user') || label.includes('facing')
+const videoClass = computed(() => {
+  return isFrontCamera.value ? 'mirror' : ''
 })
 </script>
 
@@ -329,8 +288,7 @@ const isFrontCamera = computed(() => {
           <video
             v-if="open"
             ref="videoRef"
-            class="w-full h-full object-cover"
-            :class="{ mirror: isFrontCamera }"
+            :class="['w-full h-full object-cover', videoClass]"
             autoplay
             muted
             playsinline
@@ -359,9 +317,6 @@ const isFrontCamera = computed(() => {
               <UIcon name="i-lucide-camera" class="w-12 h-12 mx-auto mb-2 animate-pulse" />
               <p class="text-sm">
                 Starting camera...
-              </p>
-              <p v-if="isSwitching" class="text-xs mt-2 opacity-75">
-                Please wait, switching camera...
               </p>
             </div>
           </div>
@@ -415,7 +370,7 @@ const isFrontCamera = computed(() => {
                   • Tap <UIcon name="i-lucide-repeat" class="inline w-3 h-3" /> to switch camera
                 </li>
                 <li>• Ensure good lighting and focus</li>
-                <li>• Supports: Code128 only</li>
+                <li>• Supports: Code128, EAN-13, UPC-A, Code39, etc.</li>
               </ul>
             </div>
           </div>
