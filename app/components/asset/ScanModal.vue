@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BrowserMultiFormatReader } from '@zxing/library'
+import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library'
 
 const open = ref(false)
 const loading = ref(false)
@@ -19,7 +19,12 @@ const router = useRouter()
 const { getAssetByCode } = useAsset()
 
 onMounted(() => {
-  codeReader.value = new BrowserMultiFormatReader()
+  const hints = new Map()
+
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128])
+  hints.set(DecodeHintType.TRY_HARDER, false)
+
+  codeReader.value = new BrowserMultiFormatReader(hints)
 })
 
 const handleScanSuccess = async (result: string) => {
@@ -181,8 +186,39 @@ const continuousScanning = async () => {
     scanning.value = true
     loading.value = false
 
+    const constraints: MediaStreamConstraints = {
+      video: {
+        deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
+        facingMode: selectedDeviceId ? undefined : 'environment',
+        width: { ideal: 1920, max: 1920 },
+        height: { ideal: 1080, max: 1080 },
+        frameRate: { ideal: 30, max: 60 }
+      }
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+
+      if (videoRef.value) {
+        videoRef.value.srcObject = stream
+        currentStream.value = stream
+
+        await new Promise<void>((resolve) => {
+          if (videoRef.value) {
+            videoRef.value.onloadedmetadata = () => {
+              videoRef.value?.play()
+              resolve()
+            }
+          }
+        })
+      }
+    } catch (streamErr) {
+      console.error('Error getting video stream:', streamErr)
+      throw streamErr
+    }
+
     await codeReader.value.decodeFromVideoDevice(
-      selectedDeviceId ?? null,
+      selectedDeviceId || null,
       videoRef.value,
       (result, error) => {
         if (result && scanning.value) {
@@ -335,7 +371,7 @@ const isFrontCamera = computed(() => {
                   • Tap <UIcon name="i-lucide-repeat" class="inline w-3 h-3" /> to switch camera
                 </li>
                 <li>• Ensure good lighting and focus</li>
-                <li>• Supports: Code128, EAN-13, UPC-A, Code39, etc.</li>
+                <li>• Supports: Code128 only</li>
               </ul>
             </div>
           </div>
