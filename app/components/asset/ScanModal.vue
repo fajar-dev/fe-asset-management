@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BrowserMultiFormatReader } from '@zxing/library'
+import { BrowserMultiFormatReader, DecodeHintType } from '@zxing/library'
 
 const open = ref(false)
 const loading = ref(false)
@@ -13,66 +13,35 @@ const scanning = ref(false)
 
 const videoDevices = ref<MediaDeviceInfo[]>([])
 const selectedDeviceIndex = ref(0)
-const isFrontCamera = ref(true) // Track if current camera is front-facing
+const isFrontCamera = ref(true)
 
-const toast = useToast()
 const router = useRouter()
 const { getAssetByCode } = useAsset()
 
 onMounted(() => {
-  codeReader.value = new BrowserMultiFormatReader()
+  const hints = new Map()
+  hints.set(DecodeHintType.TRY_HARDER, true)
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+    'CODE_128'
+  ])
+
+  codeReader.value = new BrowserMultiFormatReader(hints)
 })
 
 const detectCameraFacing = (device: MediaDeviceInfo): boolean => {
   const label = device.label.toLowerCase()
-  // Check if it's a front camera
   if (label.includes('front') || label.includes('user') || label.includes('depan')) {
     return true
   }
-  // Check if it's a back camera
   if (label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('belakang')) {
     return false
   }
-  // Default to front camera if can't determine
   return true
 }
 
-const startScanning = async () => {
-  if (!codeReader.value || !videoRef.value) return
-
-  try {
-    loading.value = true
-    cameraError.value = ''
-
-    const videoInputDevices = await codeReader.value.listVideoInputDevices()
-
-    if (videoInputDevices.length === 0) {
-      throw new Error('No camera found on this device')
-    }
-
-    videoDevices.value = videoInputDevices
-
-    // Detect camera facing
-    if (videoInputDevices[selectedDeviceIndex.value]) {
-      isFrontCamera.value = detectCameraFacing(videoInputDevices[selectedDeviceIndex.value]!)
-    }
-
-    const selectedDeviceId = videoInputDevices[selectedDeviceIndex.value]?.deviceId
-
-    const result = await codeReader.value.decodeOnceFromVideoDevice(selectedDeviceId, videoRef.value)
-
-    if (result) {
-      await handleScanSuccess(result.getText())
-    }
-  } catch (err: any) {
-    console.error('Barcode Scanner Error:', err)
-    handleCameraError(err)
-  } finally {
-    loading.value = false
-  }
-}
-
 const handleScanSuccess = async (result: string) => {
+  if (!scanning.value) return
+
   scannedResult.value = result
   scanning.value = false
   open.value = false
@@ -82,31 +51,19 @@ const handleScanSuccess = async (result: string) => {
     const data = await getAssetByCode(result)
 
     if (data) {
-      toast.add({
-        title: 'Barcode Scanned Successfully',
-        description: `Serial ID: ${result}`,
-        color: 'success'
-      })
       showLoadingModal.value = false
       await router.push(`/asset/${data.data.id}/detail`)
     } else {
-      handleScanError('Asset not found or invalid barcode')
+      handleScanError()
     }
-  } catch (err) {
-    console.error('API Error:', err)
-    handleScanError('Failed to fetch asset data. Please try again.')
+  } catch {
+    handleScanError()
   }
 }
 
-const handleScanError = (errorMessage: string) => {
+const handleScanError = () => {
   showLoadingModal.value = false
   scanning.value = false
-
-  toast.add({
-    title: 'Scan Failed',
-    description: errorMessage,
-    color: 'error'
-  })
 
   setTimeout(() => {
     openModal()
@@ -157,7 +114,6 @@ const retryCamera = async () => {
   loading.value = true
   scanning.value = false
 
-  // Reset the video element
   if (videoRef.value) {
     videoRef.value.srcObject = null
   }
@@ -171,7 +127,6 @@ const stopScanning = () => {
     codeReader.value.reset()
   }
 
-  // Stop all video tracks
   if (videoRef.value && videoRef.value.srcObject) {
     const stream = videoRef.value.srcObject as MediaStream
     stream.getTracks().forEach(track => track.stop())
@@ -184,16 +139,11 @@ const stopScanning = () => {
 const switchCamera = async () => {
   if (videoDevices.value.length <= 1) return
 
-  // Stop current scanning completely
   stopScanning()
-
-  // Update selected device index
   selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
 
-  // Wait a bit to ensure everything is cleaned up
   await new Promise(resolve => setTimeout(resolve, 300))
 
-  // Start scanning with new camera
   await nextTick()
   await continuousScanning()
 }
@@ -214,7 +164,6 @@ const continuousScanning = async () => {
 
     videoDevices.value = videoInputDevices
 
-    // Detect camera facing
     if (videoInputDevices[selectedDeviceIndex.value]) {
       isFrontCamera.value = detectCameraFacing(videoInputDevices[selectedDeviceIndex.value]!)
     }
@@ -227,18 +176,13 @@ const continuousScanning = async () => {
     codeReader.value.decodeFromVideoDevice(
       selectedDeviceId ?? null,
       videoRef.value,
-      (result, error) => {
+      (result) => {
         if (result && scanning.value) {
           handleScanSuccess(result.getText())
-        }
-
-        if (error && !scanning.value) {
-          console.warn('Scanning stopped or error occurred:', error)
         }
       }
     )
   } catch (err: any) {
-    console.error('Continuous Barcode Scanner Error:', err)
     handleCameraError(err)
   }
 }
@@ -370,7 +314,7 @@ const videoClass = computed(() => {
                   • Tap <UIcon name="i-lucide-repeat" class="inline w-3 h-3" /> to switch camera
                 </li>
                 <li>• Ensure good lighting and focus</li>
-                <li>• Supports: Code128, EAN-13, UPC-A, Code39, etc.</li>
+                <li>• Supports: Code128</li>
               </ul>
             </div>
           </div>
