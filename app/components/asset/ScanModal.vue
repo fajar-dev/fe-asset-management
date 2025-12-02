@@ -12,6 +12,7 @@ const codeReader = ref<BrowserMultiFormatReader>()
 const scanning = ref(false)
 const currentStream = ref<MediaStream | null>(null)
 const isInitializing = ref(false)
+const isSwitching = ref(false)
 
 const videoDevices = ref<MediaDeviceInfo[]>([])
 const selectedDeviceIndex = ref(0)
@@ -86,12 +87,15 @@ const stopVideoStream = () => {
       currentStream.value = null
     }
 
-    if (videoRef.value && videoRef.value.srcObject) {
-      const stream = videoRef.value.srcObject as MediaStream
-      stream.getTracks().forEach((track) => {
-        track.stop()
-      })
+    if (videoRef.value) {
+      if (videoRef.value.srcObject) {
+        const stream = videoRef.value.srcObject as MediaStream
+        stream.getTracks().forEach((track) => {
+          track.stop()
+        })
+      }
       videoRef.value.srcObject = null
+      videoRef.value.load()
     }
   } catch (err) {
     console.error('Error stopping video stream:', err)
@@ -101,9 +105,14 @@ const stopVideoStream = () => {
 const stopScanning = () => {
   scanning.value = false
   isInitializing.value = false
+  isSwitching.value = false
 
   if (codeReader.value) {
-    codeReader.value.reset()
+    try {
+      codeReader.value.reset()
+    } catch (e) {
+      // Ignore reset errors
+    }
   }
 
   stopVideoStream()
@@ -135,15 +144,28 @@ const retryCamera = async () => {
 
 const switchCamera = async () => {
   if (videoDevices.value.length <= 1) return
+  if (isSwitching.value) return
 
   try {
+    isSwitching.value = true
     loading.value = true
     cameraError.value = ''
+
     stopScanning()
-    await new Promise(resolve => setTimeout(resolve, 300))
+
+    if (codeReader.value) {
+      codeReader.value.reset()
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 600))
+
     selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
+
     await continuousScanning()
+
+    isSwitching.value = false
   } catch (err) {
+    isSwitching.value = false
     handleCameraError(err)
   }
 }
@@ -158,7 +180,7 @@ const continuousScanning = async () => {
     cameraError.value = ''
 
     stopScanning()
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 150))
 
     const videoInputDevices = await codeReader.value.listVideoInputDevices()
 
@@ -184,7 +206,13 @@ const continuousScanning = async () => {
       }
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+    let stream: MediaStream
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints)
+    } catch (err) {
+      console.log(err)
+      throw err
+    }
 
     if (videoRef.value) {
       videoRef.value.srcObject = stream
