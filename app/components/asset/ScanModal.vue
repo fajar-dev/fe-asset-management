@@ -67,9 +67,10 @@ const startScanning = async () => {
 }
 
 const handleScanSuccess = async (result: string) => {
+  if (!scanning.value) return
+
   scannedResult.value = result
 
-  // Stop scanning immediately
   stopScanning()
   open.value = false
   showLoadingModal.value = true
@@ -158,7 +159,6 @@ const switchCamera = async () => {
 
   selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
 
-  // Delay to ensure camera is properly released
   await new Promise(resolve => setTimeout(resolve, 500))
 
   await continuousScanning()
@@ -190,13 +190,9 @@ const continuousScanning = async () => {
     codeReader.value.decodeFromVideoDevice(
       selectedDeviceId ?? null,
       videoRef.value,
-      (result, error) => {
+      (result) => {
         if (result && scanning.value) {
           handleScanSuccess(result.getText())
-        }
-
-        if (error && error.name !== 'NotFoundException') {
-          console.warn('Scanning error:', error)
         }
       }
     )
@@ -325,7 +321,7 @@ const currentCameraName = computed(() => {
               <ul class="text-xs space-y-1">
                 <li>• Hold your device steady</li>
                 <li>• Point camera at the barcode</li>
-                <li>• Align barcode within the red frame</li>
+                <li>• Barcode will be detected automatically anywhere on screen</li>
                 <li v-if="videoDevices.length > 1">
                   • Tap <UIcon name="i-lucide-repeat" class="inline w-3 h-3" /> to switch camera
                 </li>
