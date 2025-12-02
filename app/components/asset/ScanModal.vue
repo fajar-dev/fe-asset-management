@@ -50,12 +50,11 @@ const handleScanError = () => {
   showLoadingModal.value = false
   scanning.value = false
 
-  setTimeout(async () => {
-    if (open.value) {
-      loading.value = true
-      await nextTick()
-      await continuousScanning()
-    }
+  setTimeout(() => {
+    closeModal()
+    setTimeout(() => {
+      openModal()
+    }, 300)
   }, 1000)
 }
 
@@ -141,7 +140,7 @@ const switchCamera = async () => {
     loading.value = true
     cameraError.value = ''
     stopScanning()
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise(resolve => setTimeout(resolve, 300))
     selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
     await continuousScanning()
   } catch (err) {
@@ -159,7 +158,7 @@ const continuousScanning = async () => {
     cameraError.value = ''
 
     stopScanning()
-    await new Promise(resolve => setTimeout(resolve, 200))
+    await new Promise(resolve => setTimeout(resolve, 100))
 
     const videoInputDevices = await codeReader.value.listVideoInputDevices()
 
@@ -175,6 +174,32 @@ const continuousScanning = async () => {
 
     const selectedDeviceId = videoInputDevices[selectedDeviceIndex.value]?.deviceId
 
+    const constraints: MediaStreamConstraints = {
+      video: {
+        deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
+        facingMode: selectedDeviceId ? undefined : 'environment',
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 30 }
+      }
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+
+    if (videoRef.value) {
+      videoRef.value.srcObject = stream
+      currentStream.value = stream
+
+      await new Promise<void>((resolve) => {
+        if (videoRef.value) {
+          videoRef.value.onloadedmetadata = () => {
+            videoRef.value?.play()
+            resolve()
+          }
+        }
+      })
+    }
+
     scanning.value = true
     loading.value = false
     isInitializing.value = false
@@ -182,9 +207,13 @@ const continuousScanning = async () => {
     await codeReader.value.decodeFromVideoDevice(
       selectedDeviceId || null,
       videoRef.value,
-      (result) => {
+      (result, error) => {
         if (result && scanning.value) {
           handleScanSuccess(result.getText())
+        }
+
+        if (error && scanning.value) {
+          // Keep trying
         }
       }
     )
