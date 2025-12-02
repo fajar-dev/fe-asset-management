@@ -15,7 +15,6 @@ const currentStream = ref<MediaStream | null>(null)
 const videoDevices = ref<MediaDeviceInfo[]>([])
 const selectedDeviceIndex = ref(0)
 
-const toast = useToast()
 const router = useRouter()
 const { getAssetByCode } = useAsset()
 
@@ -33,31 +32,19 @@ const handleScanSuccess = async (result: string) => {
     const data = await getAssetByCode(result)
 
     if (data) {
-      toast.add({
-        title: 'Barcode Scanned Successfully',
-        description: `Serial ID: ${result}`,
-        color: 'success'
-      })
       showLoadingModal.value = false
       await router.push(`/asset/${data.data.id}/detail`)
     } else {
-      handleScanError('Asset not found or invalid barcode')
+      handleScanError()
     }
-  } catch (err) {
-    console.error('API Error:', err)
-    handleScanError('Failed to fetch asset data. Please try again.')
+  } catch {
+    handleScanError()
   }
 }
 
-const handleScanError = (errorMessage: string) => {
+const handleScanError = () => {
   showLoadingModal.value = false
   scanning.value = false
-
-  toast.add({
-    title: 'Scan Failed',
-    description: errorMessage,
-    color: 'error'
-  })
 
   setTimeout(() => {
     openModal()
