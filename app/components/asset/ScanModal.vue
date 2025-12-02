@@ -111,7 +111,7 @@ const stopScanning = () => {
     try {
       codeReader.value.reset()
     } catch (e) {
-      // Ignore reset errors
+      // Ignore
     }
   }
 
@@ -153,11 +153,7 @@ const switchCamera = async () => {
 
     stopScanning()
 
-    if (codeReader.value) {
-      codeReader.value.reset()
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 600))
+    await new Promise(resolve => setTimeout(resolve, 1000))
 
     selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
 
@@ -180,7 +176,7 @@ const continuousScanning = async () => {
     cameraError.value = ''
 
     stopScanning()
-    await new Promise(resolve => setTimeout(resolve, 150))
+    await new Promise(resolve => setTimeout(resolve, 200))
 
     const videoInputDevices = await codeReader.value.listVideoInputDevices()
 
@@ -206,23 +202,52 @@ const continuousScanning = async () => {
       }
     }
 
-    let stream: MediaStream
-    try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints)
-    } catch (err) {
-      console.log(err)
-      throw err
+    let stream: MediaStream | null = null
+    let retryCount = 0
+    const maxRetries = 5
+
+    while (retryCount < maxRetries && !stream) {
+      try {
+        if (retryCount > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints)
+      } catch (streamErr: any) {
+        retryCount++
+
+        if (retryCount >= maxRetries) {
+          throw streamErr
+        }
+
+        stopVideoStream()
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+    }
+
+    if (!stream) {
+      throw new Error('Failed to get camera stream after multiple retries')
     }
 
     if (videoRef.value) {
       videoRef.value.srcObject = stream
       currentStream.value = stream
 
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Video loading timeout'))
+        }, 15000)
+
         if (videoRef.value) {
-          videoRef.value.onloadedmetadata = () => {
-            videoRef.value?.play()
-            resolve()
+          videoRef.value.onloadedmetadata = async () => {
+            clearTimeout(timeout)
+            try {
+              await videoRef.value?.play()
+              await new Promise(resolve => setTimeout(resolve, 500))
+              resolve()
+            } catch (playErr) {
+              reject(playErr)
+            }
           }
         }
       })
@@ -251,6 +276,7 @@ const continuousScanning = async () => {
     }
   } catch (err: any) {
     isInitializing.value = false
+    loading.value = false
     handleCameraError(err)
   }
 }
@@ -333,6 +359,9 @@ const isFrontCamera = computed(() => {
               <UIcon name="i-lucide-camera" class="w-12 h-12 mx-auto mb-2 animate-pulse" />
               <p class="text-sm">
                 Starting camera...
+              </p>
+              <p v-if="isSwitching" class="text-xs mt-2 opacity-75">
+                Please wait, switching camera...
               </p>
             </div>
           </div>
