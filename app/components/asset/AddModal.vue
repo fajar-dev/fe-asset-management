@@ -9,6 +9,10 @@ import { useLocation } from '~/composables/useLocation'
 import { useAssetLocation } from '~/composables/useAssetLocation'
 import { useBranch } from '~/composables/useBranch'
 
+const props = defineProps<{
+  initialCode?: string
+}>()
+
 const schema = z.object({
   code: z.string().min(1, 'Asset code is required'),
   name: z.string().min(1, 'Asset name is required'),
@@ -171,6 +175,12 @@ const isDeleteSubCategoryModalOpen = ref(false)
 const deletingSubCategoryId = ref<string | null>(null)
 const isDeleteLocationModalOpen = ref(false)
 const deletingLocationId = ref<string | null>(null)
+
+watch(() => props.initialCode, (newCode) => {
+  if (newCode && open.value) {
+    state.code = newCode
+  }
+}, { immediate: true })
 
 watch(() => state.categoryId, async (catId) => {
   if (catId) {
@@ -713,7 +723,20 @@ async function openModal() {
   imageError.value = validateImage()
   await getAllCategories()
   categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
+
+  if (props.initialCode) {
+    state.code = props.initialCode
+  }
 }
+
+async function openWithCode(code: string) {
+  await openModal()
+  state.code = code
+}
+
+defineExpose({
+  openWithCode
+})
 
 onBeforeUnmount(() => {
   if (mediaStream.value) {

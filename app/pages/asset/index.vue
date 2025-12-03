@@ -24,6 +24,7 @@ const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UBadge = resolveComponent('UBadge')
 const ConfirmModal = resolveComponent('ConfirmModal')
 const AssetAddModal = resolveComponent('AssetAddModal')
+const AssetScanModal = resolveComponent('AssetScanModal')
 const AssetUpdateModal = resolveComponent('AssetUpdateModal')
 const UTooltip = resolveComponent('UTooltip')
 const UIcon = resolveComponent('UIcon')
@@ -38,6 +39,8 @@ const isUpdateModalOpen = ref(false)
 const editingAssetId = ref<string>('')
 const isFilterOpen = ref(false)
 const showDatePicker = ref(false)
+
+const assetAddModalRef = ref<any>(null)
 
 const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset, exportAssets } = useAsset()
 const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
@@ -189,7 +192,6 @@ function resetFilters() {
   showDatePicker.value = false
   isFilterOpen.value = false
 
-  // Remove query parameters
   router.push('/asset')
 
   loadAssets(1)
@@ -301,6 +303,12 @@ function openImageModal(url: string) {
 }
 function closeImageModal() {
   previewImage.value = null
+}
+
+function handleAddAssetFromScanner(code: string) {
+  if (assetAddModalRef.value && typeof assetAddModalRef.value.openWithCode === 'function') {
+    assetAddModalRef.value.openWithCode(code)
+  }
 }
 
 function getRowItems(row: Row<any>) {
@@ -613,9 +621,9 @@ const columns: TableColumn<any>[] = [
         </template>
         <template #right>
           <RoleWrapper role="admin">
-            <AssetAddModal @created="loadAssets()" />
+            <AssetAddModal ref="assetAddModalRef" @created="loadAssets()" />
           </RoleWrapper>
-          <AssetScanModal />
+          <AssetScanModal @add-asset="handleAddAssetFromScanner" />
         </template>
       </UDashboardNavbar>
     </template>
