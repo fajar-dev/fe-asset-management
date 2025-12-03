@@ -539,8 +539,8 @@ async function startCamera(deviceId?: string) {
   try {
     const constraints: MediaStreamConstraints = {
       video: deviceId
-        ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
-        : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 960 }, aspectRatio: { ideal: 4 / 3 } }
+        : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 }, aspectRatio: { ideal: 4 / 3 } },
       audio: false
     }
 
@@ -1165,7 +1165,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div v-else class="relative bg-black rounded-lg overflow-hidden aspect-video">
+        <div v-else class="relative bg-black rounded-lg overflow-hidden aspect-4/3">
           <video
             ref="videoRef"
             autoplay
