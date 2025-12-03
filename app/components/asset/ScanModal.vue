@@ -4,6 +4,7 @@ import { BrowserMultiFormatReader } from '@zxing/library'
 const open = ref(false)
 const loading = ref(false)
 const showLoadingModal = ref(false)
+const showNotFoundModal = ref(false)
 const error = ref<string>('')
 const cameraError = ref<string>('')
 const scannedResult = ref<string>('')
@@ -17,6 +18,10 @@ const isFrontCamera = ref(true)
 
 const router = useRouter()
 const { getAssetByCode } = useAsset()
+
+const emit = defineEmits<{
+  (e: 'add-asset', code: string): void
+}>()
 
 onMounted(() => {
   codeReader.value = new BrowserMultiFormatReader()
@@ -93,10 +98,20 @@ const handleScanSuccess = async (result: string) => {
 const handleScanError = () => {
   showLoadingModal.value = false
   scanning.value = false
+  showNotFoundModal.value = true
+}
 
+const handleAddNewAsset = () => {
+  showNotFoundModal.value = false
+  open.value = false
+  emit('add-asset', scannedResult.value)
+}
+
+const handleRetryScanning = () => {
+  showNotFoundModal.value = false
   setTimeout(() => {
     openModal()
-  }, 1000)
+  }, 300)
 }
 
 const handleCameraError = (err: any) => {
@@ -368,7 +383,39 @@ const currentCameraName = computed(() => {
       </div>
     </template>
   </UModal>
-</template>
 
-<style scoped>
-</style>
+  <!-- Modal Konfirmasi Asset Tidak Ditemukan -->
+  <UModal
+    v-model:open="showNotFoundModal"
+    title="Asset Tidak Ditemukan"
+    description="Asset dengan barcode ini tidak ditemukan dalam sistem"
+  >
+    <template #content>
+      <div class="p-5">
+        <div class="space-y-1">
+          <h3 class="text-lg font-semibold">
+            {{ scannedResult }}
+          </h3>
+          <p class="text-gray-500 text-sm">
+            Asset not found. Would you like to add it as a new asset?
+          </p>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+          <UButton
+            label="Cancel"
+            color="neutral"
+            variant="subtle"
+            @click="handleRetryScanning"
+          />
+          <UButton
+            label="Add New"
+            color="primary"
+            variant="solid"
+            icon="i-lucide-plus"
+            @click="handleAddNewAsset"
+          />
+        </div>
+      </div>
+    </template>
+  </UModal>
+</template>
