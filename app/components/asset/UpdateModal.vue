@@ -136,6 +136,15 @@ const imagePreview = ref<string | null>(null)
 const existingImageUrl = ref<string | null>(null)
 const hasImageChanged = ref(false)
 
+const isCameraModalOpen = ref(false)
+const videoRef = ref<HTMLVideoElement | null>(null)
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+const mediaStream = ref<MediaStream | null>(null)
+const isCameraReady = ref(false)
+const cameraError = ref<string>('')
+const availableCameras = ref<MediaDeviceInfo[]>([])
+const selectedCameraId = ref<string>('')
+
 const isDeleteCategoryModalOpen = ref(false)
 const deletingCategoryId = ref<string | null>(null)
 const isDeleteSubCategoryModalOpen = ref(false)
@@ -413,6 +422,122 @@ function resetImageToOriginal() {
   if (fileInput.value) fileInput.value.value = ''
 }
 
+async function getAvailableCameras() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices()
+    availableCameras.value = devices.filter(device => device.kind === 'videoinput')
+
+    if (availableCameras.value.length > 0 && !selectedCameraId.value) {
+      const backCamera = availableCameras.value.find(camera =>
+        camera.label.toLowerCase().includes('back')
+        || camera.label.toLowerCase().includes('rear')
+        || camera.label.toLowerCase().includes('environment')
+      )
+      selectedCameraId.value = backCamera?.deviceId || availableCameras.value[0]!.deviceId
+    }
+  } catch {
+    return
+  }
+}
+
+async function startCamera(deviceId?: string) {
+  if (mediaStream.value) {
+    mediaStream.value.getTracks().forEach(track => track.stop())
+    mediaStream.value = null
+  }
+
+  isCameraReady.value = false
+  cameraError.value = ''
+
+  try {
+    const constraints: MediaStreamConstraints = {
+      video: deviceId
+        ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints)
+    mediaStream.value = stream
+
+    if (videoRef.value) {
+      videoRef.value.srcObject = stream
+      videoRef.value.onloadedmetadata = () => {
+        isCameraReady.value = true
+      }
+    }
+  } catch (error: any) {
+    cameraError.value = error.name === 'NotAllowedError'
+      ? 'Camera access denied. Please allow camera permissions.'
+      : 'Failed to access camera. Please check your device settings.'
+  }
+}
+
+async function switchCamera() {
+  if (availableCameras.value.length <= 1) return
+
+  const currentIndex = availableCameras.value.findIndex(
+    camera => camera.deviceId === selectedCameraId.value
+  )
+
+  const nextIndex = (currentIndex + 1) % availableCameras.value.length
+  selectedCameraId.value = availableCameras.value[nextIndex]!.deviceId
+
+  await startCamera(selectedCameraId.value)
+}
+
+async function openCameraModal() {
+  isCameraModalOpen.value = true
+  cameraError.value = ''
+  isCameraReady.value = false
+
+  await nextTick()
+  await getAvailableCameras()
+  await startCamera(selectedCameraId.value)
+}
+
+function closeCameraModal() {
+  if (mediaStream.value) {
+    mediaStream.value.getTracks().forEach(track => track.stop())
+    mediaStream.value = null
+  }
+  isCameraModalOpen.value = false
+  isCameraReady.value = false
+  cameraError.value = ''
+}
+
+function capturePhoto() {
+  if (!videoRef.value || !canvasRef.value || !isCameraReady.value) return
+
+  const video = videoRef.value
+  const canvas = canvasRef.value
+
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+
+  const context = canvas.getContext('2d')
+  if (!context) return
+
+  context.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+  canvas.toBlob((blob) => {
+    if (!blob) return
+
+    const file = new File([blob], `camera-capture-${Date.now()}.jpg`, { type: 'image/jpeg' })
+
+    state.image = file
+    hasImageChanged.value = true
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      imagePreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+
+    closeCameraModal()
+  }, 'image/jpeg', 0.9)
+}
+
 function addCustomValue() {
   state.customValues.push({ name: '', value: '' })
 }
@@ -448,6 +573,21 @@ async function confirmDeleteCategory() {
 function removeSubCategory(subCategoryId: string) {
   deletingSubCategoryId.value = subCategoryId
   isDeleteSubCategoryModalOpen.value = true
+}
+
+function handleImageUpload(file: File | null) {
+  if (!file) return
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) return
+  const maxSize = 5 * 1024 * 1024
+  if (file.size > maxSize) return
+  state.image = file
+  hasImageChanged.value = true
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    imagePreview.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
 }
 
 async function confirmDeleteSubCategory() {
@@ -575,6 +715,12 @@ function resetState() {
   imagePreview.value = null
   isInitialLoad.value = false
 }
+
+onBeforeUnmount(() => {
+  if (mediaStream.value) {
+    mediaStream.value.getTracks().forEach(track => track.stop())
+  }
+})
 </script>
 
 <template>
@@ -650,30 +796,81 @@ function resetState() {
             />
           </UFormField>
 
-          <UFormField label="Asset Image" name="image">
-            <div class="space-y-3">
-              <div class="flex items-center gap-3">
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  icon="i-lucide-upload"
-                  :disabled="saving"
-                  @click="triggerFileUpload"
-                >
-                  {{ imagePreview ? 'Change Image' : 'Upload Image' }}
-                </UButton>
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-1">
+              <label class="text-sm font-medium text-gray-700">
+                Asset Image
+              </label>
+            </div>
+            <div class="flex items-center gap-2">
+              <UButton
+                v-if="imagePreview && hasImageChanged"
+                icon="i-lucide-undo-2"
+                variant="ghost"
+                size="sm"
+                :disabled="saving"
+                @click="resetImageToOriginal"
+              >
+                Reset
+              </UButton>
+              <UButton
+                icon="i-lucide-camera"
+                variant="soft"
+                label="Take Photo"
+                size="sm"
+                :disabled="saving"
+                @click="openCameraModal"
+              />
+            </div>
+          </div>
+          <UFormField name="image" class="mb-2">
+            <div class="space-y-2">
+              <div class="relative">
+                <UFileUpload
+                  v-if="!imagePreview"
+                  label="Drop your image here"
+                  description="JPEG, PNG, WebP (max. 5MB)"
+                  class="w-full min-h-48"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  @update:model="handleImageUpload"
+                />
 
-                <UButton
-                  v-if="imagePreview && hasImageChanged"
-                  color="neutral"
-                  variant="ghost"
-                  icon="i-lucide-undo-2"
-                  size="sm"
-                  :disabled="saving"
-                  @click="resetImageToOriginal"
+                <div
+                  v-else
+                  class="relative w-full min-h-48 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900"
                 >
-                  Reset
-                </UButton>
+                  <img
+                    :src="imagePreview"
+                    alt="Preview"
+                    class="w-full h-full object-contain"
+                  >
+
+                  <div class="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                    <UButton
+                      label="Change"
+                      icon="i-lucide-image"
+                      color="neutral"
+                      variant="subtle"
+                      size="sm"
+                      @click="triggerFileUpload"
+                    />
+                    <UButton
+                      label="Retake"
+                      icon="i-lucide-camera"
+                      color="neutral"
+                      variant="subtle"
+                      size="sm"
+                      @click="openCameraModal"
+                    />
+                  </div>
+
+                  <div v-if="hasImageChanged && state.image" class="absolute bottom-2 left-2 right-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded px-3 py-2">
+                    <div class="flex items-center gap-2">
+                      <UIcon name="i-lucide-check-circle" class="w-4 h-4 text-green-600 shrink-0" />
+                      <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ state.image?.name }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <input
@@ -683,29 +880,6 @@ function resetState() {
                 class="hidden"
                 @change="handleFileChange"
               >
-
-              <div v-if="imagePreview" class="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                <div class="text-center">
-                  <img
-                    :src="imagePreview"
-                    alt="Asset preview"
-                    class="mx-auto max-h-48 rounded-lg shadow-md"
-                  >
-                  <div v-if="hasImageChanged && state.image" class="mt-2">
-                    <p class="text-sm text-gray-500">
-                      {{ state.image.name }}
-                      <span class="text-xs text-gray-400">
-                        ({{ Math.round((state.image.size || 0) / 1024) }} KB)
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="text-xs text-gray-500 mt-2">
-                <p>• Supported formats: JPEG, PNG, WebP</p>
-                <p>• Maximum file size: 5MB</p>
-              </div>
             </div>
           </UFormField>
         </div>
@@ -854,7 +1028,8 @@ function resetState() {
                     class="w-4 h-4 text-gray-500 cursor-pointer"
                   />
                 </UTooltip>
-              </div>              <UButton
+              </div>
+              <UButton
                 label="Add"
                 icon="i-lucide-plus"
                 size="xs"
@@ -919,6 +1094,100 @@ function resetState() {
           />
         </div>
       </UForm>
+    </template>
+  </UModal>
+
+  <UModal
+    v-model:open="isCameraModalOpen"
+    title="Take a Photo"
+    :description="`Press the button to capture a photo${availableCameras.length > 1 ? ` (${availableCameras.length} cameras available)` : ''}`"
+    @close="closeCameraModal"
+  >
+    <template #header>
+      <div class="flex items-center justify-between w-full">
+        <h3 class="text-lg font-semibold">
+          Take a Photo
+        </h3>
+
+        <UButton
+          icon="i-lucide-x"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          @click="closeCameraModal"
+        />
+      </div>
+    </template>
+
+    <template #body>
+      <div class="space-y-4">
+        <div v-if="cameraError" class="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div class="flex items-start gap-2">
+            <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+            <p class="text-sm text-red-700">
+              {{ cameraError }}
+            </p>
+          </div>
+        </div>
+
+        <div v-else class="relative bg-black rounded-lg overflow-hidden aspect-video">
+          <video
+            ref="videoRef"
+            autoplay
+            playsinline
+            class="w-full h-full object-cover"
+          />
+
+          <div
+            v-if="isCameraReady && availableCameras.length > 1"
+            class="absolute top-3 right-3 z-10"
+          >
+            <UButton
+              icon="i-lucide-repeat"
+              color="neutral"
+              size="sm"
+              @click="switchCamera"
+            >
+              <template #trailing>
+                <UIcon name="i-lucide-camera" class="w-4 h-4" />
+              </template>
+            </UButton>
+          </div>
+
+          <div
+            v-if="isCameraReady && availableCameras.length > 1"
+            class="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full"
+          >
+            {{ availableCameras.findIndex(c => c.deviceId === selectedCameraId) + 1 }}/{{ availableCameras.length }}
+          </div>
+
+          <div v-if="!isCameraReady" class="absolute inset-0 flex items-center justify-center bg-gray-900/50">
+            <div class="text-center text-white">
+              <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto mb-2" />
+              <p>Opening camera...</p>
+            </div>
+          </div>
+        </div>
+
+        <canvas ref="canvasRef" class="hidden" />
+
+        <div class="flex justify-end gap-2">
+          <UButton
+            label="Cancel"
+            color="neutral"
+            variant="subtle"
+            @click="closeCameraModal"
+          />
+          <UButton
+            label="Take Photo"
+            icon="i-lucide-camera"
+            color="primary"
+            variant="solid"
+            :disabled="!isCameraReady || !!cameraError"
+            @click="capturePhoto"
+          />
+        </div>
+      </div>
     </template>
   </UModal>
 
