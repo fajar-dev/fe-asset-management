@@ -52,6 +52,7 @@ const selectedCategoryId = ref<string | undefined>(undefined)
 const selectedSubCategoryId = ref<string | undefined>(undefined)
 const selectedStatus = ref<string | undefined>(undefined)
 const selectedEmployee = ref<string | undefined>(undefined)
+const selectedHasHolder = ref<boolean>(false)
 const selectedLocation = ref<string | undefined>(undefined)
 const selectedDateRange = ref<any>(undefined)
 const previewImage = ref<string | null>(null)
@@ -60,6 +61,7 @@ const tempCategoryId = ref<string | undefined>(undefined)
 const tempSubCategoryId = ref<string | undefined>(undefined)
 const tempStatus = ref<string | undefined>(undefined)
 const tempEmployee = ref<string | undefined>(undefined)
+const tempHasHolder = ref<boolean>(false)
 const tempLocation = ref<string | undefined>(undefined)
 const tempDateRange = ref<any>(undefined)
 
@@ -108,6 +110,12 @@ watch(tempCategoryId, async (newId) => {
   }
 })
 
+watch(tempHasHolder, (newValue) => {
+  if (!newValue) {
+    tempEmployee.value = undefined
+  }
+})
+
 watch(search, () => loadAssets(1))
 
 watch(pageLimit, (newLimit) => {
@@ -149,6 +157,7 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     subCategoryId: selectedSubCategoryId.value,
     status: selectedStatus.value,
     employeeId: selectedEmployee.value,
+    hasHolder: selectedHasHolder.value,
     locationId: selectedLocation.value
   }
 
@@ -165,6 +174,7 @@ function applyFilters() {
   selectedSubCategoryId.value = tempSubCategoryId.value
   selectedStatus.value = tempStatus.value
   selectedEmployee.value = tempEmployee.value
+  selectedHasHolder.value = tempHasHolder.value
   selectedLocation.value = tempLocation.value
   selectedDateRange.value = tempDateRange.value
   showDatePicker.value = false
@@ -177,6 +187,7 @@ function resetFilters() {
   selectedSubCategoryId.value = undefined
   selectedStatus.value = undefined
   selectedEmployee.value = undefined
+  selectedHasHolder.value = false
   selectedLocation.value = undefined
   selectedDateRange.value = undefined
   search.value = ''
@@ -185,6 +196,7 @@ function resetFilters() {
   tempSubCategoryId.value = undefined
   tempStatus.value = undefined
   tempEmployee.value = undefined
+  tempHasHolder.value = false
   tempLocation.value = undefined
   tempDateRange.value = undefined
 
@@ -216,6 +228,7 @@ async function handleExport() {
     subCategoryId: selectedSubCategoryId.value,
     status: selectedStatus.value,
     employeeId: selectedEmployee.value,
+    hasHolder: selectedHasHolder.value,
     locationId: selectedLocation.value
   }
 
@@ -245,6 +258,7 @@ const activeFiltersCount = computed(() => {
   if (selectedSubCategoryId.value) count++
   if (selectedStatus.value) count++
   if (selectedEmployee.value) count++
+  if (selectedHasHolder.value) count++
   if (selectedLocation.value) count++
   if (selectedDateRange.value?.start && selectedDateRange.value?.end) count++
   return count
@@ -276,6 +290,7 @@ watch(isFilterOpen, (isOpen) => {
     tempSubCategoryId.value = selectedSubCategoryId.value
     tempStatus.value = selectedStatus.value
     tempEmployee.value = selectedEmployee.value
+    tempHasHolder.value = selectedHasHolder.value
     tempLocation.value = selectedLocation.value
     tempDateRange.value = selectedDateRange.value
     showDatePicker.value = false
@@ -766,6 +781,13 @@ const columns: TableColumn<any>[] = [
                   </div>
 
                   <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                      <label class="block text-sm font-medium">Filter by Holder</label>
+                      <USwitch v-model="tempHasHolder" />
+                    </div>
+                  </div>
+
+                  <div v-if="tempHasHolder">
                     <label class="block text-sm font-medium mb-1.5">Active Holder</label>
                     <USelectMenu
                       v-model="tempEmployee"
