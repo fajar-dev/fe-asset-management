@@ -27,6 +27,7 @@ interface AssetState {
     locationId?: string | null
     startDate?: string | null
     endDate?: string | null
+    hasHolder?: boolean | null
   }) => Promise<void>
   refreshAssets: () => Promise<void>
   getAssetById: (id: string) => Promise<AssetDetailResponse | null>
@@ -43,6 +44,7 @@ interface AssetState {
     locationId?: string | undefined
     startDate?: string | null
     endDate?: string | null
+    hasHolder?: boolean | null
   }) => Promise<void>
 }
 
@@ -68,6 +70,7 @@ export const useAsset = (): AssetState => {
     locationId?: string | null
     startDate?: string | null
     endDate?: string | null
+    hasHolder?: boolean | null
   }): Promise<void> {
     loading.value = true
     error.value = null
@@ -82,7 +85,8 @@ export const useAsset = (): AssetState => {
         employeeId = null,
         locationId = null,
         startDate = null,
-        endDate = null
+        endDate = null,
+        hasHolder = null
       } = options || {}
 
       const res = await assetService.getAssets(
@@ -95,7 +99,8 @@ export const useAsset = (): AssetState => {
         employeeId,
         locationId,
         startDate,
-        endDate
+        endDate,
+        hasHolder
       )
 
       assets.value = res.data

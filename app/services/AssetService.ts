@@ -29,7 +29,8 @@ export class AssetService {
     employeeId: string | null = null,
     locationId: string | null = null,
     startDate: string | null = null,
-    endDate: string | null = null
+    endDate: string | null = null,
+    hasHolder: boolean | null = false
   ): Promise<AssetResponse> {
     const params: Record<string, any> = { search, page, limit }
 
@@ -40,6 +41,7 @@ export class AssetService {
     if (locationId) params.locationId = locationId
     if (startDate) params.startDate = startDate
     if (endDate) params.endDate = endDate
+    if (hasHolder !== null) params.hasHolder = hasHolder
 
     return await this.api<AssetResponse>(this.basePath, {
       method: 'GET',
