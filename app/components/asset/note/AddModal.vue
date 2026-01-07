@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { CalendarDate } from '@internationalized/date'
 import { useAssetNote } from '~/composables/useAssetNote'
 
 const props = defineProps<{ assetId: string }>()
@@ -22,10 +23,38 @@ const state = reactive<Partial<Schema>>({
   note: ''
 })
 
+const occuredAtModel = ref<any>(null)
+
+function formatDateDisplay(date: any): string {
+  if (!date) return 'Select a date'
+  
+  const day = String(date.day).padStart(2, '0')
+  const month = String(date.month).padStart(2, '0')
+  const year = date.year
+  
+  return `${day}/${month}/${year}`
+}
+
+function calendarDateToString(date: any): string {
+  const year = date.year
+  const month = String(date.month).padStart(2, '0')
+  const day = String(date.day).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+watch(occuredAtModel, (newDate) => {
+  if (newDate) {
+    state.occuredAt = calendarDateToString(newDate)
+  } else {
+    state.occuredAt = ''
+  }
+})
+
 const { createNote } = useAssetNote()
 
 function resetForm() {
   state.occuredAt = ''
+  occuredAtModel.value = null
   state.note = ''
 }
 
@@ -54,11 +83,18 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         @submit="onSubmit"
       >
         <UFormField label="Date" name="occuredAt" required>
-          <UInput
-            v-model="state.occuredAt"
-            type="date"
-            class="w-full"
-          />
+          <UPopover :popper="{ placement: 'bottom-start' }">
+            <UButton
+              icon="i-lucide-calendar"
+              :label="occuredAtModel ? formatDateDisplay(occuredAtModel) : 'Select a date'"
+              variant="subtle"
+              color="neutral"
+              class="w-full justify-start"
+            />
+            <template #content>
+              <UCalendar v-model="occuredAtModel" class="p-2" />
+            </template>
+          </UPopover>
         </UFormField>
 
         <UFormField label="Note" name="note" required>

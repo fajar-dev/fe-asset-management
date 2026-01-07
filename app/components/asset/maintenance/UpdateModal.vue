@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { CalendarDate } from '@internationalized/date'
 import { useAssetMaintenance } from '~/composables/useAssetMaintenance'
 
 const props = defineProps<{
@@ -26,6 +27,33 @@ const formData = reactive<Schema>({
   note: ''
 })
 
+const maintenanceDateModel = ref<any>(null)
+
+function formatDateDisplay(date: any): string {
+  if (!date) return 'Select a date'
+  
+  const day = String(date.day).padStart(2, '0')
+  const month = String(date.month).padStart(2, '0')
+  const year = date.year
+  
+  return `${day}/${month}/${year}`
+}
+
+function calendarDateToString(date: any): string {
+  const year = date.year
+  const month = String(date.month).padStart(2, '0')
+  const day = String(date.day).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+watch(maintenanceDateModel, (newDate) => {
+  if (newDate) {
+    formData.maintenanceAt = calendarDateToString(newDate)
+  } else {
+    formData.maintenanceAt = ''
+  }
+})
+
 const saving = ref(false)
 const loading = ref(false)
 
@@ -39,10 +67,18 @@ async function loadMaintenanceData() {
   try {
     const response = await getMaintenanceById(props.assetId, props.maintenanceId)
     if (response?.data) {
+      const dateStr = response.data.maintenanceAt?.split('T')[0] || ''
       Object.assign(formData, {
-        maintenanceAt: response.data.maintenanceAt?.split('T')[0] || '',
+        maintenanceAt: dateStr,
         note: response.data.note || ''
       })
+      
+      if (dateStr) {
+        const [year, month, day] = dateStr.split('-').map(Number)
+        if (year && month && day) {
+          maintenanceDateModel.value = new CalendarDate(year, month, day)
+        }
+      }
     }
   } catch (error) {
     console.error('Failed to load maintenance:', error)
@@ -69,6 +105,7 @@ function resetForm() {
     maintenanceAt: '',
     note: ''
   })
+  maintenanceDateModel.value = null
 }
 
 /** Submit */
@@ -104,11 +141,18 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
         @submit="onSubmit"
       >
         <UFormField label="Date" name="maintenanceAt" required>
-          <UInput
-            v-model="formData.maintenanceAt"
-            type="date"
-            class="w-full"
-          />
+          <UPopover :popper="{ placement: 'bottom-start' }">
+            <UButton
+              icon="i-lucide-calendar"
+              :label="maintenanceDateModel ? formatDateDisplay(maintenanceDateModel) : 'Select a date'"
+              variant="subtle"
+              color="neutral"
+              class="w-full justify-start"
+            />
+            <template #content>
+              <UCalendar v-model="maintenanceDateModel" class="p-2" />
+            </template>
+          </UPopover>
         </UFormField>
 
         <UFormField label="Note" name="note" required>
