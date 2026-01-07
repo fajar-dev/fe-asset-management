@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+
 import { useCategory } from '~/composables/useCategory'
 import { useSubCategory } from '~/composables/useSubCategory'
 import { useAsset } from '~/composables/useAsset'
@@ -107,6 +108,33 @@ const state = reactive<{
   image: null,
   properties: [],
   customValues: []
+})
+
+const purchaseDateModel = ref<any>(null)
+
+function formatDateDisplay(date: any): string {
+  if (!date) return 'Select a date'
+  
+  const day = String(date.day).padStart(2, '0')
+  const month = String(date.month).padStart(2, '0')
+  const year = date.year
+  
+  return `${day}/${month}/${year}`
+}
+
+function calendarDateToString(date: any): string {
+  const year = date.year
+  const month = String(date.month).padStart(2, '0')
+  const day = String(date.day).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+watch(purchaseDateModel, (newDate) => {
+  if (newDate) {
+    state.purchaseDate = calendarDateToString(newDate)
+  } else {
+    state.purchaseDate = ''
+  }
 })
 
 const { createCategory, deleteCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory, getCategoryById } = useCategory()
@@ -246,6 +274,7 @@ function resetForm() {
   state.user = ''
   state.price = undefined
   state.purchaseDate = ''
+  purchaseDateModel.value = null
   state.categoryId = ''
   state.subCategoryId = ''
   state.locationId = ''
@@ -809,11 +838,20 @@ onBeforeUnmount(() => {
           </UFormField>
 
           <UFormField label="Purchase Date" name="purchaseDate" required>
-            <UInput
-              v-model="state.purchaseDate"
-              class="w-full"
-              type="date"
-            />
+            <UPopover>
+              <UButton 
+                color="neutral" 
+                variant="subtle" 
+                icon="i-lucide-calendar"
+                block
+                class="justify-start"
+              >
+                {{ formatDateDisplay(purchaseDateModel) }}
+              </UButton>
+              <template #content>
+                <UCalendar v-model="purchaseDateModel" class="p-2" />
+              </template>
+            </UPopover>
           </UFormField>
 
           <UFormField label="Status" name="status" required>

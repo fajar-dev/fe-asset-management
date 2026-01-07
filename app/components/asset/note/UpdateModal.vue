@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { CalendarDate } from '@internationalized/date'
 import { useAssetNote } from '~/composables/useAssetNote'
 
 const props = defineProps<{
@@ -26,6 +27,33 @@ const formData = reactive<Schema>({
   note: ''
 })
 
+const occuredAtModel = ref<any>(null)
+
+function formatDateDisplay(date: any): string {
+  if (!date) return 'Select a date'
+  
+  const day = String(date.day).padStart(2, '0')
+  const month = String(date.month).padStart(2, '0')
+  const year = date.year
+  
+  return `${day}/${month}/${year}`
+}
+
+function calendarDateToString(date: any): string {
+  const year = date.year
+  const month = String(date.month).padStart(2, '0')
+  const day = String(date.day).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+watch(occuredAtModel, (newDate) => {
+  if (newDate) {
+    formData.occuredAt = calendarDateToString(newDate)
+  } else {
+    formData.occuredAt = ''
+  }
+})
+
 const saving = ref(false)
 const loading = ref(false)
 
@@ -39,10 +67,18 @@ async function loadNoteData() {
   try {
     const response = await getNoteById(props.assetId, props.noteId)
     if (response?.data) {
+      const dateStr = response.data.occuredAt?.split('T')[0] || ''
       Object.assign(formData, {
-        occuredAt: response.data.occuredAt?.split('T')[0] || '',
+        occuredAt: dateStr,
         note: response.data.note || ''
       })
+
+      if (dateStr) {
+        const [year, month, day] = dateStr.split('-').map(Number)
+        if (year && month && day) {
+          occuredAtModel.value = new CalendarDate(year, month, day)
+        }
+      }
     }
   } catch (error) {
     console.error('Failed to load note:', error)
@@ -69,6 +105,7 @@ function resetForm() {
     occuredAt: '',
     note: ''
   })
+  occuredAtModel.value = null
 }
 
 /** Submit */
@@ -104,11 +141,18 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
         @submit="onSubmit"
       >
         <UFormField label="Date" name="occuredAt" required>
-          <UInput
-            v-model="formData.occuredAt"
-            type="date"
-            class="w-full"
-          />
+          <UPopover :popper="{ placement: 'bottom-start' }">
+            <UButton
+              icon="i-lucide-calendar"
+              :label="occuredAtModel ? formatDateDisplay(occuredAtModel) : 'Select a date'"
+              variant="subtle"
+              color="neutral"
+              class="w-full justify-start"
+            />
+            <template #content>
+              <UCalendar v-model="occuredAtModel" class="p-2" />
+            </template>
+          </UPopover>
         </UFormField>
 
         <UFormField label="Note" name="note" required>

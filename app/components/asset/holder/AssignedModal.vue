@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
+import { CalendarDate } from '@internationalized/date'
 import { useAssetHolder } from '~/composables/useAssetHolder'
 import { useEmployee } from '~/composables/useEmployee'
 
@@ -26,6 +27,33 @@ const state = reactive({
   purpose: '' as string
 })
 
+const assignedDateModel = ref<any>(null)
+
+function formatDateDisplay(date: any): string {
+  if (!date) return 'Select a date'
+  
+  const day = String(date.day).padStart(2, '0')
+  const month = String(date.month).padStart(2, '0')
+  const year = date.year
+  
+  return `${day}/${month}/${year}`
+}
+
+function calendarDateToString(date: any): string {
+  const year = date.year
+  const month = String(date.month).padStart(2, '0')
+  const day = String(date.day).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+watch(assignedDateModel, (newDate) => {
+  if (newDate) {
+    state.assignedAt = calendarDateToString(newDate)
+  } else {
+    state.assignedAt = ''
+  }
+})
+
 const { assignHolder } = useAssetHolder()
 const { employees, fetchEmployees } = useEmployee()
 
@@ -34,6 +62,7 @@ const selectedEmployee = shallowRef<any>(null)
 
 function resetForm() {
   state.assignedAt = ''
+  assignedDateModel.value = null
   state.employeeId = ''
   state.purpose = ''
   selectedEmployee.value = null
@@ -84,11 +113,18 @@ async function openModal() {
         @submit="onSubmit"
       >
         <UFormField label="Assigned Date" name="assignedAt" required>
-          <UInput
-            v-model="state.assignedAt"
-            type="date"
-            class="w-full"
-          />
+          <UPopover :popper="{ placement: 'bottom-start' }">
+            <UButton
+              icon="i-lucide-calendar"
+              :label="assignedDateModel ? formatDateDisplay(assignedDateModel) : 'Select a date'"
+              variant="subtle"
+              color="neutral"
+              class="w-full justify-start"
+            />
+            <template #content>
+              <UCalendar v-model="assignedDateModel" class="p-2" />
+            </template>
+          </UPopover>
         </UFormField>
 
         <UFormField label="Employee" name="employeeId" required>

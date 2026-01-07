@@ -2,6 +2,7 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useCategory } from '~/composables/useCategory'
+import { CalendarDate } from '@internationalized/date'
 import { useSubCategory } from '~/composables/useSubCategory'
 import { useAsset } from '~/composables/useAsset'
 import { useProperty } from '~/composables/useProperty'
@@ -102,6 +103,33 @@ const state = reactive<{
   image: null,
   properties: [],
   customValues: []
+})
+
+const purchaseDateModel = ref<any>(null)
+
+function formatDateDisplay(date: any): string {
+  if (!date) return 'Select a date'
+  
+  const day = String(date.day).padStart(2, '0')
+  const month = String(date.month).padStart(2, '0')
+  const year = date.year
+  
+  return `${day}/${month}/${year}`
+}
+
+function calendarDateToString(date: any): string {
+  const year = date.year
+  const month = String(date.month).padStart(2, '0')
+  const day = String(date.day).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+watch(purchaseDateModel, (newDate) => {
+  if (newDate) {
+    state.purchaseDate = calendarDateToString(newDate)
+  } else {
+    state.purchaseDate = ''
+  }
 })
 
 const { createCategory, deleteCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
@@ -230,6 +258,16 @@ async function loadAssetData() {
   state.user = asset.user || ''
   state.price = asset.price || undefined
   state.purchaseDate = asset.purchaseDate || ''
+  
+  if (asset.purchaseDate) {
+    const [year, month, day] = asset.purchaseDate.split('-').map(Number)
+    if (year && month && day) {
+      purchaseDateModel.value = new CalendarDate(year, month, day)
+    }
+  } else {
+    purchaseDateModel.value = null
+  }
+
   state.status = asset.status
   state.categoryId = asset.subCategory.category.id
 
@@ -777,8 +815,21 @@ onBeforeUnmount(() => {
             </UInput>
           </UFormField>
 
-          <UFormField label="Purchase Date" name="purchaseDate" required>
-            <UInput v-model="state.purchaseDate" class="w-full" type="date" />
+        <UFormField label="Purchase Date" name="purchaseDate" required>
+            <UPopover>
+              <UButton 
+                color="neutral" 
+                variant="subtle" 
+                icon="i-lucide-calendar"
+                block
+                class="justify-start"
+              >
+                {{ formatDateDisplay(purchaseDateModel) }}
+              </UButton>
+              <template #content>
+                <UCalendar v-model="purchaseDateModel" class="p-2" />
+              </template>
+            </UPopover>
           </UFormField>
 
           <UFormField label="Status" name="status" required>
