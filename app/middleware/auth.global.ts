@@ -4,10 +4,14 @@ export default defineNuxtRouteMiddleware((to) => {
   const isPublicRoute = publicRoutes.includes(to.path)
 
   if (!cookie.value && !isPublicRoute) {
-    return navigateTo('/login')
+    return navigateTo({
+      path: '/login',
+      query: { redirect: to.fullPath },
+    })
   }
 
   if (cookie.value && to.path === '/login') {
-    return navigateTo('/')
+    const redirect = (to.query.redirect as string) || '/'
+    return navigateTo(redirect)
   }
 })
