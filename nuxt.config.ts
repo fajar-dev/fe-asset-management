@@ -43,30 +43,56 @@ export default defineNuxtConfig({
   pwa: {
     registerType: 'autoUpdate',
     manifest: {
-      name: 'SIMAS - Nusanet',
-      short_name: 'SIMAS',
-      description: 'Sistem Informasi Asset Manajemen PT. Media Antar Nusa',
-      lang: 'en',
+      name: "SIMAS - Nusanet",
+      short_name: "SIMAS",
+      description: "Sistem Informasi Asset Manajemen PT. Media Antar Nusa",
+      lang: 'id',
       display: 'standalone',
       background_color: '#ffffff',
-      theme_color: '#00C16A',
+      theme_color: '#00c16a',
       icons: [
         {
           src: '/icons/icon_64x64.png',
           sizes: '64x64',
-          type: 'image/png'
+          type: 'image/png',
         },
         {
           src: '/icons/icon_144x144.png',
           sizes: '144x144',
-          type: 'image/png'
+          type: 'image/png',
         },
         {
           src: '/icons/icon_192x192.png',
           sizes: '192x192',
-          type: 'image/png'
-        }
-      ]
+          type: 'image/png',
+        },
+        {
+
+          src: '/icons/icon_384x384.png',
+          sizes: '384x384',
+          type: 'image/png',
+        },
+        {
+          src: '/icons/icon_512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+        },
+      ],
+    },
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+      runtimeCaching: [
+        {
+          urlPattern: /^https:\/\/simas\.nusa\.id\/api\/.*$/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'api-cache',
+            cacheableResponse: {
+              statuses: [0, 200],
+            },
+          },
+        },
+      ],
     }
   }
 })
