@@ -31,7 +31,7 @@ interface AssetState {
   }) => Promise<void>
   refreshAssets: () => Promise<void>
   getAssetById: (id: string) => Promise<AssetDetailResponse | null>
-  getAssetByCode: (code: string) => Promise<AssetDetailResponse | null>
+  getAssetByCode: (code: string, silent?: boolean) => Promise<AssetDetailResponse | null>
   createAsset: (payload: CreateAssetPayload | FormData) => Promise<Asset>
   importAsset: (payload: FormData) => Promise<any>
   updateAsset: (id: string, payload: UpdateAssetPayload | FormData) => Promise<void>
@@ -136,7 +136,7 @@ export const useAsset = (): AssetState => {
     }
   }
 
-  async function getAssetByCode(code: string): Promise<AssetDetailResponse | null> {
+  async function getAssetByCode(code: string, silent: boolean = false): Promise<AssetDetailResponse | null> {
     loading.value = true
     error.value = null
     selectedAsset.value = null
@@ -145,9 +145,11 @@ export const useAsset = (): AssetState => {
       selectedAsset.value = res.data
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch asset detail'
-      toast.add({ title: 'Failed', description: error.value, color: 'error' })
+      if (!silent) {
+        const fetchError = err as FetchError<ApiError>
+        error.value = fetchError.data?.message ?? 'Failed to fetch asset detail'
+        toast.add({ title: 'Failed', description: error.value, color: 'error' })
+      }
       return null
     } finally {
       loading.value = false
