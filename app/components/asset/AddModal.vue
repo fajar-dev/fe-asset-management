@@ -15,7 +15,7 @@ const props = defineProps<{
 }>()
 
 const schema = z.object({
-  code: z.string().min(1, 'Asset code is required'),
+  codes: z.array(z.string().min(1, 'Asset code is required')).min(1, 'At least one code is required'),
   name: z.string().min(1, 'Asset name is required'),
   description: z.string().optional(),
   brand: z.string().optional(),
@@ -77,7 +77,7 @@ const emit = defineEmits<{ (e: 'created'): void }>()
 const open = ref(false)
 const saving = ref(false)
 const state = reactive<{
-  code: string
+  codes: string[]
   name: string
   description: string
   brand: string
@@ -93,7 +93,7 @@ const state = reactive<{
   properties: { id: string, value: string | number }[]
   customValues: { name: string, value: string }[]
 }>({
-  code: '',
+  codes: [''],
   name: '',
   description: '',
   brand: '',
@@ -139,7 +139,7 @@ watch(purchaseDateModel, (newDate) => {
 
 const { createCategory, deleteCategory, categories, subCategories, getAllCategories, getSubCategoriesByCategory, getCategoryById } = useCategory()
 const { createSubCategory, deleteSubCategory, getSubCategoryById } = useSubCategory()
-const { createAsset } = useAsset()
+const { createAsset, getAssetByCode } = useAsset()
 const { createProperty } = useProperty()
 const { locations, getAllLocations, createLocation, deleteLocation } = useLocation()
 const { createLocation: createAssetLocationLink } = useAssetLocation()
@@ -151,6 +151,8 @@ const locationItems = ref<{ id: string, name: string }[]>([])
 const branchItems = ref<{ id: string, name: string }[]>([])
 const availableProperties = ref<any[]>([])
 const propertyErrors = ref<Record<string, string>>({})
+const codeErrors = ref<Record<number, string>>({})
+const validatingCodes = ref<Record<number, boolean>>({})
 const showLocationField = ref(false)
 
 const openCategoryModal = ref(false)
@@ -206,7 +208,7 @@ const deletingLocationId = ref<string | null>(null)
 
 watch(() => props.initialCode, (newCode) => {
   if (newCode && open.value) {
-    state.code = newCode
+    state.codes = [newCode]
   }
 }, { immediate: true })
 
@@ -239,6 +241,58 @@ watch(() => state.categoryId, async (catId) => {
   }
 })
 
+async function checkCodeAvailability(index: number, code: string | undefined) {
+  if (!code) {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete codeErrors.value[index]
+    return
+  }
+
+  validatingCodes.value[index] = true
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  delete codeErrors.value[index]
+
+  try {
+    const asset = await getAssetByCode(code, true)
+    if (asset) {
+      codeErrors.value[index] = 'Serial ID already exists'
+    }
+  } catch (e) {
+    // Ignore error
+  } finally {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete validatingCodes.value[index]
+  }
+}
+
+function removeCode(index: number) {
+  state.codes.splice(index, 1)
+
+  // Re-index errors
+  const newCodeErrors: Record<number, string> = {}
+  Object.keys(codeErrors.value).forEach((key) => {
+    const keyNum = Number(key)
+    if (keyNum < index) {
+      newCodeErrors[keyNum] = codeErrors.value[keyNum] || ''
+    } else if (keyNum > index) {
+      newCodeErrors[keyNum - 1] = codeErrors.value[keyNum] || ''
+    }
+  })
+  codeErrors.value = newCodeErrors
+
+  // Re-index validating state
+  const newValidatingCodes: Record<number, boolean> = {}
+  Object.keys(validatingCodes.value).forEach((key) => {
+    const keyNum = Number(key)
+    if (keyNum < index) {
+      newValidatingCodes[keyNum] = validatingCodes.value[keyNum] ?? false
+    } else if (keyNum > index) {
+      newValidatingCodes[keyNum - 1] = validatingCodes.value[keyNum] ?? false
+    }
+  })
+  validatingCodes.value = newValidatingCodes
+}
+
 watch(() => state.subCategoryId, async (subCatId) => {
   propertyErrors.value = {}
 
@@ -266,7 +320,7 @@ function resetForm() {
     imagePreviewUrl.value = ''
   }
 
-  state.code = ''
+  state.codes = ['']
   state.name = ''
   state.description = ''
   state.brand = ''
@@ -287,6 +341,8 @@ function resetForm() {
   subCategoryItems.value = []
   locationItems.value = []
   propertyErrors.value = {}
+  codeErrors.value = {}
+  validatingCodes.value = {}
   showLocationField.value = false
   imageError.value = ''
   imageInteracted.value = false
@@ -667,12 +723,14 @@ function capturePhoto() {
 const hasValidationErrors = computed(() => {
   if (!state.image) return true
   if (Object.keys(propertyErrors.value).length > 0) return true
+  if (Object.keys(codeErrors.value).length > 0) return true
   return false
 })
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   saving.value = true
   propertyErrors.value = {}
+  codeErrors.value = {}
   imageError.value = validateImage()
   let hasErrors = false
 
@@ -707,7 +765,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   }) || []
 
   const formData = new FormData()
-  formData.append('code', event.data.code)
+  // formData.append('code', event.data.code) // Will be handled per code
   formData.append('subCategoryId', event.data.subCategoryId)
   formData.append('name', event.data.name)
 
@@ -735,10 +793,24 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
   if (state.image) formData.append('image', state.image)
 
-  const asset = await createAsset(formData)
+  // Create multiple assets
+  for (const code of event.data.codes) {
+    const assetFormData = new FormData()
+    // Append all common fields
+    for (const [key, value] of formData.entries()) {
+      assetFormData.append(key, value)
+    }
+    // Append specific code
+    assetFormData.append('code', code)
+    
+    // We need to re-append image because FormData might consume it or we just copy it effectively above?
+    // FormData entries iterator allows copying.
+    
+    const asset = await createAsset(assetFormData)
 
-  if (event.data.locationId) {
-    await createAssetLocationLink(asset.id, { locationId: event.data.locationId })
+    if (event.data.locationId) {
+      await createAssetLocationLink(asset.id, { locationId: event.data.locationId })
+    }
   }
 
   resetForm()
@@ -754,13 +826,13 @@ async function openModal() {
   categoryItems.value = categories.value.map(c => ({ id: c.id, name: c.name }))
 
   if (props.initialCode) {
-    state.code = props.initialCode
+    state.codes = [props.initialCode]
   }
 }
 
 async function openWithCode(code: string) {
   await openModal()
-  state.code = code
+  state.codes = [code]
 }
 
 defineExpose({
@@ -794,9 +866,54 @@ onBeforeUnmount(() => {
         @submit="onSubmit"
       >
         <div class="space-y-2">
-          <UFormField label="Serial ID" name="code" required>
-            <UInput v-model="state.code" class="w-full" placeholder="Serial ID" />
-          </UFormField>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1">
+                <label class="text-sm font-medium text-gray-700">
+                  Serial ID
+                  <span class="text-red-500">*</span>
+                </label>
+                <UTooltip text="You can add multiple serial IDs to create multiple assets at once" :delay-duration="0">
+                  <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+                </UTooltip>
+              </div>
+              <UButton
+                icon="i-lucide-plus"
+                size="xs"
+                variant="soft"
+                label="Add ID"
+                @click="state.codes.push('')"
+              />
+            </div>
+
+            <div v-for="(_, i) in state.codes" :key="i" class="flex gap-2 items-start">
+              <div class="w-full">
+                <UFormField :name="`codes.${i}`" class="w-full">
+                  <UInput
+                    v-model="state.codes[i]"
+                    class="w-full"
+                    placeholder="Serial ID"
+                    :class="{ 'border-red-500 focus:border-red-500': codeErrors[i] }"
+                    @blur="checkCodeAvailability(i, state.codes[i])"
+                  />
+                </UFormField>
+                <p v-if="codeErrors[i]" class="text-red-500 text-xs mt-1">
+                  {{ codeErrors[i] }}
+                </p>
+                <p v-if="validatingCodes[i]" class="text-gray-500 text-xs mt-1">
+                  Checking availability...
+                </p>
+              </div>
+              <UButton
+                v-if="state.codes.length > 1"
+                icon="i-lucide-x"
+                color="error"
+                variant="ghost"
+                class="mt-1"
+                @click="removeCode(i)"
+              />
+            </div>
+          </div>
 
           <UFormField label="Name" name="name" required>
             <UInput v-model="state.name" class="w-full" placeholder="Asset name" />
