@@ -78,21 +78,6 @@ export default defineNuxtConfig({
           type: 'image/png',
         },
       ],
-    },
-    workbox: {
-      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
-      runtimeCaching: [
-        {
-          urlPattern: /^https:\/\/simas\.nusa\.id\/api\/.*$/i,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'api-cache',
-            cacheableResponse: {
-              statuses: [0, 200],
-            },
-          },
-        },
-      ],
     }
   }
 })
