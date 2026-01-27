@@ -13,7 +13,7 @@ export class BranchService {
     return { Authorization: `Bearer ${token}` }
   }
 
-  async getAllCategories(search = ''): Promise<BranchResponse> {
+  async getAllBranches(search = ''): Promise<BranchResponse> {
     return await this.api<BranchResponse>(this.basePath, {
       method: 'GET',
       params: { search },

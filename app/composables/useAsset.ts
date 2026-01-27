@@ -25,6 +25,7 @@ interface AssetState {
     status?: string | null
     employeeId?: string | null
     locationId?: string | null
+    branchId?: string | null
     startDate?: string | null
     endDate?: string | null
     hasHolder?: boolean | null
@@ -42,6 +43,7 @@ interface AssetState {
     status?: string | undefined
     employeeId?: string | undefined
     locationId?: string | undefined
+    branchId?: string | undefined
     startDate?: string | null
     endDate?: string | null
     hasHolder?: boolean | null
@@ -68,6 +70,7 @@ export const useAsset = (): AssetState => {
     status?: string | null
     employeeId?: string | null
     locationId?: string | null
+    branchId?: string | null
     startDate?: string | null
     endDate?: string | null
     hasHolder?: boolean | null
@@ -84,6 +87,7 @@ export const useAsset = (): AssetState => {
         status = null,
         employeeId = null,
         locationId = null,
+        branchId = null,
         startDate = null,
         endDate = null,
         hasHolder = null
@@ -98,6 +102,7 @@ export const useAsset = (): AssetState => {
         status,
         employeeId,
         locationId,
+        branchId,
         startDate,
         endDate,
         hasHolder
@@ -232,6 +237,7 @@ export const useAsset = (): AssetState => {
     status?: string | undefined
     employeeId?: string | undefined
     locationId?: string | undefined
+    branchId?: string | undefined
     startDate?: string | null
     endDate?: string | null
   }): Promise<void> {
@@ -244,6 +250,7 @@ export const useAsset = (): AssetState => {
         filters.status || null,
         filters.employeeId || null,
         filters.locationId || null,
+        filters.branchId || null,
         filters.startDate || null,
         filters.endDate || null
       )

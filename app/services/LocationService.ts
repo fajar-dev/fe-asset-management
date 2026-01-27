@@ -21,10 +21,10 @@ export class LocationService {
     })
   }
 
-  async getAllLocations(all = true): Promise<LocationResponse> {
+  async getAllLocations(all = true, branchId = ''): Promise<LocationResponse> {
     return await this.api<LocationResponse>(this.basePath, {
       method: 'GET',
-      params: { all },
+      params: { all, branchId },
       headers: this.getAuthHeader()
     })
   }

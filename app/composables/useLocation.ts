@@ -17,7 +17,7 @@ interface LocationState {
   createLocation: (payload: CreateLocationPayload) => Promise<LocationDetailResponse | null>
   updateLocation: (id: string, payload: UpdateLocationPayload) => Promise<void>
   deleteLocation: (id: string) => Promise<void>
-  getAllLocations: () => Promise<void>
+  getAllLocations: (branchId?: string) => Promise<void>
 }
 
 export const useLocation = (): LocationState => {
@@ -38,11 +38,11 @@ export const useLocation = (): LocationState => {
     toast.add({ title: 'Error', description: msg, color: 'error' })
   }
 
-  const getAllLocations = async (): Promise<void> => {
+  const getAllLocations = async (branchId = ''): Promise<void> => {
     loading.value = true
     error.value = null
     try {
-      const res = await locationService.getAllLocations(true)
+      const res = await locationService.getAllLocations(true, branchId)
       locations.value = res.data
     } catch (err) {
       handleError(err, 'Failed to fetch locations')
