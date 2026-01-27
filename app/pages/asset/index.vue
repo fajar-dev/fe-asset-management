@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SelectMenuItem, TableColumn } from '@nuxt/ui'
+import { CalendarDate } from '@internationalized/date'
 
 import { NuxtLink } from '#components'
 import type { Row } from '@tanstack/table-core'
@@ -211,6 +212,20 @@ function resetFilters() {
 
 function clearDateRange() {
   tempDateRange.value = undefined
+}
+
+function setDateRangePreset(years: number) {
+  const today = new Date()
+  const end = new Date(today.getFullYear() - years, today.getMonth(), today.getDate())
+  
+  tempDateRange.value = {
+    start: new CalendarDate(2000, 1, 1),
+    end: new CalendarDate(
+      end.getFullYear(),
+      end.getMonth() + 1,
+      end.getDate()
+    )
+  }
 }
 
 function toggleDatePicker(e: Event) {
@@ -828,6 +843,47 @@ const columns: TableColumn<any>[] = [
                     </UButton>
 
                     <div v-if="showDatePicker" class="mt-2 p-3 border border-default rounded-lg bg-elevated" @click.stop>
+                      <div class="mb-3">
+                        <p class="text-xs font-medium mb-2 text-muted">Filter Umur Aset</p>
+                        <div class="grid grid-cols-2 gap-2">
+                          <UButton
+                            size="xs"
+                            color="neutral"
+                            variant="subtle"
+                            block
+                            @click="setDateRangePreset(1)"
+                          >
+                            > 1 Tahun
+                          </UButton>
+                          <UButton
+                            size="xs"
+                            color="neutral"
+                            variant="subtle"
+                            block
+                            @click="setDateRangePreset(2)"
+                          >
+                            > 2 Tahun
+                          </UButton>
+                          <UButton
+                            size="xs"
+                            color="neutral"
+                            variant="subtle"
+                            block
+                            @click="setDateRangePreset(3)"
+                          >
+                            > 3 Tahun
+                          </UButton>
+                          <UButton
+                            size="xs"
+                            color="neutral"
+                            variant="subtle"
+                            block
+                            @click="setDateRangePreset(4)"
+                          >
+                            > 4 Tahun
+                          </UButton>
+                        </div>
+                      </div>
                       <UCalendar
                         v-model="tempDateRange"
                         range

@@ -233,7 +233,7 @@ const maintenanceColumns: TableColumn<any>[] = [
                   <div>
                     <label class="text-sm font-medium text-gray-500 dark:text-gray-400">User</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ assetDetail.user?.name ?? '-' }}
+                      {{ assetDetail.user }}
                     </p>
                   </div>
 
