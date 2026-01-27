@@ -22,7 +22,7 @@ export const useBranch = (): BranchState => {
     loading.value = true
     error.value = null
     try {
-      const res = await branchService.getAllCategories(search)
+      const res = await branchService.getAllBranches(search)
       branches.value = res.data
     } catch (err: unknown) {
       const fetchError = err as FetchError<ApiError>

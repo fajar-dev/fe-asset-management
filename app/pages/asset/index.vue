@@ -5,6 +5,7 @@ import { CalendarDate } from '@internationalized/date'
 import { NuxtLink } from '#components'
 import type { Row } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
+import { useBranch } from '~/composables/useBranch'
 import { useCategory } from '~/composables/useCategory'
 import { useEmployee } from '~/composables/useEmployee'
 import { useLocation } from '~/composables/useLocation'
@@ -44,6 +45,7 @@ const showDatePicker = ref(false)
 const assetAddModalRef = ref<any>(null)
 
 const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset, exportAssets } = useAsset()
+const { branches, fetchBranches } = useBranch()
 const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
 const { employees, fetchEmployees } = useEmployee()
 const { locations: allLocations, getAllLocations } = useLocation()
@@ -55,6 +57,7 @@ const selectedStatus = ref<string | undefined>(undefined)
 const selectedEmployee = ref<string | undefined>(undefined)
 const selectedHasHolder = ref<boolean>(false)
 const selectedLocation = ref<string | undefined>(undefined)
+const selectedBranch = ref<string | undefined>(undefined)
 const selectedDateRange = ref<any>(undefined)
 const previewImage = ref<string | null>(null)
 
@@ -64,6 +67,7 @@ const tempStatus = ref<string | undefined>(undefined)
 const tempEmployee = ref<string | undefined>(undefined)
 const tempHasHolder = ref<boolean>(false)
 const tempLocation = ref<string | undefined>(undefined)
+const tempBranch = ref<string | undefined>(undefined)
 const tempDateRange = ref<any>(undefined)
 
 const pageLimitOptions = [10, 25, 50, 100]
@@ -77,6 +81,7 @@ const statusItems: SelectMenuItem[] = [
 onMounted(async () => {
   await getAllCategories()
   await fetchEmployees()
+  await fetchBranches()
   await getAllLocations()
   allLocations.value = allLocations.value.map(l => ({
     ...l,
@@ -100,6 +105,22 @@ onMounted(async () => {
   }
 
   loadAssets()
+})
+
+watch(tempBranch, async (newBranchId) => {
+  if (newBranchId) {
+    await getAllLocations(newBranchId)
+  } else {
+    await getAllLocations()
+  }
+  
+  // Reset selected location if it doesn't exist in the new list of locations
+  if (tempLocation.value) {
+    const exists = allLocations.value.some(l => String(l.id) === tempLocation.value)
+    if (!exists) {
+      tempLocation.value = undefined
+    }
+  }
 })
 
 watch(tempCategoryId, async (newId) => {
@@ -159,7 +180,8 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     status: selectedStatus.value,
     employeeId: selectedEmployee.value,
     hasHolder: selectedHasHolder.value,
-    locationId: selectedLocation.value
+    locationId: selectedLocation.value,
+    branchId: selectedBranch.value
   }
 
   if (selectedDateRange.value?.start && selectedDateRange.value?.end) {
@@ -177,6 +199,7 @@ function applyFilters() {
   selectedEmployee.value = tempEmployee.value
   selectedHasHolder.value = tempHasHolder.value
   selectedLocation.value = tempLocation.value
+  selectedBranch.value = tempBranch.value
   selectedDateRange.value = tempDateRange.value
   showDatePicker.value = false
   isFilterOpen.value = false
@@ -190,6 +213,7 @@ function resetFilters() {
   selectedEmployee.value = undefined
   selectedHasHolder.value = false
   selectedLocation.value = undefined
+  selectedBranch.value = undefined
   selectedDateRange.value = undefined
   search.value = ''
 
@@ -199,11 +223,13 @@ function resetFilters() {
   tempEmployee.value = undefined
   tempHasHolder.value = false
   tempLocation.value = undefined
+  tempBranch.value = undefined
   tempDateRange.value = undefined
 
   subCategories.value = []
   showDatePicker.value = false
   isFilterOpen.value = false
+  getAllLocations()
 
   router.push('/asset')
 
@@ -244,7 +270,8 @@ async function handleExport() {
     status: selectedStatus.value,
     employeeId: selectedEmployee.value,
     hasHolder: selectedHasHolder.value,
-    locationId: selectedLocation.value
+    locationId: selectedLocation.value,
+    branchId: selectedBranch.value
   }
 
   if (selectedDateRange.value?.start && selectedDateRange.value?.end) {
@@ -275,6 +302,7 @@ const activeFiltersCount = computed(() => {
   if (selectedEmployee.value) count++
   if (selectedHasHolder.value) count++
   if (selectedLocation.value) count++
+  if (selectedBranch.value) count++
   if (selectedDateRange.value?.start && selectedDateRange.value?.end) count++
   return count
 })
@@ -307,11 +335,17 @@ watch(isFilterOpen, (isOpen) => {
     tempEmployee.value = selectedEmployee.value
     tempHasHolder.value = selectedHasHolder.value
     tempLocation.value = selectedLocation.value
+    tempBranch.value = selectedBranch.value
     tempDateRange.value = selectedDateRange.value
     showDatePicker.value = false
 
     if (tempCategoryId.value) {
       getSubCategoriesByCategory(tempCategoryId.value)
+    }
+    
+    // Ensure locations are filtered correctly based on initial branch state when opening
+    if (tempBranch.value) {
+      getAllLocations(tempBranch.value)
     }
   }
 })
@@ -779,7 +813,25 @@ const columns: TableColumn<any>[] = [
                   </div>
 
                   <div>
-                    <label class="block text-sm font-medium mb-1.5">Last Location</label>
+                    <label class="block text-sm font-medium mb-1.5">Branch</label>
+                    <USelectMenu
+                      v-model="tempBranch"
+                      class="w-full"
+                      value-key="id"
+                      option-attribute="name"
+                      :items="branches.map(l => ({
+                        label: `${l.name}`,
+                        id: String(l.branchId)
+                      }))"
+                      placeholder="Select branch"
+                      searchable
+                      searchable-placeholder="Search branch..."
+                      clearable
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-1.5">Location</label>
                     <USelectMenu
                       v-model="tempLocation"
                       class="w-full"

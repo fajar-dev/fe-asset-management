@@ -28,6 +28,7 @@ export class AssetService {
     status: string | null = null,
     employeeId: string | null = null,
     locationId: string | null = null,
+    branchId: string | null = null,
     startDate: string | null = null,
     endDate: string | null = null,
     hasHolder: boolean | null = false
@@ -39,6 +40,7 @@ export class AssetService {
     if (status) params.status = status
     if (employeeId) params.employeeId = employeeId
     if (locationId) params.locationId = locationId
+    if (branchId) params.branchId = branchId
     if (startDate) params.startDate = startDate
     if (endDate) params.endDate = endDate
     if (hasHolder !== null) params.hasHolder = hasHolder
@@ -109,6 +111,7 @@ export class AssetService {
     status: string | null = null,
     employeeId: string | null = null,
     locationId: string | null = null,
+    branchId: string | null = null,
     startDate: string | null = null,
     endDate: string | null = null
   ): Promise<{ blob: Blob, filename: string }> {
@@ -121,6 +124,7 @@ export class AssetService {
     if (status) params.status = status
     if (employeeId) params.employeeId = employeeId
     if (locationId) params.locationId = locationId
+    if (branchId) params.branchId = branchId
     if (startDate) params.startDate = startDate
     if (endDate) params.endDate = endDate
 
