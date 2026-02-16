@@ -23,6 +23,7 @@ export class AssetService {
     search = '',
     page = 1,
     limit = 10,
+    user: string | null = null,
     categoryId: string | null = null,
     subCategoryId: string | null = null,
     status: string | null = null,
@@ -34,7 +35,7 @@ export class AssetService {
     hasHolder: boolean | null = false
   ): Promise<AssetResponse> {
     const params: Record<string, any> = { search, page, limit }
-
+    if (user) params.user = user
     if (categoryId) params.categoryId = categoryId
     if (subCategoryId) params.subCategoryId = subCategoryId
     if (status) params.status = status
@@ -106,6 +107,7 @@ export class AssetService {
   }
 
   async exportAssets(
+    user: string | null = null,
     categoryId: string | null = null,
     subCategoryId: string | null = null,
     status: string | null = null,
@@ -119,6 +121,7 @@ export class AssetService {
 
     const params: Record<string, string> = {}
 
+    if (user) params.user = user
     if (categoryId) params.categoryId = categoryId
     if (subCategoryId) params.subCategoryId = subCategoryId
     if (status) params.status = status
