@@ -23,6 +23,10 @@ const emit = defineEmits<{
   (e: 'add-asset', code: string): void
 }>()
 
+const props = defineProps<{
+  hideTrigger?: boolean
+}>()
+
 onMounted(() => {
   codeReader.value = new BrowserMultiFormatReader()
 })
@@ -246,6 +250,10 @@ const currentCameraName = computed(() => {
   const device = videoDevices.value[selectedDeviceIndex.value]
   return device?.label || `Camera ${selectedDeviceIndex.value + 1}`
 })
+
+defineExpose({
+  openModal
+})
 </script>
 
 <template>
@@ -256,6 +264,7 @@ const currentCameraName = computed(() => {
     @close="closeModal"
   >
     <UButton
+      v-if="!props.hideTrigger"
       label="Scan Asset"
       variant="soft"
       icon="i-lucide-scan-barcode"
