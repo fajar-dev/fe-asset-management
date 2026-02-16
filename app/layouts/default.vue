@@ -7,6 +7,7 @@ const open = ref(false)
 
 const isFeedbackOpen = ref(false)
 const isFeedbackLoading = ref(false)
+const scanModal = ref()
 
 const feedbackState = reactive({
   type: 'keluhan',
@@ -15,16 +16,17 @@ const feedbackState = reactive({
 })
 
 const links = computed<NavigationMenuItem[][]>(() => [[
+
   {
     label: 'Home',
     icon: 'i-lucide-house',
     to: '/',
     onSelect: () => (open.value = false),
-    class: 'mt-1 py-1.5'
+    class: 'pb-1.5'
   },
   {
     label: 'Asset',
-    icon: 'i-lucide-library-big',
+    icon: 'i-lucide-package',
     to: '/asset',
     class: 'mt-1 py-1.5',
     onSelect: () => (open.value = false)
@@ -133,6 +135,20 @@ onMounted(() => {
 
       <template #default="{ collapsed }">
         <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
+        <div :class="collapsed ? 'px-0' : 'px-2' ">
+          <UTooltip :text="collapsed ? 'Scan Asset' : undefined" :popper="{ placement: 'right' }" class="w-full">
+            <UButton
+              :label="collapsed ? undefined : 'Scan Asset'"
+              icon="i-lucide-scan-barcode"
+              block
+              :square="collapsed"
+              variant="solid"
+              color="primary"
+              :class="{ 'justify-start': !collapsed }"
+              @click="() => { open = false; scanModal?.openModal() }"
+            />
+          </UTooltip>
+        </div>
         <UNavigationMenu
           :collapsed="collapsed"
           :items="links[0]"
@@ -159,4 +175,5 @@ onMounted(() => {
   </UDashboardGroup>
 
   <FeedbackModal v-model:open="isFeedbackOpen" :form-state="feedbackState" />
+  <AssetScanModal ref="scanModal" :hide-trigger="true" />
 </template>
