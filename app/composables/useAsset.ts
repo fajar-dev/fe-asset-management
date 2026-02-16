@@ -65,6 +65,7 @@ export const useAsset = (): AssetState => {
     search?: string
     page?: number
     limit?: number
+    user?: string | null
     categoryId?: string | null
     subCategoryId?: string | null
     status?: string | null
@@ -82,6 +83,7 @@ export const useAsset = (): AssetState => {
         search = searchTerm.value,
         page = pagination.value.pageIndex + 1,
         limit = pagination.value.pageSize,
+        user = null,
         categoryId = null,
         subCategoryId = null,
         status = null,
@@ -97,6 +99,7 @@ export const useAsset = (): AssetState => {
         search,
         page,
         limit,
+        user,
         categoryId,
         subCategoryId,
         status,
@@ -234,6 +237,7 @@ export const useAsset = (): AssetState => {
   async function exportAssets(filters: {
     categoryId?: string | undefined
     subCategoryId?: string | undefined
+    user?: string | undefined
     status?: string | undefined
     employeeId?: string | undefined
     locationId?: string | undefined
@@ -245,6 +249,7 @@ export const useAsset = (): AssetState => {
     error.value = null
     try {
       const { blob, filename } = await assetService.exportAssets(
+        filters.user || null,
         filters.categoryId || null,
         filters.subCategoryId || null,
         filters.status || null,

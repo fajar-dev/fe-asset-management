@@ -58,9 +58,11 @@ const selectedEmployee = ref<string | undefined>(undefined)
 const selectedHasHolder = ref<boolean>(false)
 const selectedLocation = ref<string | undefined>(undefined)
 const selectedBranch = ref<string | undefined>(undefined)
+const selectedUser = ref<string | undefined>(undefined)
 const selectedDateRange = ref<any>(undefined)
 const previewImage = ref<string | null>(null)
 
+const tempUser = ref<string | undefined>(undefined)
 const tempCategoryId = ref<string | undefined>(undefined)
 const tempSubCategoryId = ref<string | undefined>(undefined)
 const tempStatus = ref<string | undefined>(undefined)
@@ -179,6 +181,7 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     subCategoryId: selectedSubCategoryId.value,
     status: selectedStatus.value,
     employeeId: selectedEmployee.value,
+    user: selectedUser.value,
     hasHolder: selectedHasHolder.value,
     locationId: selectedLocation.value,
     branchId: selectedBranch.value
@@ -196,6 +199,7 @@ function applyFilters() {
   selectedCategoryId.value = tempCategoryId.value
   selectedSubCategoryId.value = tempSubCategoryId.value
   selectedStatus.value = tempStatus.value
+  selectedUser.value = tempUser.value
   selectedEmployee.value = tempEmployee.value
   selectedHasHolder.value = tempHasHolder.value
   selectedLocation.value = tempLocation.value
@@ -214,9 +218,11 @@ function resetFilters() {
   selectedHasHolder.value = false
   selectedLocation.value = undefined
   selectedBranch.value = undefined
+  selectedUser.value = undefined
   selectedDateRange.value = undefined
   search.value = ''
 
+  tempUser.value = undefined
   tempCategoryId.value = undefined
   tempSubCategoryId.value = undefined
   tempStatus.value = undefined
@@ -303,6 +309,7 @@ const activeFiltersCount = computed(() => {
   if (selectedHasHolder.value) count++
   if (selectedLocation.value) count++
   if (selectedBranch.value) count++
+  if (selectedUser.value) count++
   if (selectedDateRange.value?.start && selectedDateRange.value?.end) count++
   return count
 })
@@ -332,6 +339,7 @@ watch(isFilterOpen, (isOpen) => {
     tempCategoryId.value = selectedCategoryId.value
     tempSubCategoryId.value = selectedSubCategoryId.value
     tempStatus.value = selectedStatus.value
+    tempUser.value = selectedUser.value
     tempEmployee.value = selectedEmployee.value
     tempHasHolder.value = selectedHasHolder.value
     tempLocation.value = selectedLocation.value
@@ -765,6 +773,15 @@ const columns: TableColumn<any>[] = [
                 </div>
 
                 <div class="space-y-3">
+                  <div>
+                    <label class="block text-sm font-medium mb-1.5">User</label>
+                    <UInput
+                      class="w-full"
+                      v-model="tempUser"
+                      icon="i-lucide-search"
+                      placeholder="User"
+                    />
+                  </div>
                   <div>
                     <label class="block text-sm font-medium mb-1.5">Category</label>
                     <USelectMenu
