@@ -70,7 +70,7 @@ const tempLocation = ref<string | undefined>(undefined)
 const tempBranch = ref<string | undefined>(undefined)
 const tempDateRange = ref<any>(undefined)
 
-const pageLimitOptions = [10, 25, 50, 100]
+const pageLimitOptions = [10, 25, 50, 100, 200, 500]
 
 const statusItems: SelectMenuItem[] = [
   { label: 'Active', id: 'active' },
@@ -416,14 +416,6 @@ function getRowItems(row: Row<any>) {
   if (isAdmin.value) {
     items.push(
       { type: 'separator' },
-      {
-        label: 'Edit',
-        icon: 'i-lucide-pencil',
-        onSelect: () => {
-          editingAssetId.value = row.original.id
-          isUpdateModalOpen.value = true
-        }
-      },
       {
         label: 'Delete',
         icon: 'i-lucide-trash',

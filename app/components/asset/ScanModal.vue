@@ -51,6 +51,18 @@ const startScanning = async () => {
 
     videoDevices.value = videoInputDevices
 
+    // Find back camera
+    const backCameraIndex = videoInputDevices.findIndex(device => {
+      const label = device.label.toLowerCase()
+      return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('belakang')
+    })
+
+    if (backCameraIndex !== -1) {
+      selectedDeviceIndex.value = backCameraIndex
+    } else {
+      selectedDeviceIndex.value = 0
+    }
+
     const selectedDevice = videoInputDevices[selectedDeviceIndex.value]
     if (!selectedDevice) {
       return
@@ -165,20 +177,6 @@ const stopScanning = () => {
   scanning.value = false
 }
 
-const switchCamera = async () => {
-  if (videoDevices.value.length <= 1) return
-
-  stopScanning()
-
-  await nextTick()
-
-  selectedDeviceIndex.value = (selectedDeviceIndex.value + 1) % videoDevices.value.length
-
-  await new Promise(resolve => setTimeout(resolve, 500))
-
-  await continuousScanning()
-}
-
 const continuousScanning = async () => {
   if (!codeReader.value || !videoRef.value) return
 
@@ -194,6 +192,18 @@ const continuousScanning = async () => {
     }
 
     videoDevices.value = videoInputDevices
+
+    // Find back camera
+    const backCameraIndex = videoInputDevices.findIndex(device => {
+      const label = device.label.toLowerCase()
+      return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('belakang')
+    })
+
+    if (backCameraIndex !== -1) {
+      selectedDeviceIndex.value = backCameraIndex
+    } else {
+      selectedDeviceIndex.value = 0
+    }
 
     const selectedDevice = videoInputDevices[selectedDeviceIndex.value]
     if (!selectedDevice) {
@@ -265,14 +275,6 @@ const currentCameraName = computed(() => {
             playsinline
           />
 
-          <button
-            v-if="!loading && !cameraError && videoDevices.length > 1"
-            class="absolute top-4 right-4 bg-black bg-opacity-60 hover:bg-opacity-80 text-white rounded-full p-3 transition-all duration-200 z-10"
-            @click="switchCamera"
-          >
-            <UIcon name="i-lucide-repeat" class="w-5 h-5" />
-          </button>
-
           <div
             v-if="!loading && !cameraError && scanning"
             class="absolute top-4 left-4 bg-black bg-opacity-60 text-white text-xs px-3 py-1.5 rounded-full z-10"
@@ -292,7 +294,7 @@ const currentCameraName = computed(() => {
             </div>
           </div>
 
-          <div
+          <!-- <div
             v-if="!loading && !cameraError && scanning"
             class="absolute inset-0 flex items-center justify-center pointer-events-none"
           >
@@ -302,7 +304,7 @@ const currentCameraName = computed(() => {
                 <p>Position barcode here</p>
               </div>
             </div>
-          </div>
+          </div> -->
 
           <div
             v-if="cameraError"
@@ -337,9 +339,6 @@ const currentCameraName = computed(() => {
                 <li>• Hold your device steady</li>
                 <li>• Point camera at the barcode</li>
                 <li>• Barcode will be detected automatically anywhere on screen</li>
-                <li v-if="videoDevices.length > 1">
-                  • Tap <UIcon name="i-lucide-repeat" class="inline w-3 h-3" /> to switch camera
-                </li>
                 <li>• Ensure good lighting and focus</li>
                 <li>• Supports: Code128, EAN-13, UPC-A, Code39, etc.</li>
               </ul>
