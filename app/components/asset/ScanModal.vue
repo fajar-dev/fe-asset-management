@@ -14,7 +14,6 @@ const scanning = ref(false)
 
 const videoDevices = ref<MediaDeviceInfo[]>([])
 const selectedDeviceIndex = ref(0)
-const isFrontCamera = ref(true)
 
 const router = useRouter()
 const { getAssetByCode } = useAsset()
@@ -31,14 +30,7 @@ onMounted(() => {
   codeReader.value = new BrowserMultiFormatReader()
 })
 
-const detectFrontCamera = (device: MediaDeviceInfo) => {
-  const label = device?.label.toLowerCase() || ''
-  return label.includes('front')
-    || label.includes('depan')
-    || label.includes('user')
-    || label.includes('facing front')
-    || (!label.includes('back') && !label.includes('rear') && selectedDeviceIndex.value === 0)
-}
+
 
 const startScanning = async () => {
   if (!codeReader.value || !videoRef.value) return
@@ -71,8 +63,7 @@ const startScanning = async () => {
     if (!selectedDevice) {
       return
     }
-    isFrontCamera.value = detectFrontCamera(selectedDevice)
-    const selectedDeviceId = videoInputDevices[selectedDeviceIndex.value]?.deviceId
+    const selectedDeviceId = selectedDevice.deviceId
 
     const result = await codeReader.value.decodeOnceFromVideoDevice(selectedDeviceId, videoRef.value)
 
@@ -213,8 +204,7 @@ const continuousScanning = async () => {
     if (!selectedDevice) {
       return
     }
-    isFrontCamera.value = detectFrontCamera(selectedDevice)
-    const selectedDeviceId = videoInputDevices[selectedDeviceIndex.value]?.deviceId
+    const selectedDeviceId = selectedDevice.deviceId
 
     codeReader.value.decodeFromVideoDevice(
       selectedDeviceId ?? null,
@@ -278,7 +268,6 @@ defineExpose({
             v-if="open"
             ref="videoRef"
             class="w-full h-full object-cover"
-            :style="{ transform: isFrontCamera ? 'scaleX(-1)' : 'scaleX(1)' }"
             autoplay
             muted
             playsinline
