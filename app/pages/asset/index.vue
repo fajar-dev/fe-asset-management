@@ -95,23 +95,86 @@ onMounted(async () => {
     id: String(l.id)
   }))
 
-  if (route.query.categoryId) {
-    selectedCategoryId.value = route.query.categoryId as string
-    tempCategoryId.value = route.query.categoryId as string
-    await getSubCategoriesByCategory(route.query.categoryId as string)
+  const q = route.query
+
+  // Restore search & limit from URL
+  if (q.search) search.value = q.search as string
+  if (q.limit) {
+    const limit = Number(q.limit)
+    if (pageLimitOptions.includes(limit)) {
+      pageLimit.value = limit
+      pagination.value.pageSize = limit
+    }
   }
 
-  if (route.query.subCategoryId) {
-    selectedSubCategoryId.value = route.query.subCategoryId as string
-    tempSubCategoryId.value = route.query.subCategoryId as string
+  // Restore filters from URL
+  if (q.categoryId) {
+    selectedCategoryId.value = q.categoryId as string
+    tempCategoryId.value = q.categoryId as string
+    await getSubCategoriesByCategory(q.categoryId as string)
   }
 
-  if (route.query.locationId) {
-    selectedLocation.value = route.query.locationId as string
-    tempLocation.value = route.query.locationId as string
+  if (q.subCategoryId) {
+    selectedSubCategoryId.value = q.subCategoryId as string
+    tempSubCategoryId.value = q.subCategoryId as string
   }
 
-  loadAssets()
+  if (q.status) {
+    selectedStatus.value = q.status as string
+    tempStatus.value = q.status as string
+  }
+
+  if (q.user) {
+    selectedUser.value = q.user as string
+    tempUser.value = q.user as string
+  }
+
+  if (q.hasHolder === 'true') {
+    selectedHasHolder.value = true
+    tempHasHolder.value = true
+  }
+
+  if (q.employeeId) {
+    selectedEmployee.value = q.employeeId as string
+    tempEmployee.value = q.employeeId as string
+    selectedHasHolder.value = true
+    tempHasHolder.value = true
+  }
+
+  if (q.branchId) {
+    selectedBranch.value = q.branchId as string
+    tempBranch.value = q.branchId as string
+    await getAllLocations(q.branchId as string)
+  }
+
+  if (q.locationId) {
+    selectedLocation.value = q.locationId as string
+    tempLocation.value = q.locationId as string
+  }
+
+  if (q.startDate && q.endDate) {
+    const startParts = (q.startDate as string).split('-')
+    const endParts = (q.endDate as string).split('-')
+    const range = {
+      start: new CalendarDate(parseInt(startParts[0]!), parseInt(startParts[1]!), parseInt(startParts[2]!)),
+      end: new CalendarDate(parseInt(endParts[0]!), parseInt(endParts[1]!), parseInt(endParts[2]!))
+    }
+    selectedDateRange.value = range
+    tempDateRange.value = range
+  }
+
+  const initialPage = q.page ? Number(q.page) : 1
+  loadAssets(initialPage)
+
+  // Wait for all pending effects to settle, then register user-interaction watchers.
+  // This prevents them from firing for changes made during initialization above.
+  await nextTick()
+
+  watch(search, () => loadAssets(1))
+  watch(pageLimit, (newLimit) => {
+    pagination.value.pageSize = newLimit
+    loadAssets(1)
+  })
 })
 
 watch(tempBranch, async (newBranchId) => {
@@ -145,12 +208,6 @@ watch(tempHasHolder, (newValue) => {
   }
 })
 
-watch(search, () => loadAssets(1))
-
-watch(pageLimit, (newLimit) => {
-  pagination.value.pageSize = newLimit
-  loadAssets(1)
-})
 
 const categoryItems = computed<SelectMenuItem[]>(() =>
   categories.value.map(c => ({ label: c.name, id: c.id }))
@@ -179,7 +236,7 @@ const selectedEmployeeAvatar = computed(() => {
 
 function loadAssets(page = pagination.value.pageIndex + 1) {
   const params: any = {
-    search: search.value,
+    search: search.value || undefined,
     page,
     limit: pageLimit.value,
     categoryId: selectedCategoryId.value,
@@ -187,7 +244,7 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     status: selectedStatus.value,
     employeeId: selectedEmployee.value,
     user: selectedUser.value,
-    hasHolder: selectedHasHolder.value,
+    hasHolder: selectedHasHolder.value || undefined,
     locationId: selectedLocation.value,
     branchId: selectedBranch.value
   }
@@ -196,6 +253,20 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     params.startDate = `${selectedDateRange.value.start.year}-${String(selectedDateRange.value.start.month).padStart(2, '0')}-${String(selectedDateRange.value.start.day).padStart(2, '0')}`
     params.endDate = `${selectedDateRange.value.end.year}-${String(selectedDateRange.value.end.month).padStart(2, '0')}-${String(selectedDateRange.value.end.day).padStart(2, '0')}`
   }
+
+  // Sync active params to URL (replace so back button isn't broken)
+  const query: Record<string, string> = {}
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '' && value !== false) {
+      query[key] = String(value)
+    }
+  }
+  router.replace({ query })
+
+  // Save the current asset list URL (with all params) so detail pages can navigate back correctly
+  const assetListUrl = useState('assetListUrl', () => '/asset')
+  const queryString = new URLSearchParams(query).toString()
+  assetListUrl.value = queryString ? `/asset?${queryString}` : '/asset'
 
   fetchAssets(params)
 }
@@ -242,8 +313,7 @@ function resetFilters() {
   isFilterOpen.value = false
   getAllLocations()
 
-  router.push('/asset')
-
+  // loadAssets will clear the URL automatically via router.replace
   loadAssets(1)
 }
 
@@ -1050,7 +1120,7 @@ const columns: TableColumn<any>[] = [
       <div class="flex flex-col md:flex-row items-center justify-center md:justify-between gap-3 border-t border-default pt-4 mt-auto">
         <UPagination
           v-if="apiPagination"
-          :default-page="pagination.pageIndex + 1"
+          :page="apiPagination.currentPage"
           :items-per-page="pagination.pageSize"
           :total="apiPagination.totalItems"
           @update:page="handlePageChange"

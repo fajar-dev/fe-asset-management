@@ -30,9 +30,18 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false
 })
 
+const router = useRouter()
+
+// Read the last visited asset list URL (set by index.vue's loadAssets via useState)
+const assetListUrl = useState('assetListUrl', () => '/asset')
+
+function goBack() {
+  router.push(assetListUrl.value)
+}
+
 const navigationItems = computed<NavigationMenuItem[][]>(() => {
   if (!props.assetDetail || !props.assetId) {
-    return [[{ label: 'Back', icon: 'i-lucide-move-left', to: '/asset' }], []]
+    return [[{ label: 'Back', icon: 'i-lucide-move-left', onClick: goBack }], []]
   }
 
   const category = props.assetDetail.subCategory.category
@@ -80,7 +89,7 @@ const navigationItems = computed<NavigationMenuItem[][]>(() => {
     {
       label: 'Back',
       icon: 'i-lucide-move-left',
-      to: '/asset'
+      onClick: goBack
     }
   ], items]
 })
