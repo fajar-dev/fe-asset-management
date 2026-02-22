@@ -106,6 +106,13 @@ const state = reactive<{
 })
 
 const purchaseDateModel = ref<any>(null)
+const displayPrice = ref('')
+
+function handlePriceInput(value: string) {
+  const digits = value.replace(/\D/g, '')
+  state.price = digits ? Number(digits) : undefined
+  displayPrice.value = digits ? Number(digits).toLocaleString('id-ID') : ''
+}
 
 function formatDateDisplay(date: any): string {
   if (!date) return 'Select a date'
@@ -257,6 +264,7 @@ async function loadAssetData() {
   state.model = asset.model || ''
   state.user = asset.user || ''
   state.price = asset.price || undefined
+  displayPrice.value = asset.price ? Number(asset.price).toLocaleString('id-ID') : ''
   state.purchaseDate = asset.purchaseDate || ''
   
   if (asset.purchaseDate) {
@@ -747,6 +755,7 @@ function resetState() {
     properties: [],
     customValues: []
   })
+  displayPrice.value = ''
 
   hasImageChanged.value = false
   existingImageUrl.value = null
@@ -804,10 +813,12 @@ onBeforeUnmount(() => {
         <div class="space-y-2">
           <UFormField label="Price" name="price" required>
             <UInput
-              v-model="state.price"
+              :model-value="displayPrice"
               class="w-full"
-              placeholder="Price"
-              type="number"
+              placeholder="0"
+              type="text"
+              inputmode="numeric"
+              @update:model-value="handlePriceInput"
             >
               <template #leading>
                 <span class="text-gray-500">Rp</span>
@@ -815,7 +826,7 @@ onBeforeUnmount(() => {
             </UInput>
           </UFormField>
 
-        <UFormField label="Purchase Date" name="purchaseDate" required>
+          <UFormField label="Purchase Date" name="purchaseDate" required>
             <UPopover>
               <UButton 
                 color="neutral" 

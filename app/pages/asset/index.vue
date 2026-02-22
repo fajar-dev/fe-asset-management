@@ -555,6 +555,16 @@ const columns: TableColumn<any>[] = [
       })
   },
   {
+    id: 'number',
+    header: () => h('span', { class: 'text-muted text-xs' }, '#'),
+    cell: ({ row }) => {
+      const page = apiPagination.value?.currentPage ?? 1
+      const limit = pageLimit.value
+      const number = (page - 1) * limit + row.index + 1
+      return h('span', { class: 'text-xs text-muted' }, number)
+    }
+  },
+  {
     accessorKey: 'name',
     header: 'Asset',
     cell: ({ row }) =>

@@ -111,6 +111,13 @@ const state = reactive<{
 })
 
 const purchaseDateModel = ref<any>(null)
+const displayPrice = ref('')
+
+function handlePriceInput(value: string) {
+  const digits = value.replace(/\D/g, '')
+  state.price = digits ? Number(digits) : undefined
+  displayPrice.value = digits ? Number(digits).toLocaleString('id-ID') : ''
+}
 
 function formatDateDisplay(date: any): string {
   if (!date) return 'Select a date'
@@ -327,6 +334,7 @@ function resetForm() {
   state.model = ''
   state.user = ''
   state.price = undefined
+  displayPrice.value = ''
   state.purchaseDate = ''
   purchaseDateModel.value = null
   state.categoryId = ''
@@ -943,10 +951,12 @@ onBeforeUnmount(() => {
         <div class="space-y-2">
           <UFormField label="Price" name="price">
             <UInput
-              v-model="state.price"
+              :model-value="displayPrice"
               class="w-full"
-              placeholder="Price"
-              type="number"
+              placeholder="0"
+              type="text"
+              inputmode="numeric"
+              @update:model-value="handlePriceInput"
             >
               <template #leading>
                 <span class="text-gray-500">Rp</span>
