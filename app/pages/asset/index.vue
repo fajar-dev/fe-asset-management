@@ -22,6 +22,7 @@ interface EmployeeItem {
 
 const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
+const UCheckbox = resolveComponent('UCheckbox')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UBadge = resolveComponent('UBadge')
 const ConfirmModal = resolveComponent('ConfirmModal')
@@ -41,8 +42,12 @@ const isUpdateModalOpen = ref(false)
 const editingAssetId = ref<string>('')
 const isFilterOpen = ref(false)
 const showDatePicker = ref(false)
+const isBulkDeleteModalOpen = ref(false)
+const isBulkDeleting = ref(false)
+const rowSelection = ref<Record<string, boolean>>({})
 
 const assetAddModalRef = ref<any>(null)
+const tableRef = ref<any>(null)
 
 const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset, exportAssets } = useAsset()
 const { branches, fetchBranches } = useBranch()
@@ -366,6 +371,27 @@ async function confirmDelete() {
   isDeleteModalOpen.value = false
 }
 
+const selectedAssetIds = computed(() => {
+  return Object.entries(rowSelection.value)
+    .filter(([, selected]) => selected)
+    .map(([index]) => assets.value[Number(index)]?.id)
+    .filter(Boolean) as string[]
+})
+
+async function confirmBulkDelete() {
+  isBulkDeleting.value = true
+  try {
+    for (const id of selectedAssetIds.value) {
+      await deleteAsset(id)
+    }
+    rowSelection.value = {}
+    loadAssets()
+  } finally {
+    isBulkDeleting.value = false
+    isBulkDeleteModalOpen.value = false
+  }
+}
+
 function handleUpdated() {
   loadAssets()
 }
@@ -440,6 +466,24 @@ function getRowItems(row: Row<any>) {
 }
 
 const columns: TableColumn<any>[] = [
+  {
+    id: 'select',
+    header: ({ table }) =>
+      h(UCheckbox, {
+        modelValue: table.getIsSomePageRowsSelected()
+          ? 'indeterminate'
+          : table.getIsAllPageRowsSelected(),
+        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+          table.toggleAllPageRowsSelected(!!value),
+        'aria-label': 'Select all'
+      }),
+    cell: ({ row }) =>
+      h(UCheckbox, {
+        modelValue: row.getIsSelected(),
+        'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
+        'aria-label': 'Select row'
+      })
+  },
   {
     accessorKey: 'name',
     header: 'Asset',
@@ -700,6 +744,13 @@ const columns: TableColumn<any>[] = [
           description="Are you sure? This action cannot be undone."
           confirm-label="Delete"
           :on-confirm="confirmDelete"
+        />
+        <ConfirmModal
+          v-model:open="isBulkDeleteModalOpen"
+          title="Bulk Delete Assets"
+          :description="`Are you sure you want to delete ${selectedAssetIds.length} selected asset(s)? This action cannot be undone.`"
+          confirm-label="Delete All"
+          :on-confirm="confirmBulkDelete"
         />
         <AssetUpdateModal
           v-if="editingAssetId"
@@ -969,8 +1020,27 @@ const columns: TableColumn<any>[] = [
         </div>
       </div>
 
+      <div v-if="selectedAssetIds.length > 0" class="flex justify-between items-center gap-3">
+        <span class="text-sm text-error font-medium">
+          {{ selectedAssetIds.length }} asset(s) selected
+        </span>
+        <RoleWrapper role="admin">
+          <UButton
+            color="error"
+            variant="soft"
+            icon="i-lucide-trash-2"
+            :loading="isBulkDeleting"
+            @click="isBulkDeleteModalOpen = true"
+          >
+            Delete Selected
+          </UButton>
+        </RoleWrapper>
+      </div>
+
       <UTable
+        ref="tableRef"
         v-model:pagination="pagination"
+        v-model:row-selection="rowSelection"
         :data="assets"
         :columns="columns"
         :loading="loading"
