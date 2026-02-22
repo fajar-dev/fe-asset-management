@@ -135,7 +135,7 @@ onMounted(() => {
 
       <template #default="{ collapsed }">
         <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
-        <div :class="collapsed ? 'px-0' : 'px-2' ">
+        <div :class="collapsed ? 'px-0' : 'px-0' ">
           <UTooltip :text="collapsed ? 'Scan Asset' : undefined" :popper="{ placement: 'right' }" class="w-full">
             <UButton
               :label="collapsed ? undefined : 'Scan Asset'"
