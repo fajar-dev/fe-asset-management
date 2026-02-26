@@ -32,7 +32,9 @@ export class AssetService {
     branchId: string | null = null,
     startDate: string | null = null,
     endDate: string | null = null,
-    hasHolder: boolean | null = false
+    hasHolder: boolean | null = false,
+    sort: string | null = null,
+    order: string | null = null
   ): Promise<AssetResponse> {
     const params: Record<string, any> = { search, page, limit }
     if (user) params.user = user
@@ -45,6 +47,8 @@ export class AssetService {
     if (startDate) params.startDate = startDate
     if (endDate) params.endDate = endDate
     if (hasHolder !== null) params.hasHolder = hasHolder
+    if (sort) params.sort = sort
+    if (order) params.order = order
 
     return await this.api<AssetResponse>(this.basePath, {
       method: 'GET',

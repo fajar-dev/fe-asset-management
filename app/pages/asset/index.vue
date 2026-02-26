@@ -3,7 +3,7 @@ import type { SelectMenuItem, TableColumn } from '@nuxt/ui'
 import { CalendarDate } from '@internationalized/date'
 
 import { NuxtLink } from '#components'
-import type { Row } from '@tanstack/table-core'
+import type { Row, Column } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
 import { useBranch } from '~/composables/useBranch'
 import { useCategory } from '~/composables/useCategory'
@@ -45,6 +45,7 @@ const showDatePicker = ref(false)
 const isBulkDeleteModalOpen = ref(false)
 const isBulkDeleting = ref(false)
 const rowSelection = ref<Record<string, boolean>>({})
+const sorting = ref<any[]>([])
 
 const assetAddModalRef = ref<any>(null)
 const tableRef = ref<any>(null)
@@ -169,6 +170,10 @@ onMounted(async () => {
     tempDateRange.value = range
   }
 
+  if (q.sort && q.order) {
+    sorting.value = [{ id: q.sort as string, desc: q.order === 'DESC' }]
+  }
+
   const initialPage = q.page ? Number(q.page) : 1
   loadAssets(initialPage)
 
@@ -181,6 +186,7 @@ onMounted(async () => {
     pagination.value.pageSize = newLimit
     loadAssets(1)
   })
+  watch(sorting, () => loadAssets(1), { deep: true })
 })
 
 watch(tempBranch, async (newBranchIds) => {
@@ -247,7 +253,9 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     user: selectedUser.value,
     hasHolder: selectedHasHolder.value || undefined,
     locationId: selectedLocation.value.length > 0 ? selectedLocation.value.join(',') : undefined,
-    branchId: selectedBranch.value.length > 0 ? selectedBranch.value.join(',') : undefined
+    branchId: selectedBranch.value.length > 0 ? selectedBranch.value.join(',') : undefined,
+    sort: sorting.value[0]?.id,
+    order: sorting.value[0] ? (sorting.value[0].desc ? 'DESC' : 'ASC') : undefined
   }
 
   if (selectedDateRange.value?.start && selectedDateRange.value?.end) {
@@ -480,6 +488,32 @@ function handleAddAssetFromScanner(code: string) {
   }
 }
 
+function getHeader(column: Column<any, any>, label: string) {
+  const isSorted = column.getIsSorted()
+
+  return h(UButton, {
+    color: 'neutral',
+    variant: 'ghost',
+    label,
+    icon: isSorted
+      ? isSorted === 'asc'
+        ? 'i-lucide-arrow-up-narrow-wide'
+        : 'i-lucide-arrow-down-wide-narrow'
+      : 'i-lucide-arrow-up-down',
+    class: '-mx-2.5 font-semibold hover:bg-elevated',
+    'aria-label': `Sort by ${label}`,
+    onClick: () => {
+      if (!isSorted) {
+        column.toggleSorting(false)
+      } else if (isSorted === 'asc') {
+        column.toggleSorting(true)
+      } else {
+        column.clearSorting()
+      }
+    }
+  })
+}
+
 function getRowItems(row: Row<any>) {
   const category = row.original.subCategory?.category
   if (!category) return []
@@ -567,7 +601,7 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'name',
-    header: 'Asset',
+    header: ({ column }) => getHeader(column, 'Asset'),
     cell: ({ row }) =>
       h(
         NuxtLink,
@@ -642,12 +676,12 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'brand',
-    header: 'Brand',
+    header: ({ column }) => getHeader(column, 'Brand'),
     cell: ({ row }) => row.original.brand ?? '-'
   },
   {
     accessorKey: 'model',
-    header: 'Model',
+    header: ({ column }) => getHeader(column, 'Model'),
     cell: ({ row }) => row.original.model ?? '-'
   },
   {
@@ -721,12 +755,12 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'user',
-    header: 'User',
+    header: ({ column }) => getHeader(column, 'User'),
     cell: ({ row }) => row.original.user ?? '-'
   },
   {
     accessorKey: 'price',
-    header: 'Price',
+    header: ({ column }) => getHeader(column, 'Price'),
     cell: ({ row }) => {
       const price = row.original.price
       if (!price) return h('span', { class: 'text-xs text-muted' }, '-')
@@ -740,7 +774,7 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'purchaseDate',
-    header: 'Purchase Date',
+    header: ({ column }) => getHeader(column, 'Purchase Date'),
     cell: ({ row }) => {
       const date = row.original.purchaseDate
       const age = row.original.age
@@ -758,7 +792,7 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: ({ column }) => getHeader(column, 'Status'),
     filterFn: 'equals',
     cell: ({ row }) => {
       type AssetStatus = 'active' | 'disposed' | 'in repair'
@@ -1127,6 +1161,7 @@ const columns: TableColumn<any>[] = [
         ref="tableRef"
         v-model:pagination="pagination"
         v-model:row-selection="rowSelection"
+        v-model:sorting="sorting"
         :data="assets"
         :columns="columns"
         :loading="loading"
