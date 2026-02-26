@@ -75,6 +75,16 @@ export class AssetService {
     })
   }
 
+  async getAssetByImage(image: File): Promise<AssetDetailResponse> {
+    const formData = new FormData()
+    formData.append('image', image)
+    return await this.api<AssetDetailResponse>(`${this.basePath}/scan-image`, {
+      method: 'POST',
+      body: formData,
+      headers: this.getAuthHeader()
+    })
+  }
+
   async createAsset(payload: CreateAssetPayload | FormData): Promise<AssetDetailResponse> {
     return await this.api<AssetDetailResponse>(this.basePath, {
       method: 'POST',

@@ -56,25 +56,25 @@ const { employees, fetchEmployees } = useEmployee()
 const { locations: allLocations, getAllLocations } = useLocation()
 const { isAdmin } = useRole()
 
-const selectedCategoryId = ref<string | undefined>(undefined)
-const selectedSubCategoryId = ref<string | undefined>(undefined)
-const selectedStatus = ref<string | undefined>(undefined)
-const selectedEmployee = ref<string | undefined>(undefined)
+const selectedCategoryId = ref<string[]>([])
+const selectedSubCategoryId = ref<string[]>([])
+const selectedStatus = ref<string[]>([])
+const selectedEmployee = ref<string[]>([])
 const selectedHasHolder = ref<boolean>(false)
-const selectedLocation = ref<string | undefined>(undefined)
-const selectedBranch = ref<string | undefined>(undefined)
+const selectedLocation = ref<string[]>([])
+const selectedBranch = ref<string[]>([])
 const selectedUser = ref<string | undefined>(undefined)
 const selectedDateRange = ref<any>(undefined)
 const previewImage = ref<string | null>(null)
 
 const tempUser = ref<string | undefined>(undefined)
-const tempCategoryId = ref<string | undefined>(undefined)
-const tempSubCategoryId = ref<string | undefined>(undefined)
-const tempStatus = ref<string | undefined>(undefined)
-const tempEmployee = ref<string | undefined>(undefined)
+const tempCategoryId = ref<string[]>([])
+const tempSubCategoryId = ref<string[]>([])
+const tempStatus = ref<string[]>([])
+const tempEmployee = ref<string[]>([])
 const tempHasHolder = ref<boolean>(false)
-const tempLocation = ref<string | undefined>(undefined)
-const tempBranch = ref<string | undefined>(undefined)
+const tempLocation = ref<string[]>([])
+const tempBranch = ref<string[]>([])
 const tempDateRange = ref<any>(undefined)
 
 const pageLimitOptions = [10, 25, 50, 100, 200, 500]
@@ -109,19 +109,22 @@ onMounted(async () => {
 
   // Restore filters from URL
   if (q.categoryId) {
-    selectedCategoryId.value = q.categoryId as string
-    tempCategoryId.value = q.categoryId as string
-    await getSubCategoriesByCategory(q.categoryId as string)
+    const ids = String(q.categoryId).split(',')
+    selectedCategoryId.value = ids
+    tempCategoryId.value = [...ids]
+    await getSubCategoriesByCategory(ids.join(','))
   }
 
   if (q.subCategoryId) {
-    selectedSubCategoryId.value = q.subCategoryId as string
-    tempSubCategoryId.value = q.subCategoryId as string
+    const ids = String(q.subCategoryId).split(',')
+    selectedSubCategoryId.value = ids
+    tempSubCategoryId.value = [...ids]
   }
 
   if (q.status) {
-    selectedStatus.value = q.status as string
-    tempStatus.value = q.status as string
+    const ids = String(q.status).split(',')
+    selectedStatus.value = ids
+    tempStatus.value = [...ids]
   }
 
   if (q.user) {
@@ -135,21 +138,24 @@ onMounted(async () => {
   }
 
   if (q.employeeId) {
-    selectedEmployee.value = q.employeeId as string
-    tempEmployee.value = q.employeeId as string
+    const ids = String(q.employeeId).split(',')
+    selectedEmployee.value = ids
+    tempEmployee.value = [...ids]
     selectedHasHolder.value = true
     tempHasHolder.value = true
   }
 
   if (q.branchId) {
-    selectedBranch.value = q.branchId as string
-    tempBranch.value = q.branchId as string
-    await getAllLocations(q.branchId as string)
+    const ids = String(q.branchId).split(',')
+    selectedBranch.value = ids
+    tempBranch.value = [...ids]
+    await getAllLocations(ids.join(','))
   }
 
   if (q.locationId) {
-    selectedLocation.value = q.locationId as string
-    tempLocation.value = q.locationId as string
+    const ids = String(q.locationId).split(',')
+    selectedLocation.value = ids
+    tempLocation.value = [...ids]
   }
 
   if (q.startDate && q.endDate) {
@@ -177,26 +183,25 @@ onMounted(async () => {
   })
 })
 
-watch(tempBranch, async (newBranchId) => {
-  if (newBranchId) {
-    await getAllLocations(newBranchId)
+watch(tempBranch, async (newBranchIds) => {
+  if (newBranchIds && newBranchIds.length > 0) {
+    await getAllLocations(newBranchIds.join(','))
   } else {
     await getAllLocations()
   }
   
   // Reset selected location if it doesn't exist in the new list of locations
-  if (tempLocation.value) {
-    const exists = allLocations.value.some(l => String(l.id) === tempLocation.value)
-    if (!exists) {
-      tempLocation.value = undefined
-    }
+  if (tempLocation.value.length > 0) {
+    tempLocation.value = tempLocation.value.filter(locId => 
+      allLocations.value.some(l => String(l.id) === locId)
+    )
   }
 })
 
-watch(tempCategoryId, async (newId) => {
-  if (newId) {
-    await getSubCategoriesByCategory(newId)
-    tempSubCategoryId.value = undefined
+watch(tempCategoryId, async (newIds) => {
+  if (newIds && newIds.length > 0) {
+    await getSubCategoriesByCategory(newIds.join(','))
+    tempSubCategoryId.value = []
   } else {
     subCategories.value = []
   }
@@ -204,7 +209,7 @@ watch(tempCategoryId, async (newId) => {
 
 watch(tempHasHolder, (newValue) => {
   if (!newValue) {
-    tempEmployee.value = undefined
+    tempEmployee.value = []
   }
 })
 
@@ -228,25 +233,21 @@ const employeeItems = computed<EmployeeItem[]>(() =>
   }))
 )
 
-const selectedEmployeeAvatar = computed(() => {
-  if (!tempEmployee.value) return undefined
-  const employee = employeeItems.value.find(e => e.id === tempEmployee.value)
-  return employee?.avatar
-})
+
 
 function loadAssets(page = pagination.value.pageIndex + 1) {
   const params: any = {
     search: search.value || undefined,
     page,
     limit: pageLimit.value,
-    categoryId: selectedCategoryId.value,
-    subCategoryId: selectedSubCategoryId.value,
-    status: selectedStatus.value,
-    employeeId: selectedEmployee.value,
+    categoryId: selectedCategoryId.value.length > 0 ? selectedCategoryId.value.join(',') : undefined,
+    subCategoryId: selectedSubCategoryId.value.length > 0 ? selectedSubCategoryId.value.join(',') : undefined,
+    status: selectedStatus.value.length > 0 ? selectedStatus.value.join(',') : undefined,
+    employeeId: selectedEmployee.value.length > 0 ? selectedEmployee.value.join(',') : undefined,
     user: selectedUser.value,
     hasHolder: selectedHasHolder.value || undefined,
-    locationId: selectedLocation.value,
-    branchId: selectedBranch.value
+    locationId: selectedLocation.value.length > 0 ? selectedLocation.value.join(',') : undefined,
+    branchId: selectedBranch.value.length > 0 ? selectedBranch.value.join(',') : undefined
   }
 
   if (selectedDateRange.value?.start && selectedDateRange.value?.end) {
@@ -287,25 +288,25 @@ function applyFilters() {
 }
 
 function resetFilters() {
-  selectedCategoryId.value = undefined
-  selectedSubCategoryId.value = undefined
-  selectedStatus.value = undefined
-  selectedEmployee.value = undefined
+  selectedCategoryId.value = []
+  selectedSubCategoryId.value = []
+  selectedStatus.value = []
+  selectedEmployee.value = []
   selectedHasHolder.value = false
-  selectedLocation.value = undefined
-  selectedBranch.value = undefined
+  selectedLocation.value = []
+  selectedBranch.value = []
   selectedUser.value = undefined
   selectedDateRange.value = undefined
   search.value = ''
 
   tempUser.value = undefined
-  tempCategoryId.value = undefined
-  tempSubCategoryId.value = undefined
-  tempStatus.value = undefined
-  tempEmployee.value = undefined
+  tempCategoryId.value = []
+  tempSubCategoryId.value = []
+  tempStatus.value = []
+  tempEmployee.value = []
   tempHasHolder.value = false
-  tempLocation.value = undefined
-  tempBranch.value = undefined
+  tempLocation.value = []
+  tempBranch.value = []
   tempDateRange.value = undefined
 
   subCategories.value = []
@@ -346,13 +347,13 @@ function handlePageChange(newPage: number) {
 
 async function handleExport() {
   const filters: any = {
-    categoryId: selectedCategoryId.value,
-    subCategoryId: selectedSubCategoryId.value,
-    status: selectedStatus.value,
-    employeeId: selectedEmployee.value,
+    categoryId: selectedCategoryId.value.length > 0 ? selectedCategoryId.value.join(',') : undefined,
+    subCategoryId: selectedSubCategoryId.value.length > 0 ? selectedSubCategoryId.value.join(',') : undefined,
+    status: selectedStatus.value.length > 0 ? selectedStatus.value.join(',') : undefined,
+    employeeId: selectedEmployee.value.length > 0 ? selectedEmployee.value.join(',') : undefined,
     hasHolder: selectedHasHolder.value,
-    locationId: selectedLocation.value,
-    branchId: selectedBranch.value
+    locationId: selectedLocation.value.length > 0 ? selectedLocation.value.join(',') : undefined,
+    branchId: selectedBranch.value.length > 0 ? selectedBranch.value.join(',') : undefined
   }
 
   if (selectedDateRange.value?.start && selectedDateRange.value?.end) {
@@ -377,13 +378,13 @@ const showingTo = computed(() =>
 
 const activeFiltersCount = computed(() => {
   let count = 0
-  if (selectedCategoryId.value) count++
-  if (selectedSubCategoryId.value) count++
-  if (selectedStatus.value) count++
-  if (selectedEmployee.value) count++
+  if (selectedCategoryId.value.length > 0) count++
+  if (selectedSubCategoryId.value.length > 0) count++
+  if (selectedStatus.value.length > 0) count++
+  if (selectedEmployee.value.length > 0) count++
   if (selectedHasHolder.value) count++
-  if (selectedLocation.value) count++
-  if (selectedBranch.value) count++
+  if (selectedLocation.value.length > 0) count++
+  if (selectedBranch.value.length > 0) count++
   if (selectedUser.value) count++
   if (selectedDateRange.value?.start && selectedDateRange.value?.end) count++
   return count
@@ -411,24 +412,24 @@ const formattedDateRange = computed(() => {
 
 watch(isFilterOpen, (isOpen) => {
   if (isOpen) {
-    tempCategoryId.value = selectedCategoryId.value
-    tempSubCategoryId.value = selectedSubCategoryId.value
-    tempStatus.value = selectedStatus.value
+    tempCategoryId.value = [...selectedCategoryId.value]
+    tempSubCategoryId.value = [...selectedSubCategoryId.value]
+    tempStatus.value = [...selectedStatus.value]
     tempUser.value = selectedUser.value
-    tempEmployee.value = selectedEmployee.value
+    tempEmployee.value = [...selectedEmployee.value]
     tempHasHolder.value = selectedHasHolder.value
-    tempLocation.value = selectedLocation.value
-    tempBranch.value = selectedBranch.value
+    tempLocation.value = [...selectedLocation.value]
+    tempBranch.value = [...selectedBranch.value]
     tempDateRange.value = selectedDateRange.value
     showDatePicker.value = false
 
-    if (tempCategoryId.value) {
-      getSubCategoriesByCategory(tempCategoryId.value)
+    if (tempCategoryId.value.length > 0) {
+      getSubCategoriesByCategory(tempCategoryId.value.join(','))
     }
     
     // Ensure locations are filtered correctly based on initial branch state when opening
-    if (tempBranch.value) {
-      getAllLocations(tempBranch.value)
+    if (tempBranch.value.length > 0) {
+      getAllLocations(tempBranch.value.join(','))
     }
   }
 })
@@ -923,6 +924,7 @@ const columns: TableColumn<any>[] = [
                       placeholder="Select category"
                       searchable
                       searchable-placeholder="Search category..."
+                      multiple
                     />
                   </div>
 
@@ -936,7 +938,8 @@ const columns: TableColumn<any>[] = [
                       placeholder="Select sub category"
                       searchable
                       searchable-placeholder="Search sub category..."
-                      :disabled="!tempCategoryId"
+                      :disabled="tempCategoryId.length === 0"
+                      multiple
                     />
                   </div>
 
@@ -949,6 +952,7 @@ const columns: TableColumn<any>[] = [
                       :items="statusItems"
                       placeholder="Select status"
                       searchable
+                      multiple
                     />
                   </div>
 
@@ -967,6 +971,7 @@ const columns: TableColumn<any>[] = [
                       searchable
                       searchable-placeholder="Search branch..."
                       clearable
+                      multiple
                     />
                   </div>
 
@@ -984,6 +989,7 @@ const columns: TableColumn<any>[] = [
                       searchable
                       searchable-placeholder="Search location..."
                       clearable
+                      multiple
                     />
                   </div>
 
@@ -1000,11 +1006,11 @@ const columns: TableColumn<any>[] = [
                       v-model="tempEmployee"
                       class="w-full"
                       value-key="id"
-                      :avatar="selectedEmployeeAvatar"
                       :items="employeeItems"
                       placeholder="Select holder"
                       searchable
                       searchable-placeholder="Search employee..."
+                      multiple
                     />
                   </div>
 
