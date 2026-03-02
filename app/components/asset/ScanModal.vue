@@ -36,6 +36,7 @@ const aiAnalyzing = ref(false)
 
 const router = useRouter()
 const { getAssetByCode, getAssetByImage } = useAsset()
+const toast = useToast()
 
 const emit = defineEmits<{
   (e: 'add-asset', code: string): void
@@ -292,13 +293,13 @@ const takePhoto = async () => {
         showLoadingModal.value = false
         await router.push(`/asset/${data.data.id}/detail`)
       } else {
-        scannedResult.value = 'AI Scan'
-        handleScanError()
+        showLoadingModal.value = false
+        capturedImage.value = null
+        open.value = true
       }
-    } catch (err) {
-      console.error('AI API Error:', err)
-      scannedResult.value = 'AI Scan'
-      handleScanError()
+    } catch (err: any) {
+      capturedImage.value = null
+      open.value = true
     } finally {
       aiAnalyzing.value = false
     }
