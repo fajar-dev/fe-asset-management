@@ -13,7 +13,7 @@ const loading = ref(false)
 const previewImage = ref<string | null>(null)
 const isUpdateModalOpen = ref(false)
 
-const { getAssetById } = useAsset()
+const { getAssetById, getAssetLogs } = useAsset()
 const { holders, loading: holderLoading, fetchHolders } = useAssetHolder()
 const { maintenances, loading: maintenanceLoading, fetchMaintenances } = useAssetMaintenance()
 
@@ -46,6 +46,7 @@ async function loadAssetData() {
   const res = await getAssetById(assetId)
   if (res) {
     assetDetail.value = res.data
+    await loadLogs()
     if (hasHolder.value) {
       await loadHolders()
     }
@@ -106,6 +107,33 @@ const maintenanceColumns: TableColumn<any>[] = [
   { accessorKey: 'maintenanceAt', header: 'Date' },
   { accessorKey: 'note', header: 'Note' }
 ]
+
+import type { TimelineItem } from '@nuxt/ui'
+
+const items = ref<TimelineItem[]>([])
+
+function getIconByLogType(type: string): string {
+  switch (type) {
+    case 'asset': return 'i-lucide-package'
+    case 'location': return 'i-lucide-map-pin'
+    case 'holder': return 'i-lucide-users'
+    case 'maintenance': return 'i-lucide-wrench'
+    case 'note': return 'i-lucide-notebook-pen'
+    default: return 'i-lucide-history'
+  }
+}
+
+async function loadLogs() {
+  const logs = await getAssetLogs(assetId)
+  if (logs) {
+    items.value = logs.map((log: any) => ({
+      date: new Date(log.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      title: log.message,
+      description: log.employee ? `by ${log.employee.fullName}` : '',
+      icon: getIconByLogType(log.type)
+    }))
+  }
+}
 </script>
 
 <template>
@@ -300,11 +328,42 @@ const maintenanceColumns: TableColumn<any>[] = [
           </UCard>
         </div>
 
-        <div
-          v-if="hasHolder || hasMaintenance"
-          class="grid gap-6 mt-6 lg:grid-cols-2 grid-cols-1"
-        >
-          <div v-if="hasHolder">
+        <div class="grid gap-6 mt-6 xl:grid-cols-3 lg:grid-cols-2 grid-cols-1">
+          <!-- Timeline Section -->
+          <div class="xl:col-span-1 lg:col-span-1 relative h-full min-h-[400px]">
+            <div class="lg:absolute lg:inset-0 h-full w-full">
+              <UCard 
+                class="flex flex-col h-full" 
+                :ui="{ 
+                  body: 'flex-1 overflow-y-auto max-h-[500px] lg:max-h-none' 
+                }"
+              >
+                <template #header>
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <UIcon name="i-lucide-history" class="w-5 h-5" />
+                      Asset History
+                    </h3>
+                  </div>
+                </template>
+                
+                <div v-if="items.length === 0" class="flex flex-col items-center justify-center p-6 h-[200px] text-gray-500">
+                  <UIcon name="i-lucide-scroll-text" class="w-10 h-10 mb-2 opacity-30" />
+                  <p class="text-sm">No data</p>
+                </div>
+                <div v-else class="p-2">
+                  <UTimeline :items="items" />
+                </div>
+              </UCard>
+            </div>
+          </div>
+
+          <!-- Holders & Maintenance Section -->
+          <div
+            v-if="hasHolder || hasMaintenance"
+            class="grid gap-5 xl:col-span-2 lg:col-span-1 content-start"
+          >
+            <div v-if="hasHolder">
             <UCard>
               <template #header>
                 <div class="flex items-center justify-between">
@@ -374,8 +433,10 @@ const maintenanceColumns: TableColumn<any>[] = [
               </div>
             </UCard>
           </div>
+          </div>
         </div>
       </div>
+
     </template>
   </UDashboardPanel>
 

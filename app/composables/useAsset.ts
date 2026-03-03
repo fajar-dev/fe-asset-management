@@ -34,6 +34,7 @@ interface AssetState {
   }) => Promise<void>
   refreshAssets: () => Promise<void>
   getAssetById: (id: string) => Promise<AssetDetailResponse | null>
+  getAssetLogs: (id: string) => Promise<any>
   getAssetByCode: (code: string, silent?: boolean) => Promise<AssetDetailResponse | null>
   getAssetByImage: (image: File) => Promise<AssetDetailResponse | null>
   createAsset: (payload: CreateAssetPayload | FormData) => Promise<Asset>
@@ -146,6 +147,22 @@ export const useAsset = (): AssetState => {
     } catch (err: unknown) {
       const fetchError = err as FetchError<ApiError>
       error.value = fetchError.data?.message ?? 'Failed to fetch asset detail'
+      toast.add({ title: 'Failed', description: error.value, color: 'error' })
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function getAssetLogs(id: string): Promise<any> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await assetService.getAssetLogs(id)
+      return res.data
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiError>
+      error.value = fetchError.data?.message ?? 'Failed to fetch asset logs'
       toast.add({ title: 'Failed', description: error.value, color: 'error' })
       return null
     } finally {
@@ -330,6 +347,7 @@ export const useAsset = (): AssetState => {
     fetchAssets,
     refreshAssets,
     getAssetById,
+    getAssetLogs,
     getAssetByCode,
     getAssetByImage,
     createAsset,
