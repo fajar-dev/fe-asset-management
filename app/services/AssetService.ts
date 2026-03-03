@@ -72,6 +72,13 @@ export class AssetService {
     })
   }
 
+  async getAssetLogs(id: string): Promise<any> {
+    return await this.api<any>(`${this.basePath}/${id}/log`, {
+      method: 'GET',
+      headers: this.getAuthHeader()
+    })
+  }
+
   async getAssetByCode(code: string): Promise<AssetDetailResponse> {
     return await this.api<AssetDetailResponse>(`${this.basePath}/${code}/by-code`, {
       method: 'GET',
