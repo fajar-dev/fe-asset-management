@@ -3,8 +3,8 @@ export interface AssetPropertyPayload {
   value: string | number
 }
 
-export interface customValues {
-  name: string
+export interface AssetLabel {
+  key: string
   value: string
 }
 
@@ -21,8 +21,9 @@ export interface CreateAssetPayload {
   brand?: string
   model?: string
   properties?: AssetPropertyPayload[]
-  customValues?: customValues[]
+  labels?: AssetLabel[]
   image?: File | null
+  isLendable: boolean
 }
 
 export interface UpdateAssetPayload {
@@ -34,8 +35,9 @@ export interface UpdateAssetPayload {
   brand?: string
   model?: string
   properties?: AssetPropertyPayload[]
-  customValues?: customValues[]
+  labels?: AssetLabel[]
   image?: File | null
+  isLendable: boolean
 }
 
 export interface Asset {
@@ -51,6 +53,7 @@ export interface Asset {
   price?: number
   purchaseDate: string
   status: 'active' | 'in repair' | 'disposed'
+  isLendable: boolean
   subCategory: {
     id: string
     name: string
@@ -71,9 +74,9 @@ export interface Asset {
       dataType: string
     }
   }>
-  customValues?: Array<{
+  labels?: Array<{
     id: string
-    name: string
+    key: string
     value: string | number
   }>
 }

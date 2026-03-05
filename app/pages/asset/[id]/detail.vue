@@ -287,11 +287,11 @@ async function loadLogs() {
                   </div>
 
                   <div
-                    v-for="(item, idx) in assetDetail.customValues"
+                    v-for="(item, idx) in assetDetail.labels"
                     :key="idx"
                   >
                     <label class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {{ item.name }}
+                      {{ item.key }}
                     </label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
                       {{ item.value ?? '-' }}

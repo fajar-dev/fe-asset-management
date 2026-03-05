@@ -135,6 +135,17 @@ const columns: TableColumn<any>[] = [
     cell: ({ row }) => row.original.category?.name ?? '-'
   },
   {
+    accessorKey: 'labels',
+    header: 'Labels',
+    cell: ({ row }) => {
+      const labels = row.original.labels as string[] | undefined
+      if (!labels || labels.length === 0) return '-'
+      return h('div', { class: 'flex flex-wrap gap-1' },
+        labels.map(label => h(UBadge, { variant: 'subtle', color: 'primary' }, () => label))
+      )
+    }
+  },
+  {
     id: 'actions',
     cell: ({ row }) => {
       if (!isAdmin.value) return null

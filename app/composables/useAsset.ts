@@ -29,6 +29,8 @@ interface AssetState {
     startDate?: string | null
     endDate?: string | null
     hasHolder?: boolean | null
+    isLendable?: boolean | null
+    labels?: string | null
     sort?: string | null
     order?: string | null
   }) => Promise<void>
@@ -41,6 +43,7 @@ interface AssetState {
   importAsset: (payload: FormData) => Promise<any>
   updateAsset: (id: string, payload: UpdateAssetPayload | FormData) => Promise<void>
   deleteAsset: (id: string) => Promise<void>
+  getLabels: () => Promise<Array<{ key: string, value: string }>>
   exportAssets: (filters: {
     categoryId?: string | undefined
     subCategoryId?: string | undefined
@@ -51,6 +54,8 @@ interface AssetState {
     startDate?: string | null
     endDate?: string | null
     hasHolder?: boolean | null
+    isLendable?: boolean | null
+    labels?: string | null
   }) => Promise<void>
 }
 
@@ -79,6 +84,8 @@ export const useAsset = (): AssetState => {
     startDate?: string | null
     endDate?: string | null
     hasHolder?: boolean | null
+    isLendable?: boolean | null
+    labels?: string | null
     sort?: string | null
     order?: string | null
   }): Promise<void> {
@@ -99,6 +106,8 @@ export const useAsset = (): AssetState => {
         startDate = null,
         endDate = null,
         hasHolder = null,
+        isLendable = null,
+        labels = null,
         sort = null,
         order = null
       } = options || {}
@@ -117,6 +126,8 @@ export const useAsset = (): AssetState => {
         startDate,
         endDate,
         hasHolder,
+        isLendable,
+        labels,
         sort,
         order
       )
@@ -276,6 +287,22 @@ export const useAsset = (): AssetState => {
     }
   }
 
+  async function getLabels(): Promise<Array<{ key: string, value: string }>> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await assetService.getLabels()
+      return res.data
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiError>
+      error.value = fetchError.data?.message ?? 'Failed to fetch labels'
+      toast.add({ title: 'Failed', description: error.value, color: 'error' })
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function exportAssets(filters: {
     categoryId?: string | undefined
     subCategoryId?: string | undefined
@@ -286,6 +313,8 @@ export const useAsset = (): AssetState => {
     branchId?: string | undefined
     startDate?: string | null
     endDate?: string | null
+    isLendable?: boolean | null
+    labels?: string | null
   }): Promise<void> {
     loading.value = true
     error.value = null
@@ -299,7 +328,9 @@ export const useAsset = (): AssetState => {
         filters.locationId || null,
         filters.branchId || null,
         filters.startDate || null,
-        filters.endDate || null
+        filters.endDate || null,
+        filters.isLendable !== undefined ? filters.isLendable : null,
+        filters.labels || null
       )
 
       const url = window.URL.createObjectURL(blob)
@@ -354,6 +385,7 @@ export const useAsset = (): AssetState => {
     importAsset,
     updateAsset,
     deleteAsset,
+    getLabels,
     exportAssets
   }
 }

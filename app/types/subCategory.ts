@@ -22,18 +22,21 @@ export interface SubCategory {
   parent: SubCategory | null
   children: SubCategory[]
   assetProperties: AssetProperty[]
+  labels?: string[]
 }
 
 export interface CreateSubCategoryPayload {
   name: string
   categoryId: string
   parentId?: string
+  labels?: string[]
 }
 
 export interface UpdateSubCategoryPayload {
   name: string
   categoryId: string
   parentId?: string
+  labels?: string[]
 }
 
 export interface Pagination {

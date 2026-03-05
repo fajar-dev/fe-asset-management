@@ -8,6 +8,7 @@ import { useProperty } from '~/composables/useProperty'
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
   categoryId: z.string().min(1, 'Category is required'),
+  labels: z.array(z.string()).optional(),
   properties: z.array(
     z.object({
       name: z.string().min(1, 'Property name is required'),
@@ -24,6 +25,7 @@ const saving = ref(false)
 const state = reactive<Partial<Schema>>({
   name: '',
   categoryId: undefined,
+  labels: [],
   properties: []
 })
 
@@ -42,6 +44,7 @@ function resetForm() {
   state.name = ''
   state.categoryId = undefined
   value.value = undefined
+  state.labels = []
   state.properties = []
 }
 
@@ -50,7 +53,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     saving.value = true
     const subCategory = await createSubCategory({
       name: event.data.name,
-      categoryId: event.data.categoryId
+      categoryId: event.data.categoryId,
+      labels: event.data.labels
     })
     if (event.data.properties.length > 0) {
       for (const property of event.data.properties) {
@@ -111,6 +115,11 @@ function removeProperty(index: number) {
             :items="items"
             placeholder="Select category"
           />
+        </UFormField>
+
+        <!-- Labels -->
+        <UFormField label="Labels" name="labels">
+          <UInputTags v-model="state.labels" class="w-full" placeholder="Add labels..." />
         </UFormField>
 
         <!-- Properties -->
