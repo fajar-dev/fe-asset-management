@@ -21,6 +21,7 @@ const schema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   subCategoryId: z.string().min(1, 'Sub category is required'),
   status: z.enum(['active', 'in repair', 'disposed']).default('active'),
+  isLendable: z.boolean().default(false),
   image: z.any().optional(),
   properties: z.array(
     z.object({
@@ -28,12 +29,23 @@ const schema = z.object({
       value: z.union([z.string(), z.number()]).optional()
     })
   ).optional(),
-  customValues: z.array(
+  labels: z.array(
     z.object({
-      name: z.string().min(1, 'Custom field name is required'),
-      value: z.string().min(1, 'Custom field value is required')
+      key: z.string().min(1, 'Label key is required'),
+      value: z.string().min(1, 'Label value is required')
     })
   ).optional()
+}).superRefine((data, ctx) => {
+  if (data.labels) {
+    const keys = new Map<string, number[]>()
+    data.labels.forEach((item, index) => {
+      const k = item.key.toLowerCase().trim()
+      if (k) {
+        if (!keys.has(k)) keys.set(k, [])
+        keys.get(k)!.push(index)
+      }
+    })
+  }
 })
 
 const categorySchema = z.object({
@@ -85,9 +97,10 @@ const state = reactive<{
   categoryId: string
   subCategoryId: string
   status: 'active' | 'in repair' | 'disposed'
+  isLendable: boolean
   image: File | null
   properties: { id: string, value: string | number }[]
-  customValues: { name: string, value: string }[]
+  labels: { key: string, value: string }[]
 }>({
   code: '',
   name: '',
@@ -100,9 +113,10 @@ const state = reactive<{
   categoryId: '',
   subCategoryId: '',
   status: 'active',
+  isLendable: false,
   image: null,
   properties: [],
-  customValues: []
+  labels: []
 })
 
 const purchaseDateModel = ref<any>(null)
@@ -185,7 +199,26 @@ const deletingCategoryId = ref<string | null>(null)
 const isDeleteSubCategoryModalOpen = ref(false)
 const deletingSubCategoryId = ref<string | null>(null)
 
-const hasValidationErrors = computed(() => Object.keys(propertyErrors.value).length > 0)
+const duplicateLabelIndices = computed(() => {
+  const indices = new Set<number>()
+  const keys = state.labels.map(l => l.key.toLowerCase().trim())
+  
+  keys.forEach((key, index) => {
+    if (key && keys.filter(k => k === key).length > 1) {
+      indices.add(index)
+    }
+  })
+  return indices
+})
+
+const hasValidationErrors = computed(() => {
+  if (Object.keys(propertyErrors.value).length > 0) return true
+  
+  // Check for duplicate labels
+  if (duplicateLabelIndices.value.size > 0) return true
+
+  return false
+})
 
 watch(() => state.categoryId, async (catId) => {
   if (isInitialLoad.value) return
@@ -212,20 +245,34 @@ watch(() => state.subCategoryId, async (subCatId) => {
 
   if (subCatId) {
     const subCategoryDetail = await getSubCategoryById(subCatId)
-    if (subCategoryDetail?.data?.assetProperties) {
-      availableProperties.value = subCategoryDetail.data.assetProperties
-      const existingProperties = state.properties || []
-      state.properties = subCategoryDetail.data.assetProperties.map((p) => {
-        const existing = existingProperties.find(ep => ep.id === p.id)
-        return { id: p.id, value: existing?.value || '' }
-      })
-    } else {
-      availableProperties.value = []
-      state.properties = []
+    if (subCategoryDetail) {
+      if (subCategoryDetail.data.assetProperties) {
+        availableProperties.value = subCategoryDetail.data.assetProperties
+        const existingProperties = state.properties || []
+        state.properties = subCategoryDetail.data.assetProperties.map((p) => {
+          const existing = existingProperties.find(ep => ep.id === p.id)
+          return { id: p.id, value: existing?.value || '' }
+        })
+      } else {
+        availableProperties.value = []
+        state.properties = []
+      }
+
+      if (state.labels && state.labels.length > 0) {
+        // Keep existing labels if they are already present
+      } else if (subCategoryDetail.data.labels && subCategoryDetail.data.labels.length > 0) {
+        state.labels = subCategoryDetail.data.labels.map(label => ({
+          key: label,
+          value: ''
+        }))
+      } else {
+        state.labels = []
+      }
     }
   } else {
     availableProperties.value = []
     state.properties = []
+    state.labels = []
   }
 })
 
@@ -277,6 +324,7 @@ async function loadAssetData() {
   }
 
   state.status = asset.status
+  state.isLendable = asset.isLendable
   state.categoryId = asset.subCategory.category.id
 
   if (asset.imageUrl) {
@@ -302,10 +350,10 @@ async function loadAssetData() {
     }))
   }
 
-  if (asset.customValues && asset.customValues.length > 0) {
-    state.customValues = asset.customValues.map(cv => ({
-      name: cv.name,
-      value: cv.value.toString()
+  if (asset.labels && asset.labels.length > 0) {
+    state.labels = asset.labels.map(l => ({
+      key: l.key,
+      value: l.value.toString()
     }))
   }
 
@@ -584,12 +632,12 @@ function capturePhoto() {
   }, 'image/jpeg', 0.9)
 }
 
-function addCustomValue() {
-  state.customValues.push({ name: '', value: '' })
+function addLabel() {
+  state.labels.push({ key: '', value: '' })
 }
 
-function removeCustomValue(index: number) {
-  state.customValues.splice(index, 1)
+function removeLabel(index: number) {
+  state.labels.splice(index, 1)
 }
 
 function removeCategory(categoryId: string) {
@@ -658,6 +706,13 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   propertyErrors.value = {}
   let hasErrors = false
 
+  // Check for duplicate label keys manually as a final safeguard
+  const labelKeys = state.labels.map(l => l.key.toLowerCase().trim()).filter(k => !!k)
+  if (new Set(labelKeys).size !== labelKeys.length) {
+    saving.value = false
+    return
+  }
+
   if (availableProperties.value.length > 0) {
     for (const property of availableProperties.value) {
       const propertyValue = state.properties?.find(p => p.id === property.id)
@@ -703,12 +758,13 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     }
 
     formData.append('status', event.data.status || 'active')
+    formData.append('isLendable', event.data.isLendable as any)
     formData.append('properties', JSON.stringify(processedProperties))
 
-    if (state.customValues?.length > 0) {
-      const validCustomValues = state.customValues.filter(cv => cv.name && cv.value)
-      if (validCustomValues.length > 0) {
-        formData.append('customValues', JSON.stringify(validCustomValues))
+    if (state.labels?.length > 0) {
+      const validLabels = state.labels.filter((cv: { key: string, value: string }) => cv.key && cv.value)
+      if (validLabels.length > 0) {
+        formData.append('labels', JSON.stringify(validLabels))
       }
     }
 
@@ -726,8 +782,9 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       price: state.price,
       purchaseDate: event.data.purchaseDate,
       status: event.data.status || 'active',
+      isLendable: event.data.isLendable,
       properties: processedProperties,
-      customValues: state.customValues.filter(cv => cv.name && cv.value)
+      labels: state.labels.filter((cv: { key: string, value: string }) => cv.key && cv.value)
     }
 
     await updateAsset(props.assetId, payload)
@@ -751,9 +808,10 @@ function resetState() {
     categoryId: '',
     subCategoryId: '',
     status: 'active',
+    isLendable: false,
     image: null,
     properties: [],
-    customValues: []
+    labels: []
   })
   displayPrice.value = ''
 
@@ -947,6 +1005,18 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="space-y-2">
+          <UFormField name="isLendable">
+            <template #label>
+              <div class="flex items-center gap-1">
+                <span>Is Lendable</span>
+                <UTooltip text="Can this asset be borrowed by users" :delay-duration="0">
+                  <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
+                </UTooltip>
+              </div>
+            </template>
+            <USwitch v-model="state.isLendable" />
+          </UFormField>
+
           <UFormField name="categoryId">
             <template #label>
               <div class="flex items-center gap-1">
@@ -1079,10 +1149,10 @@ onBeforeUnmount(() => {
             <div class="flex justify-between items-center">
               <div class="flex items-center gap-1">
                 <label class="text-sm font-medium text-gray-700">
-                  Custom Fields
+                  Labels
                 </label>
                 <UTooltip
-                  text="Define additional attributes for this Asset (e.g. serial number, size, capacity)"
+                  text="Define additional labels for this Asset (e.g. serial number, size, capacity)"
                   :delay-duration="0"
                 >
                   <UIcon
@@ -1096,28 +1166,32 @@ onBeforeUnmount(() => {
                 icon="i-lucide-plus"
                 size="xs"
                 variant="soft"
-                @click="addCustomValue"
+                @click="addLabel"
               />
             </div>
 
-            <div v-if="state.customValues.length > 0" class="space-y-2">
+            <div v-if="state.labels.length > 0" class="space-y-2">
               <div
-                v-for="(customValue, i) in state.customValues"
+                v-for="(label, i) in state.labels"
                 :key="i"
                 class="flex gap-2 items-start"
               >
-                <UFormField :name="`customValues.${i}.name`" class="flex-1">
+                <UFormField :name="`labels.${i}.key`" class="flex-1">
                   <UInput
-                    v-model="customValue.name"
-                    placeholder="Field name"
+                    v-model="label.key"
+                    placeholder="Key"
                     class="w-full"
+                    :class="{ 'border-red-500 focus:border-red-500': duplicateLabelIndices.has(i) }"
                   />
+                  <p v-if="duplicateLabelIndices.has(i)" class="text-red-500 text-xs mt-1">
+                    Duplicate key: {{ label.key }}
+                  </p>
                 </UFormField>
 
-                <UFormField :name="`customValues.${i}.value`" class="flex-1">
+                <UFormField :name="`labels.${i}.value`" class="flex-1">
                   <UInput
-                    v-model="customValue.value"
-                    placeholder="Field value"
+                    v-model="label.value"
+                    placeholder="Value"
                     class="w-full"
                   />
                 </UFormField>
@@ -1127,13 +1201,13 @@ onBeforeUnmount(() => {
                   color="error"
                   variant="ghost"
                   size="sm"
-                  @click="removeCustomValue(i)"
+                  @click="removeLabel(i)"
                 />
               </div>
             </div>
 
-            <p v-if="state.customValues.length === 0" class="text-sm text-gray-500 italic">
-              No custom fields added yet
+            <p v-if="state.labels.length === 0" class="text-sm text-gray-500 italic">
+              No labels added yet
             </p>
           </div>
         </div>

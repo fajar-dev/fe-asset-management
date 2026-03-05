@@ -16,7 +16,8 @@ const emit = defineEmits<{
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
-  categoryId: z.string().min(1, 'Category is required')
+  categoryId: z.string().min(1, 'Category is required'),
+  labels: z.array(z.string()).optional()
 })
 
 type Schema = z.output<typeof schema>
@@ -24,7 +25,8 @@ type Schema = z.output<typeof schema>
 const saving = ref(false)
 const state = reactive<Partial<Schema>>({
   name: '',
-  categoryId: ''
+  categoryId: '',
+  labels: []
 })
 
 const items = ref<{ id: string, name: string }[]>([])
@@ -44,6 +46,7 @@ watchEffect(async () => {
     if (detail) {
       state.name = detail.data.name
       state.categoryId = detail.data.category?.id ?? ''
+      state.labels = detail.data.labels ?? []
     }
   }
 })
@@ -51,13 +54,15 @@ watchEffect(async () => {
 function resetForm() {
   state.name = ''
   state.categoryId = ''
+  state.labels = []
 }
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   saving.value = true
   await updateSubCategory(props.id, {
     name: event.data.name,
-    categoryId: event.data.categoryId
+    categoryId: event.data.categoryId,
+    labels: event.data.labels
   })
   saving.value = false
   emit('updated')
@@ -97,6 +102,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             :items="items"
             placeholder="Select category"
           />
+        </UFormField>
+
+        <UFormField label="Labels" name="labels">
+          <UInputTags v-model="state.labels" class="w-full" placeholder="Add labels..." />
         </UFormField>
 
         <div class="flex justify-end gap-2">

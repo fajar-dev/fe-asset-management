@@ -33,6 +33,8 @@ export class AssetService {
     startDate: string | null = null,
     endDate: string | null = null,
     hasHolder: boolean | null = false,
+    isLendable: boolean | null = null,
+    labels: string | null = null,
     sort: string | null = null,
     order: string | null = null
   ): Promise<AssetResponse> {
@@ -47,6 +49,8 @@ export class AssetService {
     if (startDate) params.startDate = startDate
     if (endDate) params.endDate = endDate
     if (hasHolder !== null) params.hasHolder = hasHolder
+    if (isLendable !== null) params.isLendable = isLendable
+    if (labels) params.labels = labels
     if (sort) params.sort = sort
     if (order) params.order = order
 
@@ -136,11 +140,13 @@ export class AssetService {
     locationId: string | null = null,
     branchId: string | null = null,
     startDate: string | null = null,
-    endDate: string | null = null
+    endDate: string | null = null,
+    isLendable: boolean | null = null,
+    labels: string | null = null
   ): Promise<{ blob: Blob, filename: string }> {
     const config = useRuntimeConfig()
 
-    const params: Record<string, string> = {}
+    const params: Record<string, any> = {}
 
     if (user) params.user = user
     if (categoryId) params.categoryId = categoryId
@@ -151,6 +157,8 @@ export class AssetService {
     if (branchId) params.branchId = branchId
     if (startDate) params.startDate = startDate
     if (endDate) params.endDate = endDate
+    if (isLendable !== null) params.isLendable = isLendable
+    if (labels) params.labels = labels
 
     const queryString = new URLSearchParams(params).toString()
     const url = `${config.public.apiUrl}${this.basePath}/export${queryString ? `?${queryString}` : ''}`
@@ -177,8 +185,14 @@ export class AssetService {
       const dateStr = today.toISOString().split('T')[0]
       filename = `export-assets-${dateStr}.xlsx`
     }
-
     return { blob, filename }
+  }
+
+  async getLabels(): Promise<{ data: Array<{ key: string, value: string }> }> {
+    return await this.api<{ data: Array<{ key: string, value: string }> }>('/v1/label', {
+      method: 'GET',
+      headers: this.getAuthHeader()
+    })
   }
 }
 

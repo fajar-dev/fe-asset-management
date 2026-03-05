@@ -50,7 +50,7 @@ const sorting = ref<any[]>([])
 const assetAddModalRef = ref<any>(null)
 const tableRef = ref<any>(null)
 
-const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset, exportAssets } = useAsset()
+const { assets, apiPagination, pagination, loading, fetchAssets, deleteAsset, exportAssets, getLabels } = useAsset()
 const { branches, fetchBranches } = useBranch()
 const { categories, subCategories, getAllCategories, getSubCategoriesByCategory } = useCategory()
 const { employees, fetchEmployees } = useEmployee()
@@ -65,6 +65,7 @@ const selectedHasHolder = ref<boolean>(false)
 const selectedLocation = ref<string[]>([])
 const selectedBranch = ref<string[]>([])
 const selectedUser = ref<string | undefined>(undefined)
+const selectedLabels = ref<string[]>([])
 const selectedDateRange = ref<any>(undefined)
 const previewImage = ref<string | null>(null)
 
@@ -77,6 +78,8 @@ const tempHasHolder = ref<boolean>(false)
 const tempLocation = ref<string[]>([])
 const tempBranch = ref<string[]>([])
 const tempDateRange = ref<any>(undefined)
+
+const availableLabels = ref<string[]>([])
 
 const pageLimitOptions = [10, 25, 50, 100, 200, 500]
 
@@ -91,6 +94,10 @@ onMounted(async () => {
   await fetchEmployees()
   await fetchBranches()
   await getAllLocations()
+  
+  const labelData = await getLabels()
+  availableLabels.value = labelData.map(l => `${l.key}=${l.value}`)
+
   allLocations.value = allLocations.value.map(l => ({
     ...l,
     id: String(l.id)
@@ -159,6 +166,11 @@ onMounted(async () => {
     tempLocation.value = [...ids]
   }
 
+  if (q.labels) {
+    const labels = String(q.labels).split(',')
+    selectedLabels.value = labels
+  }
+
   if (q.startDate && q.endDate) {
     const startParts = (q.startDate as string).split('-')
     const endParts = (q.endDate as string).split('-')
@@ -182,6 +194,7 @@ onMounted(async () => {
   await nextTick()
 
   watch(search, () => loadAssets(1))
+  watch(selectedLabels, () => loadAssets(1))
   watch(pageLimit, (newLimit) => {
     pagination.value.pageSize = newLimit
     loadAssets(1)
@@ -254,6 +267,7 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     hasHolder: selectedHasHolder.value || undefined,
     locationId: selectedLocation.value.length > 0 ? selectedLocation.value.join(',') : undefined,
     branchId: selectedBranch.value.length > 0 ? selectedBranch.value.join(',') : undefined,
+    labels: selectedLabels.value.length > 0 ? selectedLabels.value.join(',') : undefined,
     sort: sorting.value[0]?.id,
     order: sorting.value[0] ? (sorting.value[0].desc ? 'DESC' : 'ASC') : undefined
   }
@@ -304,6 +318,7 @@ function resetFilters() {
   selectedLocation.value = []
   selectedBranch.value = []
   selectedUser.value = undefined
+  selectedLabels.value = []
   selectedDateRange.value = undefined
   search.value = ''
 
@@ -361,7 +376,8 @@ async function handleExport() {
     employeeId: selectedEmployee.value.length > 0 ? selectedEmployee.value.join(',') : undefined,
     hasHolder: selectedHasHolder.value,
     locationId: selectedLocation.value.length > 0 ? selectedLocation.value.join(',') : undefined,
-    branchId: selectedBranch.value.length > 0 ? selectedBranch.value.join(',') : undefined
+    branchId: selectedBranch.value.length > 0 ? selectedBranch.value.join(',') : undefined,
+    labels: selectedLabels.value.length > 0 ? selectedLabels.value.join(',') : undefined
   }
 
   if (selectedDateRange.value?.start && selectedDateRange.value?.end) {
@@ -485,6 +501,23 @@ function closeImageModal() {
 function handleAddAssetFromScanner(code: string) {
   if (assetAddModalRef.value && typeof assetAddModalRef.value.openWithCode === 'function') {
     assetAddModalRef.value.openWithCode(code)
+  }
+}
+
+function handleLabelEnter(e: KeyboardEvent) {
+  const input = e.target as HTMLInputElement
+  const value = input.value.trim()
+  
+  if (value) {
+    // Prevent default to avoid potential form submission or menu closing issues
+    e.preventDefault()
+    
+    if (!selectedLabels.value.includes(value)) {
+      selectedLabels.value = [...selectedLabels.value, value]
+    }
+    
+    // Clear the input
+    input.value = ''
   }
 }
 
@@ -874,17 +907,25 @@ const columns: TableColumn<any>[] = [
           @updated="handleUpdated"
         />
       </RoleWrapper>
-      <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-        <div class="flex gap-2 items-center max-w-lg flex-1">
+      <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3">
+        <div class="flex flex-col md:flex-row gap-2 items-center flex-1">
           <UInput
             v-model="search"
-            class="flex-1"
+            class="w-full md:w-64"
             icon="i-lucide-search"
             placeholder="Search assets..."
           />
+          <UInputMenu
+            v-model="selectedLabels"
+            :items="availableLabels"
+            placeholder="Label"
+            multiple
+            class="w-full md:flex-1"
+            @keydown.enter="handleLabelEnter"
+          />
           <USelect
             v-model="pageLimit"
-            class="w-24"
+            class="w-full md:w-24"
             :items="pageLimitOptions"
           />
         </div>
