@@ -5,9 +5,9 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@vueuse/nuxt',
     'nuxt-vue3-google-signin',
-    'nuxt-charts',
     '@vite-pwa/nuxt'
   ],
+
 
   devtools: {
     enabled: true

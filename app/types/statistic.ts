@@ -11,6 +11,7 @@ export interface CountData {
   categories: number
   subCategories: number
   locations: number
+  totalPrice: number
 }
 
 export type CountResponse = ApiResponse<CountData>
@@ -42,3 +43,38 @@ export interface AssetByLocationData {
 }
 
 export type AssetByLocationResponse = ApiResponse<AssetByLocationData[]>
+
+// ---- Price By Category ----
+export interface CategoryPriceData {
+  id: string
+  name: string
+  value: number
+}
+
+export type CategoryPriceResponse = ApiResponse<CategoryPriceData[]>
+
+// ---- Price By Location ----
+export interface LocationPriceData {
+  id: string
+  name: string
+  branch: string
+  value: number
+}
+
+export type LocationPriceResponse = ApiResponse<LocationPriceData[]>
+
+// ---- Asset Aging ----
+export interface AssetAgingData {
+  name: string
+  value: number
+}
+
+export type AssetAgingResponse = ApiResponse<AssetAgingData[]>
+
+// ---- Data Quality ----
+export interface DataQualityData {
+  name: string
+  value: number
+}
+
+export type DataQualityResponse = ApiResponse<DataQualityData[]>

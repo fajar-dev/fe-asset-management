@@ -74,24 +74,29 @@ onMounted(() => {
       <USkeleton class="w-40 h-40 rounded-full" />
     </div>
 
-    <div v-else-if="assetsByLocation.length" class="space-y-4">
-      <div class="h-[275px]">
+    <div v-else-if="assetsByLocation.length" class="flex flex-col md:flex-row items-center gap-4">
+      <div class="h-[275px] w-full md:w-1/2 flex justify-center">
         <Doughnut :data="chartData" :options="chartOptions" />
       </div>
 
-      <div class="flex flex-wrap gap-1">
-        <button
-          v-for="(location, index) in assetsByLocation"
-          :key="location.id"
-          class="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-muted/20 hover:bg-elevated hover:text-primary transition-all cursor-pointer"
-          @click="navigateToLocation(location.id)"
-        >
-          <div
-            class="w-2 h-2 rounded-full"
-            :style="{ backgroundColor: getRandomColor(index) }"
-          />
-          <span>{{ location.name }} - {{ location.branch }} ({{ location.value }})</span>
-        </button>
+      <div class="w-full md:w-1/2">
+        <div class="flex flex-col gap-0 max-h-[275px] overflow-y-auto pr-2 custom-scrollbar">
+          <button
+            v-for="(location, index) in assetsByLocation"
+            :key="location.id"
+            class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg text-xs font-medium bg-muted/10 hover:bg-muted/30 hover:text-primary transition-all cursor-pointer group"
+            @click="navigateToLocation(location.id)"
+          >
+            <div class="flex items-center gap-2 overflow-hidden">
+              <div
+                class="w-2.5 h-2.5 rounded-full shrink-0"
+                :style="{ backgroundColor: getRandomColor(index) }"
+              />
+              <span class="truncate">{{ location.name }} - {{ location.branch }}</span>
+            </div>
+            <span class="text-muted group-hover:text-primary shrink-0">{{ location.value }}</span>
+          </button>
+        </div>
       </div>
     </div>
 

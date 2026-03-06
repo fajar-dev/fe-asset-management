@@ -14,10 +14,20 @@
     <template #body>
       <HomeStats />
 
-      <div class="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="grid gap-5 grid-cols-1 lg:grid-cols-3 mb-5">
         <HomeCategoryChart />
-        <HomeSubCategoryChart />
+        <HomeCategoryPriceChart class="lg:col-span-2" />
+      </div>
+
+      <div class="grid gap-5 grid-cols-1 lg:grid-cols-3 mb-5">
         <HomeLocationChart />
+        <HomeLocationPriceChart class="lg:col-span-2" />
+      </div>
+
+      <div class="grid gap-5 grid-cols-1 lg:grid-cols-3">
+        <HomeSubCategoryChart />
+        <HomeAgingChart />
+        <HomeDataQualityChart />
       </div>
     </template>
   </UDashboardPanel>
