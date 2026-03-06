@@ -75,24 +75,27 @@ onMounted(() => {
       <USkeleton class="w-40 h-40 rounded-full" />
     </div>
 
-    <div v-else-if="assetsBySubCategory.length" class="space-y-4">
-      <div class="h-[275px]">
+    <div v-else-if="assetsBySubCategory.length" class="flex flex-col md:flex-row items-center gap-4">
+      <div class="h-[275px] w-full md:w-1/2 flex justify-center">
         <Doughnut :data="chartData" :options="chartOptions" />
       </div>
 
-      <div class="space-y-1">
-        <div class="flex flex-wrap gap-1">
+      <div class="w-full md:w-1/2">
+        <div class="flex flex-col gap-0 max-h-[275px] overflow-y-auto pr-2 custom-scrollbar">
           <button
             v-for="(subCategory, index) in assetsBySubCategory"
             :key="subCategory.id"
-            class="flex items-center gap-1 px-1 py-0.5 rounded-md text-xs font-medium bg-muted/20 hover:bg-elevated hover:text-primary transition-all cursor-pointer"
+            class="flex items-center justify-between gap-2 px-2 py-1 rounded-lg text-xs font-medium bg-muted/10 hover:bg-muted/30 hover:text-primary transition-all cursor-pointer group"
             @click="navigateToSubCategory(subCategory.id)"
           >
-            <div
-              class="w-2 h-2 rounded-full"
-              :style="{ backgroundColor: getRandomColor(index) }"
-            />
-            <span>{{ subCategory.name }} ({{ subCategory.value }})</span>
+            <div class="flex items-center gap-2 overflow-hidden">
+              <div
+                class="w-2.5 h-2.5 rounded-full shrink-0"
+                :style="{ backgroundColor: getRandomColor(index) }"
+              />
+              <span class="truncate">{{ subCategory.name }}</span>
+            </div>
+            <span class="text-muted group-hover:text-primary shrink-0">{{ subCategory.value }}</span>
           </button>
         </div>
       </div>

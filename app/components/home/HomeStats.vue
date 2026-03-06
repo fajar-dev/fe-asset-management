@@ -9,6 +9,14 @@ function formatNumber(value: number): string {
   return value.toLocaleString('en-US')
 }
 
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(value)
+}
+
 const stats = computed(() => {
   if (!count.value) return []
 
@@ -17,6 +25,12 @@ const stats = computed(() => {
       title: 'Assets',
       icon: 'i-lucide-box',
       value: formatNumber(count.value.assets),
+      to: '/asset'
+    },
+    {
+      title: 'Price',
+      icon: 'i-lucide-dollar-sign',
+      value: formatCurrency(count.value.totalPrice),
       to: '/asset'
     },
     {
@@ -42,10 +56,10 @@ const stats = computed(() => {
 </script>
 
 <template>
-  <UPageGrid class="lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-px">
+  <UPageGrid class="lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-px">
     <template v-if="loading">
       <UPageCard
-        v-for="i in 4"
+        v-for="i in 5"
         :key="i"
         variant="subtle"
         class="lg:rounded-none first:rounded-l-lg last:rounded-r-lg hover:z-1"

@@ -2,8 +2,12 @@ import { ref } from 'vue'
 import type {
   CountResponse,
   AssetByCategoryResponse,
-  AssetBySubCategoryResponse,
   AssetByLocationResponse,
+  AssetBySubCategoryResponse,
+  CategoryPriceResponse,
+  LocationPriceResponse,
+  AssetAgingResponse,
+  DataQualityResponse,
   ApiResponse
 } from '~/types/statistic'
 import type { FetchError } from 'ofetch'
@@ -18,6 +22,10 @@ export function useStatistic() {
   const assetsByCategory = ref<AssetByCategoryResponse['data']>([])
   const assetsBySubCategory = ref<AssetBySubCategoryResponse['data']>([])
   const assetsByLocation = ref<AssetByLocationResponse['data']>([])
+  const priceByCategory = ref<CategoryPriceResponse['data']>([])
+  const priceByLocation = ref<LocationPriceResponse['data']>([])
+  const assetAging = ref<AssetAgingResponse['data']>([])
+  const dataQuality = ref<DataQualityResponse['data']>([])
 
   async function getCount(): Promise<void> {
     loading.value = true
@@ -79,6 +87,66 @@ export function useStatistic() {
     }
   }
 
+  async function getPriceByCategory(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await statisticService.getPriceByCategory()
+      priceByCategory.value = res.data
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiResponse<unknown>>
+      error.value = fetchError.data?.message ?? 'Failed to fetch price by category'
+      toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function getPriceByLocation(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await statisticService.getPriceByLocation()
+      priceByLocation.value = res.data
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiResponse<unknown>>
+      error.value = fetchError.data?.message ?? 'Failed to fetch price by location'
+      toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function getAssetAging(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await statisticService.getAssetAging()
+      assetAging.value = res.data
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiResponse<unknown>>
+      error.value = fetchError.data?.message ?? 'Failed to fetch asset aging'
+      toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function getDataQuality(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await statisticService.getDataQuality()
+      dataQuality.value = res.data
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiResponse<unknown>>
+      error.value = fetchError.data?.message ?? 'Failed to fetch data quality'
+      toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     loading,
     error,
@@ -86,9 +154,17 @@ export function useStatistic() {
     assetsByCategory,
     assetsBySubCategory,
     assetsByLocation,
+    priceByCategory,
+    priceByLocation,
+    assetAging,
+    dataQuality,
     getCount,
     getAssetsByCategory,
     getAssetsBySubCategory,
-    getAssetsByLocation
+    getAssetsByLocation,
+    getPriceByCategory,
+    getPriceByLocation,
+    getAssetAging,
+    getDataQuality
   }
 }
