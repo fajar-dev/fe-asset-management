@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import { useAsset } from '~/composables/useAsset'
 import { useAssetHolder } from '~/composables/useAssetHolder'
 import AssetHolderReturnModal from '~/components/asset/holder/ReturnedModal.vue'
 import { useRole } from '~/composables/useRole'
 
 const UAvatar = resolveComponent('UAvatar')
+const UButton = resolveComponent('UButton')
+const UIcon = resolveComponent('UIcon')
 const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
+
+const expanded = ref({} as Record<string | number, boolean>)
 
 // state asset detail
 const assetDetail = ref<any>(null)
@@ -63,6 +68,25 @@ const hasActiveHolder = computed(() =>
 )
 
 const columns: TableColumn<any>[] = [
+  {
+    id: 'expand',
+    cell: ({ row }: { row: Row<any> }) => {
+      return h(UButton, {
+        'color': 'neutral',
+        'variant': 'ghost',
+        'icon': 'i-lucide-chevron-right',
+        'square': true,
+        'aria-label': 'Expand',
+        'ui': {
+          leadingIcon: [
+            'transition-transform',
+            row.getIsExpanded() ? 'rotate-90 duration-200' : 'duration-200'
+          ]
+        },
+        'onClick': () => row.toggleExpanded()
+      })
+    }
+  },
   {
     accessorKey: 'employeeId',
     header: 'Employee',
@@ -136,18 +160,62 @@ const columns: TableColumn<any>[] = [
       <div class="overflow-x-auto">
         <UTable
           v-model:pagination="pagination"
+          v-model:expanded="expanded"
           :data="holders"
           :columns="columns"
           :loading="holderLoading"
+          :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
           class="shrink-0"
           :ui="{
             base: 'table-fixed border-separate border-spacing-0',
             thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
             tbody: '[&>tr]:last:[&>td]:border-b-0',
             th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap',
-            td: 'border-b border-default whitespace-nowrap'
+            td: 'border-b border-default whitespace-nowrap',
+            tr: 'data-[expanded=true]:bg-elevated/30'
           }"
-        />
+        >
+          <template #expanded="{ row }">
+            <div class="p-6 bg-muted border-t border-default">
+              <div v-if="row.original.attachmentUrls && row.original.attachmentUrls.length">
+                <div class="flex items-center gap-2 mb-3">
+                  <UIcon name="i-lucide-paperclip" class="w-4 h-4 text-gray-500" />
+                  <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Attachments ({{ row.original.attachmentUrls.length }})
+                  </p>
+                </div>
+                <div class="flex flex-wrap gap-4">
+                  <a
+                    v-for="(url, index) in row.original.attachmentUrls"
+                    :key="index"
+                    :href="url"
+                    target="_blank"
+                    class="group relative w-24 h-24 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400 transition-colors flex items-center justify-center bg-white dark:bg-gray-900"
+                  >
+                    <img
+                      v-if="url.match(/\.(jpeg|jpg|gif|png|webp|bmp)(\?.*)?$/i)"
+                      :src="String(url)"
+                      :alt="`Attachment ${Number(index) + 1}`"
+                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                    >
+                    <div v-else class="flex flex-col items-center gap-2 text-gray-400 group-hover:text-primary-500 transition-colors">
+                      <UIcon name="i-lucide-file-text" class="w-10 h-10" />
+                      <span class="text-xs font-medium px-2 text-center truncate w-full">Document</span>
+                    </div>
+                    
+                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                      <UIcon name="i-lucide-external-link" class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                    </div>
+                  </a>
+                </div>
+              </div>
+              <div v-else class="text-sm text-gray-500 italic flex items-center gap-2">
+                <UIcon name="i-lucide-info" class="w-4 h-4" />
+                No attachments assigned
+              </div>
+            </div>
+          </template>
+        </UTable>
       </div>
 
       <div

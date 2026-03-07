@@ -13,7 +13,8 @@ const emit = defineEmits<{ (e: 'returned'): void }>()
 
 // validation schema
 const schema = z.object({
-  returnedAt: z.string().min(1, 'Returned date is required')
+  returnedAt: z.string().min(1, 'Returned date is required'),
+  attachments: z.array(z.custom<File>((val) => val instanceof File, 'Must be a File')).optional()
 })
 
 type Schema = z.output<typeof schema>
@@ -22,7 +23,8 @@ const open = ref(false)
 const saving = ref(false)
 
 const state = reactive<Partial<Schema>>({
-  returnedAt: ''
+  returnedAt: '',
+  attachments: []
 })
 
 const returnedDateModel = ref<any>(null)
@@ -54,15 +56,19 @@ watch(returnedDateModel, (newDate) => {
 
 const { returnHolder } = useAssetHolder()
 
+const canAddMoreImages = computed(() => !state.attachments || state.attachments.length < 3)
+
 function resetForm() {
   state.returnedAt = ''
+  state.attachments = []
   returnedDateModel.value = null
 }
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   saving.value = true
   await returnHolder(props.assetId, props.holderId, {
-    returnedAt: event.data.returnedAt
+    returnedAt: event.data.returnedAt!,
+    attachments: event.data.attachments
   })
   resetForm()
   open.value = false
@@ -104,6 +110,42 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
               <UCalendar v-model="returnedDateModel" class="p-2" />
             </template>
           </UPopover>
+        </UFormField>
+
+        <UFormField name="attachments" label="Attachments (Max 3)">
+          <UFileUpload
+            v-model="state.attachments"
+            layout="grid"
+            multiple
+            :interactive="false"
+            class="w-full min-h-25"
+          >
+            <template #actions="{ open }">
+              <UButton
+                label="Select attachments"
+                icon="i-lucide-upload"
+                color="neutral"
+                variant="outline"
+                :disabled="!canAddMoreImages"
+                @click="open()"
+              />
+            </template>
+            <template #files-top="{ open, files }">
+              <div v-if="files?.length" class="mb-2 flex items-center justify-between">
+                <p class="font-bold">
+                  Attachments ({{ files.length }})
+                </p>
+                <UButton
+                  icon="i-lucide-plus"
+                  label="Add more"
+                  color="neutral"
+                  variant="outline"
+                  :disabled="!canAddMoreImages"
+                  @click="open()"
+                />
+              </div>
+            </template>
+          </UFileUpload>
         </UFormField>
 
         <div class="flex justify-end gap-2">
