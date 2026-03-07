@@ -64,11 +64,19 @@ export class AssetHolderService {
     assetUuid: string,
     payload: AssignAssetHolderPayload
   ): Promise<AssetHolder> {
+    const formData = new FormData()
+    formData.append('assignedAt', payload.assignedAt)
+    formData.append('purpose', payload.purpose)
+    formData.append('employeeId', payload.employeeId)
+    if (payload.attachments) {
+      payload.attachments.forEach(file => formData.append('attachments', file))
+    }
+
     return await this.api<AssetHolder>(
       `${this.basePath}/${assetUuid}/holder`,
       {
         method: 'POST',
-        body: payload,
+        body: formData as any,
         headers: this.getAuthHeader()
       }
     )
@@ -80,11 +88,17 @@ export class AssetHolderService {
     holderId: string,
     payload: ReturnAssetHolderPayload
   ): Promise<void> {
+    const formData = new FormData()
+    formData.append('returnedAt', payload.returnedAt)
+    if (payload.attachments) {
+      payload.attachments.forEach(file => formData.append('attachments', file))
+    }
+
     await this.api(
       `${this.basePath}/${assetUuid}/holder/${holderId}`,
       {
         method: 'POST',
-        body: payload,
+        body: formData as any,
         headers: this.getAuthHeader()
       }
     )

@@ -9,6 +9,8 @@ export interface AssetHolder {
   assignedAt: string
   returnedAt?: string
   assetUuid?: string
+  attachmentUrls?: string[]
+  attachmentPaths?: string[]
   createdAt?: string
   updatedAt?: string
 }
@@ -18,11 +20,13 @@ export interface AssignAssetHolderPayload {
   assignedAt: string
   purpose: string
   employeeId: string
+  attachments?: File[]
 }
 
 // Payload for return
 export interface ReturnAssetHolderPayload {
   returnedAt: string
+  attachments?: File[]
 }
 
 // Pagination
