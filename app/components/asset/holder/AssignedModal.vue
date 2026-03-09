@@ -108,6 +108,7 @@ async function openModal() {
       label="Assign Holder"
       icon="i-lucide-plus"
       :disabled="props.disabled"
+      :ui="{ label: 'hidden sm:inline-block' }"
       @click="openModal"
     />
 

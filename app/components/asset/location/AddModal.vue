@@ -59,7 +59,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 </script>
 
 <template>
-  <UButton label="Relocate Asset" icon="i-lucide-move" @click="openModal" />
+  <UButton label="Relocate Asset" icon="i-lucide-move" :ui="{ label: 'hidden sm:inline-block' }" @click="openModal" />
 
   <UModal v-model:open="open" title="Relocate Asset" description="Assign a new location to this asset">
     <template #body>

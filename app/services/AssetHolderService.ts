@@ -103,6 +103,30 @@ export class AssetHolderService {
       }
     )
   }
+
+  // Request asset
+  async requestAsset(
+    assetUuid: string,
+    payload: {
+      purpose: string
+      image?: File | null
+    }
+  ): Promise<void> {
+    const formData = new FormData()
+    formData.append('purpose', payload.purpose)
+    if (payload.image) {
+      formData.append('image', payload.image)
+    }
+
+    await this.api(
+      `${this.basePath}/${assetUuid}/holder/request`,
+      {
+        method: 'POST',
+        body: formData as any,
+        headers: this.getAuthHeader()
+      }
+    )
+  }
 }
 
 export const assetHolderService = new AssetHolderService()

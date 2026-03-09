@@ -8,6 +8,8 @@ const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
 
+const requestModal = ref()
+
 const assetDetail = ref<any>(null)
 const loading = ref(false)
 const previewImage = ref<string | null>(null)
@@ -71,6 +73,10 @@ const hasMaintenance = computed(() => {
   return assetDetail.value?.subCategory?.category?.hasMaintenance ?? false
 })
 
+const hasActiveHolder = computed(() => {
+  return holders.value?.some(h => !h.returnedAt)
+})
+
 onMounted(async () => {
   await loadAssetData()
 })
@@ -80,32 +86,46 @@ const holderColumns: TableColumn<any>[] = [
     accessorKey: 'employeeId',
     header: 'Employee',
     cell: ({ row }) => {
-      return h('div', { class: 'flex items-center gap-3' }, [
+      return h('div', { class: 'flex items-center gap-2 min-w-[120px]' }, [
         h(UAvatar, {
           src: row.original.employee.photoProfile,
-          size: 'lg'
+          size: 'md'
         }),
-        h('div', undefined, [
-          h('p', { class: 'font-medium text-highlighted text-xs' }, row.original.employee.fullName),
-          h('p', { class: 'text-xs' }, row.original.employee.employeeId)
+        h('div', { class: 'min-w-0' }, [
+          h('p', { class: 'font-medium text-highlighted text-[11px] truncate' }, row.original.employee.fullName),
+          h('p', { class: 'text-[10px] opacity-70' }, row.original.employee.employeeId)
         ])
       ])
     }
   },
-  { accessorKey: 'purpose', header: 'Purpose' },
-  { accessorKey: 'assignedAt', header: 'Assigned At' },
+  { 
+    accessorKey: 'purpose', 
+    header: 'Purpose',
+    cell: ({ row }) => h('p', { class: 'text-xs whitespace-normal min-w-[100px] line-clamp-2' }, row.original.purpose)
+  },
+  { 
+    accessorKey: 'assignedAt', 
+    header: 'Assigned',
+    cell: ({ row }) => h('span', { class: 'text-[10px] whitespace-nowrap' }, row.original.assignedAt)
+  },
   {
     accessorKey: 'returnedAt',
-    header: 'Returned At',
-    cell: ({ row }) => {
-      return row.original.returnedAt || '-'
-    }
+    header: 'Returned',
+    cell: ({ row }) => h('span', { class: 'text-[10px] whitespace-nowrap' }, row.original.returnedAt || '-')
   }
 ]
 
 const maintenanceColumns: TableColumn<any>[] = [
-  { accessorKey: 'maintenanceAt', header: 'Date' },
-  { accessorKey: 'note', header: 'Note' }
+  { 
+    accessorKey: 'maintenanceAt', 
+    header: 'Date',
+    cell: ({ row }) => h('span', { class: 'text-[10px] whitespace-nowrap' }, row.original.maintenanceAt)
+  },
+  { 
+    accessorKey: 'note', 
+    header: 'Note',
+    cell: ({ row }) => h('p', { class: 'text-xs whitespace-normal min-w-[120px]' }, row.original.note)
+  }
 ]
 
 import type { TimelineItem } from '@nuxt/ui'
@@ -144,14 +164,27 @@ async function loadLogs() {
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <UButton
-            label="Edit Asset"
-            icon="i-lucide-pencil"
-            color="primary"
-            variant="solid"
-            :disabled="loading"
-            @click="isUpdateModalOpen = true"
-          />
+          <div class="flex items-center gap-2">
+            <UButton
+              v-if="assetDetail?.isRequest || assetDetail?.isLendable"
+              label="Request"
+              icon="i-lucide-hand-helping"
+              color="primary"
+              variant="outline"
+              :disabled="loading || hasActiveHolder"
+              :ui="{ label: 'hidden sm:inline-block' }"
+              @click="requestModal?.openModal()"
+            />
+            <UButton
+              label="Edit Asset"
+              icon="i-lucide-pencil"
+              color="primary"
+              variant="solid"
+              :disabled="loading"
+              :ui="{ label: 'hidden sm:inline-block' }"
+              @click="isUpdateModalOpen = true"
+            />
+          </div>
         </template>
         <template #title>
           <AssetDetailHeader
@@ -194,7 +227,7 @@ async function loadLogs() {
                     <img
                       :src="assetDetail.imageUrl"
                       :alt="assetDetail.name"
-                      class="w-100 h-50 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer transition"
+                      class="w-full md:w-100 h-50 object-cover rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer transition"
                       @click="openImageModal(assetDetail.imageUrl)"
                     >
                     <div
@@ -388,11 +421,11 @@ async function loadLogs() {
                   :loading="holderLoading"
                   class="w-full"
                   :ui="{
-                    base: 'table-fixed border-separate border-spacing-0',
+                    base: 'table-auto border-separate border-spacing-0',
                     thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
                     tbody: '[&>tr]:last:[&>td]:border-b-0',
-                    th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap',
-                    td: 'border-b border-default whitespace-nowrap'
+                    th: 'py-2 px-3 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap text-xs',
+                    td: 'px-3 py-2 border-b border-default'
                   }"
                 />
               </div>
@@ -423,11 +456,11 @@ async function loadLogs() {
                   :loading="maintenanceLoading"
                   class="w-full"
                   :ui="{
-                    base: 'table-fixed border-separate border-spacing-0',
+                    base: 'table-auto border-separate border-spacing-0',
                     thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
                     tbody: '[&>tr]:last:[&>td]:border-b-0',
-                    th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap',
-                    td: 'border-b border-default whitespace-nowrap'
+                    th: 'py-2 px-3 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap text-xs',
+                    td: 'px-3 py-2 border-b border-default'
                   }"
                 />
               </div>
@@ -464,5 +497,12 @@ async function loadLogs() {
     v-model="isUpdateModalOpen"
     :asset-id="assetId"
     @updated="handleAssetUpdated"
+  />
+
+  <!-- Request Asset Modal -->
+  <AssetLoanRequestModal
+    ref="requestModal"
+    :asset-id="assetId"
+    @requested="handleAssetUpdated"
   />
 </template>

@@ -6,6 +6,7 @@
       highlight
       orientation="horizontal"
       class="-mx-1 flex-1"
+      :ui="{ label: 'hidden sm:inline' }"
     />
     <div v-else-if="loading" class="flex gap-2 ml-auto">
       <USkeleton class="h-8 w-24 rounded" />
