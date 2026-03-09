@@ -42,6 +42,13 @@ const links = computed<NavigationMenuItem[][]>(() => [[
       { label: 'Sub Category', to: '/setting/sub-category', onSelect: () => (open.value = false) },
       { label: 'Location', to: '/setting/location', onSelect: () => (open.value = false) }
     ]
+  },
+  {
+    label: 'Asset Loan',
+    icon: 'i-lucide-hand-helping',
+    to: '/asset-loan',
+    class: 'mt-1 py-1.5',
+    onSelect: () => (open.value = false)
   }
 ], [
   {

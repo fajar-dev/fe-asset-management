@@ -73,7 +73,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
 <template>
   <UModal v-model:open="open" title="New Maintenance" description="Add a new maintenance record">
-    <UButton label="Add Maintenance" icon="i-lucide-plus" />
+    <UButton label="Add Maintenance" icon="i-lucide-plus" :ui="{ label: 'hidden sm:inline-block' }" @click="open = true" />
 
     <template #body>
       <UForm

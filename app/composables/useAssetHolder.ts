@@ -38,6 +38,13 @@ interface AssetHolderState {
     holderId: string,
     payload: ReturnAssetHolderPayload
   ) => Promise<void>
+  requestAsset: (
+    assetUuid: string,
+    payload: {
+      purpose: string
+      image?: File | null
+    }
+  ) => Promise<void>
 }
 
 export function useAssetHolder(): AssetHolderState {
@@ -159,6 +166,33 @@ export function useAssetHolder(): AssetHolderState {
     }
   }
 
+  async function requestAsset(
+    assetUuid: string,
+    payload: {
+      purpose: string
+      image?: File | null
+    }
+  ): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await assetHolderService.requestAsset(assetUuid, payload)
+      await refreshHolders(assetUuid)
+      toast.add({
+        title: 'Requested',
+        description: 'Asset request sent successfully',
+        color: 'success'
+      })
+    } catch (err: unknown) {
+      const fetchError = err as FetchError<ApiError>
+      error.value = fetchError.data?.message ?? 'Failed to request asset'
+      toast.add({ title: 'Request failed', description: error.value, color: 'error' })
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   watch(searchTerm, () => {
     pagination.value.pageIndex = 0
     fetchHolders('', searchTerm.value, 1, pagination.value.pageSize)
@@ -176,6 +210,7 @@ export function useAssetHolder(): AssetHolderState {
     refreshHolders,
     getHolderById,
     assignHolder,
-    returnHolder
+    returnHolder,
+    requestAsset
   }
 }

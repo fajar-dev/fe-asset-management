@@ -54,6 +54,7 @@ export interface Asset {
   purchaseDate: string
   status: 'active' | 'in repair' | 'disposed'
   isLendable: boolean
+  isRequest?: boolean
   subCategory: {
     id: string
     name: string

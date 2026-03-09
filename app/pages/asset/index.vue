@@ -923,14 +923,14 @@ const columns: TableColumn<any>[] = [
             class="w-full md:flex-1"
             @keydown.enter="handleLabelEnter"
           />
-          <USelect
-            v-model="pageLimit"
-            class="w-full md:w-24"
-            :items="pageLimitOptions"
-          />
         </div>
 
         <div class="flex gap-2 items-center">
+          <USelect
+            v-model="pageLimit"
+            class="w-20"
+            :items="pageLimitOptions"
+          />
           <RoleWrapper role="admin">
             <AssetImportModal />
           </RoleWrapper>
@@ -948,9 +948,10 @@ const columns: TableColumn<any>[] = [
               color="neutral"
               variant="subtle"
               icon="i-lucide-filter"
-              trailing-icon="i-lucide-chevron-down"
+              :trailing-icon="isFilterOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+              :ui="{ trailingIcon: 'hidden sm:inline-flex' }"
             >
-              Filters
+              <span class="hidden sm:inline">Filters</span>
               <UBadge
                 v-if="activeFiltersCount > 0"
                 color="primary"
