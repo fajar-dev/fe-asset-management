@@ -43,7 +43,7 @@ interface AssetState {
   importAsset: (payload: FormData) => Promise<any>
   updateAsset: (id: string, payload: UpdateAssetPayload | FormData) => Promise<void>
   deleteAsset: (id: string) => Promise<void>
-  getLabels: () => Promise<Array<{ key: string, value: string }>>
+  getLabels: (search?: string) => Promise<Array<{ key: string, value: string }>>
   exportAssets: (filters: {
     categoryId?: string | undefined
     subCategoryId?: string | undefined
@@ -287,11 +287,11 @@ export const useAsset = (): AssetState => {
     }
   }
 
-  async function getLabels(): Promise<Array<{ key: string, value: string }>> {
+  async function getLabels(search?: string): Promise<Array<{ key: string, value: string }>> {
     loading.value = true
     error.value = null
     try {
-      const res = await assetService.getLabels()
+      const res = await assetService.getLabels(search)
       return res.data
     } catch (err: unknown) {
       const fetchError = err as FetchError<ApiError>

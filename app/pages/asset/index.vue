@@ -80,6 +80,15 @@ const tempBranch = ref<string[]>([])
 const tempDateRange = ref<any>(undefined)
 
 const availableLabels = ref<string[]>([])
+const labelSearch = ref('')
+
+const filteredLabels = computed(() => {
+  const selectedKeys = selectedLabels.value.map(l => l.split('=')[0])
+  return availableLabels.value.filter(l => {
+    const key = l.split('=')[0]
+    return !selectedKeys.includes(key)
+  })
+})
 
 const pageLimitOptions = [10, 25, 50, 100, 200, 500]
 
@@ -200,6 +209,16 @@ onMounted(async () => {
     loadAssets(1)
   })
   watch(sorting, () => loadAssets(1), { deep: true })
+  
+  // Debounced search for labels
+  let labelSearchTimeout: any = null
+  watch(labelSearch, (newVal) => {
+    if (labelSearchTimeout) clearTimeout(labelSearchTimeout)
+    labelSearchTimeout = setTimeout(async () => {
+      const labelData = await getLabels(newVal)
+      availableLabels.value = labelData.map(l => `${l.key}=${l.value}`)
+    }, 300)
+  })
 })
 
 watch(tempBranch, async (newBranchIds) => {
@@ -504,6 +523,12 @@ function handleAddAssetFromScanner(code: string) {
   }
 }
 
+function handleSearchEnter() {
+  if (!search.value) {
+    resetFilters()
+  }
+}
+
 function handleLabelEnter(e: KeyboardEvent) {
   const input = e.target as HTMLInputElement
   const value = input.value.trim()
@@ -516,8 +541,13 @@ function handleLabelEnter(e: KeyboardEvent) {
       selectedLabels.value = [...selectedLabels.value, value]
     }
     
-    // Clear the input
+    // Clear the input and the search query
     input.value = ''
+    labelSearch.value = ''
+  } else {
+    // If input is empty and enter is pressed -> RESET
+    labelSearch.value = ''
+    resetFilters()
   }
 }
 
@@ -914,10 +944,12 @@ const columns: TableColumn<any>[] = [
             class="w-full md:w-64"
             icon="i-lucide-search"
             placeholder="Search assets..."
+            @keydown.enter="handleSearchEnter"
           />
           <UInputMenu
             v-model="selectedLabels"
-            :items="availableLabels"
+            v-model:query="labelSearch"
+            :items="filteredLabels"
             placeholder="Label"
             multiple
             class="w-full md:flex-1"
