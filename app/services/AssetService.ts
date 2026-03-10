@@ -188,9 +188,10 @@ export class AssetService {
     return { blob, filename }
   }
 
-  async getLabels(): Promise<{ data: Array<{ key: string, value: string }> }> {
+  async getLabels(search?: string): Promise<{ data: Array<{ key: string, value: string }> }> {
     return await this.api<{ data: Array<{ key: string, value: string }> }>('/v1/label', {
       method: 'GET',
+      params: { search },
       headers: this.getAuthHeader()
     })
   }
