@@ -149,7 +149,7 @@ async function loadLogs() {
     items.value = logs.map((log: any) => ({
       date: new Date(log.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
       title: log.message,
-      description: log.employee ? `by ${log.employee.fullName}` : '',
+      description: log.user ? `by ${log.user.name}` : '',
       icon: getIconByLogType(log.type)
     }))
   }
