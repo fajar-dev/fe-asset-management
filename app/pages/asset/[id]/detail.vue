@@ -93,7 +93,7 @@ const holderColumns: TableColumn<any>[] = [
         }),
         h('div', { class: 'min-w-0' }, [
           h('p', { class: 'font-medium text-highlighted text-[11px] truncate' }, row.original.employee.fullName),
-          h('p', { class: 'text-[10px] opacity-70' }, row.original.employee.employeeId)
+          h('p', { class: 'text-xs opacity-70' }, row.original.employee.employeeId)
         ])
       ])
     }
@@ -106,12 +106,18 @@ const holderColumns: TableColumn<any>[] = [
   { 
     accessorKey: 'assignedAt', 
     header: 'Assigned',
-    cell: ({ row }) => h('span', { class: 'text-[10px] whitespace-nowrap' }, row.original.assignedAt)
+    cell: ({ row }) => {
+      const d = row.original.assignedAt ? new Date(row.original.assignedAt) : null
+      return h('span', { class: 'text-xs whitespace-nowrap' }, d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : '-')
+    }
   },
   {
     accessorKey: 'returnedAt',
     header: 'Returned',
-    cell: ({ row }) => h('span', { class: 'text-[10px] whitespace-nowrap' }, row.original.returnedAt || '-')
+    cell: ({ row }) => {
+      const d = row.original.returnedAt ? new Date(row.original.returnedAt) : null
+      return h('span', { class: 'text-xs whitespace-nowrap' }, d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : '-')
+    }
   }
 ]
 
@@ -119,7 +125,7 @@ const maintenanceColumns: TableColumn<any>[] = [
   { 
     accessorKey: 'maintenanceAt', 
     header: 'Date',
-    cell: ({ row }) => h('span', { class: 'text-[10px] whitespace-nowrap' }, row.original.maintenanceAt)
+    cell: ({ row }) => h('span', { class: 'text-xs whitespace-nowrap' }, row.original.maintenanceAt)
   },
   { 
     accessorKey: 'note', 

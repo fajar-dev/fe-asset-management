@@ -104,21 +104,29 @@ const columns: TableColumn<any>[] = [
     }
   },
   { accessorKey: 'purpose', header: 'Purpose' },
-  { accessorKey: 'assignedAt', header: 'Assigned At' },
+  { 
+    accessorKey: 'assignedAt', 
+    header: 'Assigned At',
+    cell: ({ row }) => {
+      const d = row.original.assignedAt ? new Date(row.original.assignedAt) : null
+      return h('span', { class: 'text-xs' }, d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : '-')
+    }
+  },
   {
     id: 'returnedAt',
     header: 'Returned At',
     cell: ({ row }) => {
       const returnedAt = row.original.returnedAt
       if (!returnedAt) {
-        if (!isAdmin.value) return null
+        if (!isAdmin.value) return h('span', { class: 'text-xs' }, '-')
         return h(AssetHolderReturnModal, {
           assetId,
           holderId: row.original.id,
           onReturned: () => loadHolders()
         })
       }
-      return row.original.returnedAt
+      const d = new Date(returnedAt)
+      return h('span', { class: 'text-xs' }, isNaN(d.getTime()) ? returnedAt : `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`)
     }
   }
 ]
