@@ -11,6 +11,7 @@ const { login: authLogin, isAuthenticated, google } = useAuth()
 const loading = ref(false)
 const googleLoading = ref(false)
 const router = useRouter()
+const route = useRoute()
 
 definePageMeta({
   layout: 'auth',
@@ -22,9 +23,11 @@ useSeoMeta({
   description: 'Login to your account to continue'
 })
 
-watchEffect(() => {
+watchEffect(async () => {
   if (import.meta.client && isAuthenticated.value) {
-    navigateTo('/')
+    await nextTick()
+    const intendedRoute = route.query.redirect as string
+    navigateTo(intendedRoute || '/')
   }
 })
 
@@ -33,7 +36,7 @@ const handleOnSuccess = async (response: ImplicitFlowSuccessResponse) => {
   try {
     const success = await google(response.code)
     if (success) {
-      const intendedRoute = router.currentRoute.value.query.redirect as string
+      const intendedRoute = route.query.redirect as string
       if (intendedRoute) await router.push(intendedRoute)
       else await router.push('/')
     }
@@ -67,7 +70,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
   try {
     const success = await authLogin(payload.data.employeeId, payload.data.password)
     if (success) {
-      const intendedRoute = router.currentRoute.value.query.redirect as string
+      const intendedRoute = route.query.redirect as string
       if (intendedRoute) await router.push(intendedRoute)
       else await router.push('/')
     }
