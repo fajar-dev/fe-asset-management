@@ -17,9 +17,11 @@ export interface CreateAssetPayload {
   code: string
   name: string
   description?: string
-  status: 'active' | 'in repair' | 'disposed'
   brand?: string
   model?: string
+  user: string
+  price?: number
+  purchaseDate?: string
   properties?: AssetPropertyPayload[]
   labels?: AssetLabel[]
   image?: File | null
@@ -31,30 +33,65 @@ export interface UpdateAssetPayload {
   code: string
   name: string
   description?: string
-  status: 'active' | 'in repair' | 'disposed'
   brand?: string
   model?: string
+  user: string
+  price?: number
+  purchaseDate?: string
   properties?: AssetPropertyPayload[]
   labels?: AssetLabel[]
   image?: File | null
   isLendable: boolean
 }
 
+export interface AssetHolder {
+  id: string
+  assignedAt: string
+  returnedAt?: string | null
+  employee: {
+    id: string
+    fullName: string
+    employeeId: string
+    photoProfile?: string
+  }
+}
+
+export interface AssetStatus {
+  id: string
+  type: string
+  note?: string
+  createdAt: string
+  user: {
+    name: string
+    employeeId: string
+  }
+}
+
+export interface AssetLocation {
+  id: string
+  locationId: string
+  name: string
+  branch: {
+    id: string
+    name: string
+    code: string
+  }
+}
+
 export interface Asset {
   id: string
   code: string
   name: string
-  imageUrl?: string
-  imagePath?: string
-  description?: string
-  brand?: string
-  model?: string
+  imageUrl?: string | null
+  imagePath?: string | null
+  description?: string | null
+  brand?: string | null
+  model?: string | null
   user: string
-  price?: number
-  purchaseDate: string
-  status: 'active' | 'in repair' | 'disposed'
+  price?: number | string | null
+  purchaseDate: string | null
+  age?: string | null
   isLendable: boolean
-  isRequest?: boolean
   subCategory: {
     id: string
     name: string
@@ -68,7 +105,7 @@ export interface Asset {
   }
   properties?: Array<{
     id: string
-    value: string | number
+    value: string | number | null
     property: {
       id: string
       name: string
@@ -76,10 +113,12 @@ export interface Asset {
     }
   }>
   labels?: Array<{
-    id: string
     key: string
-    value: string | number
+    value: string
   }>
+  activeHolder?: AssetHolder | null
+  lastStatus?: AssetStatus | null
+  lastLocation?: AssetLocation | null
 }
 
 export interface Pagination {

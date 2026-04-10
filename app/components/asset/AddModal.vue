@@ -28,7 +28,6 @@ const schema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   subCategoryId: z.string().min(1, 'Sub category is required'),
   locationId: z.string().optional(),
-  status: z.enum(['active', 'in repair', 'disposed']).default('active'),
   isLendable: z.boolean().default(false),
   image: z.any().refine(file => file !== null && file !== undefined, {
     message: 'Asset image is required'
@@ -100,7 +99,6 @@ const state = reactive<{
   categoryId: string
   subCategoryId: string
   locationId: string
-  status: 'active' | 'in repair' | 'disposed'
   isLendable: boolean
   image: File | null
   properties: { id: string, value: string | number }[]
@@ -116,7 +114,6 @@ const state = reactive<{
   purchaseDate: '',
   categoryId: '',
   subCategoryId: '',
-  status: 'active',
   isLendable: false,
   locationId: '',
   image: null,
@@ -366,7 +363,6 @@ function resetForm() {
   state.categoryId = ''
   state.subCategoryId = ''
   state.locationId = ''
-  state.status = 'active'
   state.isLendable = false
   state.image = null
   state.properties = []
@@ -839,7 +835,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     formData.append('price', state.price.toString())
   }
 
-  formData.append('status', event.data.status || 'active')
   formData.append('isLendable', event.data.isLendable as any)
   formData.append('properties', JSON.stringify(processedProperties))
 
@@ -1032,20 +1027,6 @@ onBeforeUnmount(() => {
             </UPopover>
           </UFormField>
 
-          <UFormField label="Status" name="status" required>
-            <USelectMenu
-              v-model="state.status"
-              :items="[
-                { id: 'active', name: 'Active' },
-                { id: 'in repair', name: 'In Repair' },
-                { id: 'disposed', name: 'Disposed' }
-              ]"
-              value-key="id"
-              label-key="name"
-              placeholder="Select status"
-              class="w-full"
-            />
-          </UFormField>
 
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-1">
