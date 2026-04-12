@@ -94,7 +94,8 @@ const pageLimitOptions = [10, 25, 50, 100, 200, 500]
 
 const statusItems: SelectMenuItem[] = [
   { label: 'Active', id: 'active' },
-  { label: 'In Repair', id: 'in repair' },
+  { label: 'Sold', id: 'sold' },
+  { label: 'Granted', id: 'granted' },
   { label: 'Disposed', id: 'disposed' }
 ]
 
@@ -858,20 +859,24 @@ const columns: TableColumn<any>[] = [
     header: ({ column }) => getHeader(column, 'Status'),
     filterFn: 'equals',
     cell: ({ row }) => {
-      type AssetStatus = 'active' | 'disposed' | 'in repair'
-      const status = row.original.status as AssetStatus
-      const colorMap: Record<AssetStatus, 'success' | 'error' | 'warning'> = {
+      const statusType = row.original.lastStatus?.type
+      if (!statusType) return h('span', { class: 'text-xs text-muted' }, '-')
+
+      const colorMap: Record<string, 'success' | 'error' | 'warning' | 'primary' | 'neutral'> = {
         'active': 'success',
         'disposed': 'error',
-        'in repair': 'warning'
+        'sold': 'warning',
+        'granted': 'primary'
       }
-      const displayStatus = status
-        .split(' ')
-        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+      
+      const displayStatus = statusType
+        .split('_')
+        .map((s: string) => s.charAt(0).toUpperCase() + s.slice(1))
         .join(' ')
+        
       return h(
         UBadge,
-        { class: 'capitalize', variant: 'subtle', color: colorMap[status] },
+        { class: 'capitalize', variant: 'subtle', color: colorMap[statusType] || 'neutral' },
         () => displayStatus
       )
     }

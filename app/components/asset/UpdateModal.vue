@@ -20,7 +20,6 @@ const schema = z.object({
   purchaseDate: z.string().min(1, 'Purchase date is required'),
   categoryId: z.string().min(1, 'Category is required'),
   subCategoryId: z.string().min(1, 'Sub category is required'),
-  status: z.enum(['active', 'in repair', 'disposed']).default('active'),
   isLendable: z.boolean().default(false),
   image: z.any().optional(),
   properties: z.array(
@@ -96,7 +95,6 @@ const state = reactive<{
   purchaseDate: string
   categoryId: string
   subCategoryId: string
-  status: 'active' | 'in repair' | 'disposed'
   isLendable: boolean
   image: File | null
   properties: { id: string, value: string | number }[]
@@ -112,7 +110,6 @@ const state = reactive<{
   purchaseDate: '',
   categoryId: '',
   subCategoryId: '',
-  status: 'active',
   isLendable: false,
   image: null,
   properties: [],
@@ -310,7 +307,7 @@ async function loadAssetData() {
   state.brand = asset.brand || ''
   state.model = asset.model || ''
   state.user = asset.user || ''
-  state.price = asset.price || undefined
+  state.price = asset.price ? Number(asset.price) : undefined
   displayPrice.value = asset.price ? Number(asset.price).toLocaleString('id-ID') : ''
   state.purchaseDate = asset.purchaseDate || ''
   
@@ -323,7 +320,6 @@ async function loadAssetData() {
     purchaseDateModel.value = null
   }
 
-  state.status = asset.status
   state.isLendable = asset.isLendable
   state.categoryId = asset.subCategory.category.id
 
@@ -340,7 +336,7 @@ async function loadAssetData() {
   if (asset.properties && asset.properties.length > 0) {
     state.properties = asset.properties.map(p => ({
       id: p.property.id,
-      value: p.value
+      value: p.value ?? ''
     }))
 
     availableProperties.value = asset.properties.map(p => ({
@@ -757,7 +753,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       formData.append('price', state.price.toString())
     }
 
-    formData.append('status', event.data.status || 'active')
     formData.append('isLendable', event.data.isLendable as any)
     formData.append('properties', JSON.stringify(processedProperties))
 
@@ -781,7 +776,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       user: event.data.user,
       price: state.price,
       purchaseDate: event.data.purchaseDate,
-      status: event.data.status || 'active',
       isLendable: event.data.isLendable,
       properties: processedProperties,
       labels: state.labels.filter((cv: { key: string, value: string }) => cv.key && cv.value)
@@ -807,7 +801,6 @@ function resetState() {
     purchaseDate: '',
     categoryId: '',
     subCategoryId: '',
-    status: 'active',
     isLendable: false,
     image: null,
     properties: [],
@@ -901,20 +894,6 @@ onBeforeUnmount(() => {
             </UPopover>
           </UFormField>
 
-          <UFormField label="Status" name="status" required>
-            <USelectMenu
-              v-model="state.status"
-              :items="[
-                { id: 'active', name: 'Active' },
-                { id: 'in repair', name: 'In Repair' },
-                { id: 'disposed', name: 'Disposed' }
-              ]"
-              value-key="id"
-              label-key="name"
-              placeholder="Select status"
-              class="w-full"
-            />
-          </UFormField>
 
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-1">
