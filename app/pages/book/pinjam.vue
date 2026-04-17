@@ -98,15 +98,15 @@ const state = reactive<Partial<Schema>>({
   category: undefined,
 })
 
-async function onScanned(code: string) {
+async function lookupBySerial(code: string) {
+  if (!code?.trim()) return
   lookupLoading.value = true
-  state.serialNumber = code
   state.judulBuku = undefined
   state.category = undefined
   bookData.value = null
 
   try {
-    const res = await bookService.getBookByCode(code)
+    const res = await bookService.getBookByCode(code.trim())
     bookData.value = res.data
     state.judulBuku = res.data.name
     state.category = res.data.subCategory.name
@@ -116,10 +116,14 @@ async function onScanned(code: string) {
       description: `Tidak ada buku dengan kode "${code}"`,
       color: 'error'
     })
-    state.serialNumber = undefined
   } finally {
     lookupLoading.value = false
   }
+}
+
+function onScanned(code: string) {
+  state.serialNumber = code
+  lookupBySerial(code)
 }
 
 function resetBook() {
@@ -209,33 +213,48 @@ onUnmounted(() => stopCamera())
         <div class="flex gap-2">
           <UInput
             v-model="state.serialNumber"
-            placeholder="Scan barcode untuk mengisi"
+            placeholder="Ketik atau scan serial number"
             icon="i-lucide-hash"
             class="flex-1"
-            disabled
             :loading="lookupLoading"
-          />
-          <UButton
-            v-if="!state.serialNumber"
-            type="button"
-            variant="soft"
-            color="primary"
-            icon="i-lucide-scan-barcode"
-            class="shrink-0"
-            title="Scan Barcode"
             :disabled="lookupLoading"
-            @click="barcodeScannerRef?.openModal()"
+            @keyup.enter="lookupBySerial(state.serialNumber!)"
           />
-          <UButton
-            v-else
-            type="button"
-            variant="outline"
-            color="error"
-            icon="i-lucide-x"
-            class="shrink-0"
-            title="Reset"
-            @click="resetBook"
-          />
+          <template v-if="bookData">
+            <UButton
+              type="button"
+              variant="outline"
+              color="error"
+              icon="i-lucide-x"
+              class="shrink-0"
+              title="Reset"
+              @click="resetBook"
+            />
+          </template>
+          <template v-else>
+            <UButton
+              v-if="state.serialNumber"
+              type="button"
+              variant="soft"
+              color="primary"
+              icon="i-lucide-search"
+              class="shrink-0"
+              title="Cari Buku"
+              :loading="lookupLoading"
+              :disabled="lookupLoading"
+              @click="lookupBySerial(state.serialNumber!)"
+            />
+            <UButton
+              type="button"
+              variant="soft"
+              color="neutral"
+              icon="i-lucide-scan-barcode"
+              class="shrink-0"
+              title="Scan Barcode"
+              :disabled="lookupLoading"
+              @click="barcodeScannerRef?.openModal()"
+            />
+          </template>
         </div>
       </UFormField>
 
