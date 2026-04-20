@@ -151,7 +151,7 @@ const statusColumns: TableColumn<any>[] = [
         'sold': 'warning',
         'granted': 'primary'
       }
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color: colorMap[type] || 'neutral', size: 'xs' }, () => type.replace('_', ' '))
+      return h(UBadge, { class: 'capitalize', variant: 'subtle', color: colorMap[type] || 'neutral', size: 'sm' }, () => type.replace('_', ' '))
     }
   },
   { 

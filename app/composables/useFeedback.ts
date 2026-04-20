@@ -1,6 +1,7 @@
 import { feedbackService } from '~/services/FeedbackService'
 import type {
   Feedback,
+  FeedbackRaw,
   CreateFeedbackPayload,
   FeedbackDetailResponse,
   Pagination,
@@ -39,7 +40,16 @@ export const useFeedback = (): FeedbackState => {
     error.value = null
     try {
       const res = await feedbackService.getFeedbacks(search, page, limit, byUser)
-      feedbacks.value = res.data
+      feedbacks.value = res.data.map((raw: FeedbackRaw): Feedback => ({
+        type: raw.category,
+        description: raw.message,
+        createdAt: raw.timestamp,
+        imageUrls: raw.imageUrls,
+        reply: raw.reply,
+        status: raw.status,
+        email: raw.email,
+        url: raw.url
+      }))
       apiPagination.value = res.meta?.pagination ?? null
     } catch (err: unknown) {
       const fetchError = err as FetchError<ApiError>
