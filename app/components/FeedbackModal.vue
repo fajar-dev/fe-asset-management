@@ -6,6 +6,7 @@ import { useFeedback } from '~/composables/useFeedback'
 const props = defineProps<{
   open: boolean
   formState: {
+    url: string
     type: string
     description: string
     images: File[]
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 }>()
 
 const schema = z.object({
+  url: z.string().min(1, 'Url is required'),
   type: z.enum(['keluhan', 'saran', 'pujian']),
   description: z.string().min(1, 'Description is required'),
   images: z.array(z.instanceof(File)).min(1, 'At least 1 image is required').max(3, 'Maximum 3 images allowed')
@@ -26,6 +28,7 @@ const schema = z.object({
 type Schema = z.infer<typeof schema>
 
 const state = reactive<Schema>({
+  url: props.formState.url,
   type: ['keluhan', 'saran', 'pujian'].includes(props.formState.type)
     ? (props.formState.type as 'keluhan' | 'saran' | 'pujian')
     : 'keluhan',
@@ -34,6 +37,7 @@ const state = reactive<Schema>({
 })
 
 watch(() => props.formState, (v) => {
+  state.url = window.location.href
   state.type = ['keluhan', 'saran', 'pujian'].includes(v.type) ? (v.type as 'keluhan' | 'saran' | 'pujian') : 'keluhan'
   state.description = v.description
   state.images = v.images
@@ -41,9 +45,9 @@ watch(() => props.formState, (v) => {
 
 const saving = ref(false)
 const items = [
-  { label: 'Keluhan', value: 'keluhan' },
-  { label: 'Saran', value: 'saran' },
-  { label: 'Pujian', value: 'pujian' }
+  { label: 'Issue', value: 'keluhan' },
+  { label: 'Suggestion', value: 'saran' },
+  { label: 'Compliment', value: 'pujian' }
 ]
 
 const { createFeedback } = useFeedback()
@@ -74,6 +78,10 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
       @update:open="emit('update:open', $event)"
     >
       <template #body>
+        <div class="mb-4">
+          <p>We are improving the information system so it works well for everyone. Thank you for your feedback.</p>
+          <span class="text-blue-500 font-medium underline">{{ state.url }}</span>
+        </div>
         <UForm
           :schema="schema"
           :state="state"

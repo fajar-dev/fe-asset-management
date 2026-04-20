@@ -157,10 +157,6 @@ const columns = [
                         {{ row.original.reply }}
                       </p>
                     </div>
-                    <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                      <UIcon name="i-lucide-clock" class="w-3.5 h-3.5" />
-                      <span>Updated: {{ new Date(row.original.updatedAt).toLocaleString() }}</span>
-                    </div>
                   </div>
                   <div v-else class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-md text-sm">
                     <UIcon name="i-lucide-alert-circle" class="w-4 h-4" />

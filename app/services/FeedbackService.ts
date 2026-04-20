@@ -56,6 +56,7 @@ export class FeedbackService {
 
   async createFeedback(payload: CreateFeedbackPayload): Promise<Feedback> {
     const formData = new FormData()
+    formData.append('url', payload.url)
     formData.append('type', payload.type)
     formData.append('description', payload.description)
     payload.images?.forEach(file => formData.append('images', file))

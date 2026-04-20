@@ -10,6 +10,7 @@ const isFeedbackLoading = ref(false)
 const scanModal = ref()
 
 const feedbackState = reactive({
+  url: '',
   type: 'keluhan',
   description: '',
   images: [] as File[]
@@ -83,6 +84,7 @@ const links = computed<NavigationMenuItem[][]>(() => [[
         const blob = await res.blob()
         const screenshotFile = new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' })
         feedbackState.images = [screenshotFile]
+        feedbackState.url = window.location.href
         isFeedbackOpen.value = true
       } finally {
         isFeedbackLoading.value = false

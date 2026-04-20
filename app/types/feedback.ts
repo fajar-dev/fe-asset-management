@@ -7,34 +7,48 @@ export const FeedbackTypeColor: Record<FeedbackType, string> = {
 }
 
 export type FeedbackStatus
-  = | 'new'
-    | 'ignored'
-    | 'noted'
-    | 'need discussion'
-    | 'accepted'
-    | 'in progress'
-    | 'done'
+  = | 'New'
+    | 'Ignored'
+    | 'Noted'
+    | 'Need Discussion'
+    | 'Accepted'
+    | 'In Progress'
+    | 'Done'
 
 export const FeedbackStatusColor: Record<FeedbackStatus, string> = {
-  'new': 'primary',
-  'ignored': 'neutral',
-  'noted': 'warning',
-  'need discussion': 'secondary',
-  'accepted': 'success',
-  'in progress': 'info',
-  'done': 'success'
+  'New': 'primary',
+  'Ignored': 'neutral',
+  'Noted': 'warning',
+  'Need Discussion': 'secondary',
+  'Accepted': 'success',
+  'In Progress': 'info',
+  'Done': 'success'
 }
 
 export interface Feedback {
-  id: string
+  id?: string
   type: FeedbackType
   description: string
   imageUrls?: string[]
   createdAt: string
-  updatedAt: string
+  updatedAt?: string
   reply?: string
   status?: FeedbackStatus
-  user: any
+  email?: string
+  url?: string
+}
+
+/** Raw shape returned by the API before mapping */
+export interface FeedbackRaw {
+  timestamp: string
+  email: string
+  image?: string[]
+  imageUrls?: string[]
+  url: string
+  category: FeedbackType
+  message: string
+  status: FeedbackStatus
+  reply: string
 }
 
 export interface FeedbackDetailResponse {
@@ -42,20 +56,22 @@ export interface FeedbackDetailResponse {
 }
 
 export interface FeedbackResponse {
-  data: Feedback[]
+  data: FeedbackRaw[]
   meta?: {
     pagination: Pagination
   }
 }
 
 export interface Pagination {
-  page: number
-  pageSize: number
-  total: number
-  pageCount: number
+  totalItems: number
+  itemCount: number
+  itemsPerPage: number
+  totalPages: number
+  currentPage: number
 }
 
 export interface CreateFeedbackPayload {
+  url: string
   type: FeedbackType
   description: string
   images?: File[]
