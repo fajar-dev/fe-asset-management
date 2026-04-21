@@ -1,5 +1,5 @@
 import type { Asset } from './asset'
-import type { Pagination } from './assetHolder'
+import type { Pagination } from './api'
 
 export interface UserAsset {
   id: string

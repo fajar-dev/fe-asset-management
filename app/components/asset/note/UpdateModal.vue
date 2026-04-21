@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { CalendarDate } from '@internationalized/date'
 import { useAssetNote } from '~/composables/useAssetNote'
+import { noteSchema, type NoteSchema } from '~/schemas/noteSchema'
+import { formatCalendarDate, calendarDateToISOString } from '~/utils/date'
 
 const props = defineProps<{
   assetId: string
@@ -15,12 +16,8 @@ const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
 
-// Validasi schema
-const schema = z.object({
-  occuredAt: z.string().min(1, 'Date is required'),
-  note: z.string().min(1, 'Note is required')
-})
-type Schema = z.output<typeof schema>
+const schema = noteSchema
+type Schema = NoteSchema
 
 const formData = reactive<Schema>({
   occuredAt: '',
@@ -29,29 +26,8 @@ const formData = reactive<Schema>({
 
 const occuredAtModel = ref<any>(null)
 
-function formatDateDisplay(date: any): string {
-  if (!date) return 'Select a date'
-  
-  const day = String(date.day).padStart(2, '0')
-  const month = String(date.month).padStart(2, '0')
-  const year = date.year
-  
-  return `${day}/${month}/${year}`
-}
-
-function calendarDateToString(date: any): string {
-  const year = date.year
-  const month = String(date.month).padStart(2, '0')
-  const day = String(date.day).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 watch(occuredAtModel, (newDate) => {
-  if (newDate) {
-    formData.occuredAt = calendarDateToString(newDate)
-  } else {
-    formData.occuredAt = ''
-  }
+  formData.occuredAt = newDate ? calendarDateToISOString(newDate) : ''
 })
 
 const saving = ref(false)
@@ -144,7 +120,7 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
           <UPopover :popper="{ placement: 'bottom-start' }">
             <UButton
               icon="i-lucide-calendar"
-              :label="occuredAtModel ? formatDateDisplay(occuredAtModel) : 'Select a date'"
+              :label="formatCalendarDate(occuredAtModel)"
               variant="subtle"
               color="neutral"
               class="w-full justify-start"

@@ -1,43 +1,37 @@
+import { BaseService } from '~/services/base'
 import type {
   AssetDetailResponse,
   AssetResponse,
+  AssetFilterOptions,
+  AssetExportOptions,
   CreateAssetPayload,
-  ImportAssetPayload,
   UpdateAssetPayload
 } from '~/types/asset'
 
-export class AssetService {
+export class AssetService extends BaseService {
   private basePath = '/v1/asset'
 
-  private get api() {
-    const { $api } = useNuxtApp()
-    return $api
-  }
+  async getAssets(options: AssetFilterOptions = {}): Promise<AssetResponse> {
+    const {
+      search = '',
+      page = 1,
+      limit = 10,
+      user,
+      categoryId,
+      subCategoryId,
+      status,
+      employeeId,
+      locationId,
+      branchId,
+      startDate,
+      endDate,
+      hasHolder,
+      isLendable,
+      labels,
+      sort,
+      order
+    } = options
 
-  private getAuthHeader() {
-    const token = localStorage.getItem('accessToken') || ''
-    return { Authorization: `Bearer ${token}` }
-  }
-
-  async getAssets(
-    search = '',
-    page = 1,
-    limit = 10,
-    user: string | null = null,
-    categoryId: string | null = null,
-    subCategoryId: string | null = null,
-    status: string | null = null,
-    employeeId: string | null = null,
-    locationId: string | null = null,
-    branchId: string | null = null,
-    startDate: string | null = null,
-    endDate: string | null = null,
-    hasHolder: boolean | null = false,
-    isLendable: boolean | null = null,
-    labels: string | null = null,
-    sort: string | null = null,
-    order: string | null = null
-  ): Promise<AssetResponse> {
     const params: Record<string, any> = { search, page, limit }
     if (user) params.user = user
     if (categoryId) params.categoryId = categoryId
@@ -48,8 +42,8 @@ export class AssetService {
     if (branchId) params.branchId = branchId
     if (startDate) params.startDate = startDate
     if (endDate) params.endDate = endDate
-    if (hasHolder !== null) params.hasHolder = hasHolder
-    if (isLendable !== null) params.isLendable = isLendable
+    if (hasHolder !== null && hasHolder !== undefined) params.hasHolder = hasHolder
+    if (isLendable !== null && isLendable !== undefined) params.isLendable = isLendable
     if (labels) params.labels = labels
     if (sort) params.sort = sort
     if (order) params.order = order
@@ -131,34 +125,21 @@ export class AssetService {
     })
   }
 
-  async exportAssets(
-    user: string | null = null,
-    categoryId: string | null = null,
-    subCategoryId: string | null = null,
-    status: string | null = null,
-    employeeId: string | null = null,
-    locationId: string | null = null,
-    branchId: string | null = null,
-    startDate: string | null = null,
-    endDate: string | null = null,
-    isLendable: boolean | null = null,
-    labels: string | null = null
-  ): Promise<{ blob: Blob, filename: string }> {
+  async exportAssets(options: AssetExportOptions = {}): Promise<{ blob: Blob, filename: string }> {
     const config = useRuntimeConfig()
-
     const params: Record<string, any> = {}
 
-    if (user) params.user = user
-    if (categoryId) params.categoryId = categoryId
-    if (subCategoryId) params.subCategoryId = subCategoryId
-    if (status) params.status = status
-    if (employeeId) params.employeeId = employeeId
-    if (locationId) params.locationId = locationId
-    if (branchId) params.branchId = branchId
-    if (startDate) params.startDate = startDate
-    if (endDate) params.endDate = endDate
-    if (isLendable !== null) params.isLendable = isLendable
-    if (labels) params.labels = labels
+    if (options.user) params.user = options.user
+    if (options.categoryId) params.categoryId = options.categoryId
+    if (options.subCategoryId) params.subCategoryId = options.subCategoryId
+    if (options.status) params.status = options.status
+    if (options.employeeId) params.employeeId = options.employeeId
+    if (options.locationId) params.locationId = options.locationId
+    if (options.branchId) params.branchId = options.branchId
+    if (options.startDate) params.startDate = options.startDate
+    if (options.endDate) params.endDate = options.endDate
+    if (options.isLendable !== null && options.isLendable !== undefined) params.isLendable = options.isLendable
+    if (options.labels) params.labels = options.labels
 
     const queryString = new URLSearchParams(params).toString()
     const url = `${config.public.apiUrl}${this.basePath}/export${queryString ? `?${queryString}` : ''}`
@@ -169,7 +150,6 @@ export class AssetService {
     })
 
     const blob = await response.blob()
-
     const contentDisposition = response.headers.get('content-disposition')
     let filename = ''
 
@@ -185,6 +165,7 @@ export class AssetService {
       const dateStr = today.toISOString().split('T')[0]
       filename = `export-assets-${dateStr}.xlsx`
     }
+
     return { blob, filename }
   }
 

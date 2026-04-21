@@ -7,8 +7,7 @@ import type {
   Pagination,
   UpdateFeedbackPayload
 } from '~/types/feedback'
-import type { FetchError } from 'ofetch'
-import type { ApiError } from '~/types/api'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface FeedbackState {
   feedbacks: Ref<Feedback[]>
@@ -24,7 +23,7 @@ interface FeedbackState {
   updateFeedback: (id: string, payload: UpdateFeedbackPayload) => Promise<Feedback | undefined>
 }
 
-export const useFeedback = (): FeedbackState => {
+export function useFeedback(): FeedbackState {
   const feedbacks = ref<Feedback[]>([])
   const selectedFeedback = ref<Feedback | null>(null)
   const apiPagination = ref<Pagination | null>(null)
@@ -34,7 +33,6 @@ export const useFeedback = (): FeedbackState => {
 
   const pagination = ref({ pageIndex: 0, pageSize: 10 })
 
-  // 🟢 Tambahkan byUser (default: true)
   async function fetchFeedbacks(search = '', page = 1, limit = 10, byUser = true): Promise<void> {
     loading.value = true
     error.value = null
@@ -52,8 +50,7 @@ export const useFeedback = (): FeedbackState => {
       }))
       apiPagination.value = res.meta?.pagination ?? null
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch feedbacks'
+      error.value = extractErrorMessage(err, 'Failed to fetch feedbacks')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -73,8 +70,7 @@ export const useFeedback = (): FeedbackState => {
       toast.add({ title: 'Created', description: 'Feedback created successfully', color: 'success' })
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to create feedback'
+      error.value = extractErrorMessage(err, 'Failed to create feedback')
       toast.add({ title: 'Create failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -90,8 +86,7 @@ export const useFeedback = (): FeedbackState => {
       selectedFeedback.value = res.data
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch feedback detail'
+      error.value = extractErrorMessage(err, 'Failed to fetch feedback detail')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
       return null
     } finally {
@@ -108,8 +103,7 @@ export const useFeedback = (): FeedbackState => {
       toast.add({ title: 'Updated', description: 'Feedback updated successfully', color: 'success' })
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to update feedback'
+      error.value = extractErrorMessage(err, 'Failed to update feedback')
       toast.add({ title: 'Update failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false

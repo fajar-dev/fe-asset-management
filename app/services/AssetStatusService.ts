@@ -1,3 +1,5 @@
+import { BaseService } from '~/services/base'
+
 export interface CreateAssetStatusPayload {
   type: 'active' | 'sold' | 'granted' | 'disposed'
   note?: string
@@ -14,18 +16,8 @@ export interface AssetStatusResponse {
   }
 }
 
-export class AssetStatusService {
+export class AssetStatusService extends BaseService {
   private basePath = '/v1/asset'
-
-  private get api() {
-    const { $api } = useNuxtApp()
-    return $api
-  }
-
-  private getAuthHeader() {
-    const token = localStorage.getItem('accessToken') || ''
-    return { Authorization: `Bearer ${token}` }
-  }
 
   async updateStatus(assetUuid: string, payload: CreateAssetStatusPayload): Promise<{ data: AssetStatusResponse }> {
     return await this.api<{ data: AssetStatusResponse }>(`${this.basePath}/${assetUuid}/status`, {
@@ -35,7 +27,7 @@ export class AssetStatusService {
     })
   }
 
-  async getStatuses(assetUuid: string, page: number = 1, limit: number = 10, search: string = ''): Promise<{ data: AssetStatusResponse[], meta?: any }> {
+  async getStatuses(assetUuid: string, page = 1, limit = 10, search = ''): Promise<{ data: AssetStatusResponse[], meta?: any }> {
     return await this.api<{ data: AssetStatusResponse[], meta?: any }>(`${this.basePath}/${assetUuid}/status`, {
       method: 'GET',
       params: { page, limit, search },

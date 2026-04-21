@@ -6,8 +6,7 @@ import type {
   AssetNoteDetailResponse,
   Pagination
 } from '~/types/assetNote'
-import type { ApiError } from '~/types/api'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface AssetNoteState {
   notes: Ref<AssetNote[]>
@@ -73,8 +72,7 @@ export function useAssetNote(): AssetNoteState {
         total: res.meta?.pagination?.totalItems ?? 0
       }
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch maintenances'
+      error.value = extractErrorMessage(err, 'Failed to fetch notes')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -105,8 +103,7 @@ export function useAssetNote(): AssetNoteState {
       selectedNote.value = res.data
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch note detail'
+      error.value = extractErrorMessage(err, 'Failed to fetch note detail')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
       return null
     } finally {
@@ -129,8 +126,7 @@ export function useAssetNote(): AssetNoteState {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to create maintenance'
+      error.value = extractErrorMessage(err, 'Failed to create note')
       toast.add({ title: 'Create failed', description: error.value, color: 'error' })
       throw err
     } finally {
@@ -154,8 +150,7 @@ export function useAssetNote(): AssetNoteState {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to update maintenance'
+      error.value = extractErrorMessage(err, 'Failed to update note')
       toast.add({ title: 'Update failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -177,8 +172,7 @@ export function useAssetNote(): AssetNoteState {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to delete maintenance'
+      error.value = extractErrorMessage(err, 'Failed to delete note')
       toast.add({ title: 'Delete failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false

@@ -1,4 +1,4 @@
-// ~/types/subCategory.ts
+import type { Pagination } from './api'
 
 export interface AssetProperty {
   id: string
@@ -39,14 +39,6 @@ export interface UpdateSubCategoryPayload {
   labels?: string[]
 }
 
-export interface Pagination {
-  totalItems: number
-  itemCount: number
-  itemsPerPage: number
-  totalPages: number
-  currentPage: number
-}
-
 export interface SubCategoryResponse {
   success: boolean
   statusCode: number
@@ -77,3 +69,5 @@ export interface SubCategoryPathResponse {
   message: string
   data: SubCategory[]
 }
+
+export type { Pagination }

@@ -1,3 +1,5 @@
+import type { Pagination } from './api'
+
 export interface Category {
   data?: any
   id: string
@@ -5,14 +7,6 @@ export interface Category {
   hasLocation: boolean
   hasMaintenance: boolean
   hasHolder: boolean
-}
-
-export interface Pagination {
-  totalItems: number
-  itemCount: number
-  itemsPerPage: number
-  totalPages: number
-  currentPage: number
 }
 
 export interface CategoryResponse {
@@ -42,3 +36,5 @@ export interface CreateCategoryPayload {
 export interface UpdateCategoryPayload extends Partial<CreateCategoryPayload> {
   id?: string
 }
+
+export type { Pagination }

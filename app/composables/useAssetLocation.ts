@@ -6,8 +6,7 @@ import type {
   CreateAssetLocationPayload,
   Pagination
 } from '~/types/assetLocation'
-import type { ApiError } from '~/types/api'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface AssetLocationState {
   locations: Ref<AssetLocation[]>
@@ -61,8 +60,7 @@ export function useAssetLocation(): AssetLocationState {
         total: res.meta?.pagination?.totalItems ?? 0
       }
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch locations'
+      error.value = extractErrorMessage(err, 'Failed to fetch locations')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -93,8 +91,7 @@ export function useAssetLocation(): AssetLocationState {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to create location'
+      error.value = extractErrorMessage(err, 'Failed to create location')
       toast.add({ title: 'Create failed', description: error.value, color: 'error' })
       throw err
     } finally {

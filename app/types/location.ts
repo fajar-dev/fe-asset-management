@@ -1,18 +1,11 @@
 import type { Branch } from './branch'
+import type { Pagination } from './api'
 
 export interface Location {
   locationUuid: any
   id: string
   name: string
   branch: Branch
-}
-
-export interface Pagination {
-  totalItems: number
-  itemCount: number
-  itemsPerPage: number
-  totalPages: number
-  currentPage: number
 }
 
 export interface LocationResponse {
@@ -40,3 +33,5 @@ export interface CreateLocationPayload {
 export interface UpdateLocationPayload extends Partial<CreateLocationPayload> {
   id?: string
 }
+
+export type { Pagination }

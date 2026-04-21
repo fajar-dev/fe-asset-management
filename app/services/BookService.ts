@@ -1,17 +1,8 @@
+import { BaseService } from '~/services/base'
 import type { BookResponse, LoanListResponse } from '~/types/book'
 
-export class BookService {
+export class BookService extends BaseService {
   private basePath = '/v2/book'
-
-  private get api() {
-    const { $api } = useNuxtApp()
-    return $api
-  }
-
-  private getAuthHeader() {
-    const token = localStorage.getItem('accessToken') || ''
-    return { Authorization: `Bearer ${token}` }
-  }
 
   async getBookByCode(code: string): Promise<BookResponse> {
     return await this.api<BookResponse>(`${this.basePath}/${code}`, {
@@ -24,7 +15,6 @@ export class BookService {
     const formData = new FormData()
     formData.append('assetId', assetId)
     formData.append('image', image)
-
     return await this.api<any>(`${this.basePath}/loan/assign`, {
       method: 'POST',
       body: formData,
@@ -44,7 +34,6 @@ export class BookService {
     formData.append('assetHolderId', assetHolderId)
     formData.append('purpose', purpose)
     formData.append('image', image)
-
     return await this.api<any>(`${this.basePath}/loan/return`, {
       method: 'POST',
       body: formData,

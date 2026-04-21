@@ -7,10 +7,9 @@ import type {
   CategoryPriceResponse,
   LocationPriceResponse,
   AssetAgingResponse,
-  DataQualityResponse,
-  ApiResponse
+  DataQualityResponse
 } from '~/types/statistic'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 import { statisticService } from '~/services/StatisticService'
 
 export function useStatistic() {
@@ -34,8 +33,7 @@ export function useStatistic() {
       const res = await statisticService.getCount()
       count.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiResponse<unknown>>
-      error.value = fetchError.data?.message ?? 'Failed to fetch count data'
+      error.value = extractErrorMessage(err, 'Failed to fetch count data')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -49,8 +47,7 @@ export function useStatistic() {
       const res = await statisticService.getAssetsByCategory()
       assetsByCategory.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiResponse<unknown>>
-      error.value = fetchError.data?.message ?? 'Failed to fetch assets by category'
+      error.value = extractErrorMessage(err, 'Failed to fetch assets by category')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -64,8 +61,7 @@ export function useStatistic() {
       const res = await statisticService.getAssetsBySubCategory()
       assetsBySubCategory.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiResponse<unknown>>
-      error.value = fetchError.data?.message ?? 'Failed to fetch assets by sub-category'
+      error.value = extractErrorMessage(err, 'Failed to fetch assets by sub-category')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -79,8 +75,7 @@ export function useStatistic() {
       const res = await statisticService.getAssetsByLocation()
       assetsByLocation.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiResponse<unknown>>
-      error.value = fetchError.data?.message ?? 'Failed to fetch assets by location'
+      error.value = extractErrorMessage(err, 'Failed to fetch assets by location')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -94,8 +89,7 @@ export function useStatistic() {
       const res = await statisticService.getPriceByCategory()
       priceByCategory.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiResponse<unknown>>
-      error.value = fetchError.data?.message ?? 'Failed to fetch price by category'
+      error.value = extractErrorMessage(err, 'Failed to fetch price by category')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -109,8 +103,7 @@ export function useStatistic() {
       const res = await statisticService.getPriceByLocation()
       priceByLocation.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiResponse<unknown>>
-      error.value = fetchError.data?.message ?? 'Failed to fetch price by location'
+      error.value = extractErrorMessage(err, 'Failed to fetch price by location')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -124,8 +117,7 @@ export function useStatistic() {
       const res = await statisticService.getAssetAging()
       assetAging.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiResponse<unknown>>
-      error.value = fetchError.data?.message ?? 'Failed to fetch asset aging'
+      error.value = extractErrorMessage(err, 'Failed to fetch asset aging')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -139,8 +131,7 @@ export function useStatistic() {
       const res = await statisticService.getDataQuality()
       dataQuality.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiResponse<unknown>>
-      error.value = fetchError.data?.message ?? 'Failed to fetch data quality'
+      error.value = extractErrorMessage(err, 'Failed to fetch data quality')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false

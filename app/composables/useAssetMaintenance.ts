@@ -6,8 +6,7 @@ import type {
   AssetMaintenanceDetailResponse,
   Pagination
 } from '~/types/assetMaintenance'
-import type { ApiError } from '~/types/api'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface AssetMaintenanceState {
   maintenances: Ref<AssetMaintenance[]>
@@ -73,8 +72,7 @@ export function useAssetMaintenance(): AssetMaintenanceState {
         total: res.meta?.pagination?.totalItems ?? 0
       }
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch maintenances'
+      error.value = extractErrorMessage(err, 'Failed to fetch maintenances')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -105,8 +103,7 @@ export function useAssetMaintenance(): AssetMaintenanceState {
       selectedMaintenance.value = res.data
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch maintenance detail'
+      error.value = extractErrorMessage(err, 'Failed to fetch maintenance detail')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
       return null
     } finally {
@@ -129,8 +126,7 @@ export function useAssetMaintenance(): AssetMaintenanceState {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to create maintenance'
+      error.value = extractErrorMessage(err, 'Failed to create maintenance')
       toast.add({ title: 'Create failed', description: error.value, color: 'error' })
       throw err
     } finally {
@@ -154,8 +150,7 @@ export function useAssetMaintenance(): AssetMaintenanceState {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to update maintenance'
+      error.value = extractErrorMessage(err, 'Failed to update maintenance')
       toast.add({ title: 'Update failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -177,8 +172,7 @@ export function useAssetMaintenance(): AssetMaintenanceState {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to delete maintenance'
+      error.value = extractErrorMessage(err, 'Failed to delete maintenance')
       toast.add({ title: 'Delete failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false

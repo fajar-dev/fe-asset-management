@@ -6,8 +6,7 @@ import type {
   Pagination,
   AssetDetailResponse
 } from '~/types/asset'
-import type { ApiError } from '~/types/api'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface AssetState {
   assets: Ref<Asset[]>
@@ -59,7 +58,7 @@ interface AssetState {
   }) => Promise<void>
 }
 
-export const useAsset = (): AssetState => {
+export function useAsset(): AssetState {
   const assets = ref<Asset[]>([])
   const selectedAsset = ref<Asset | null>(null)
   const apiPagination = ref<Pagination | null>(null)
@@ -92,51 +91,30 @@ export const useAsset = (): AssetState => {
     loading.value = true
     error.value = null
     try {
-      const {
-        search = searchTerm.value,
-        page = pagination.value.pageIndex + 1,
-        limit = pagination.value.pageSize,
-        user = null,
-        categoryId = null,
-        subCategoryId = null,
-        status = null,
-        employeeId = null,
-        locationId = null,
-        branchId = null,
-        startDate = null,
-        endDate = null,
-        hasHolder = null,
-        isLendable = null,
-        labels = null,
-        sort = null,
-        order = null
-      } = options || {}
-
-      const res = await assetService.getAssets(
-        search,
-        page,
-        limit,
-        user,
-        categoryId,
-        subCategoryId,
-        status,
-        employeeId,
-        locationId,
-        branchId,
-        startDate,
-        endDate,
-        hasHolder,
-        isLendable,
-        labels,
-        sort,
-        order
-      )
+      const res = await assetService.getAssets({
+        search: options?.search ?? searchTerm.value,
+        page: options?.page ?? pagination.value.pageIndex + 1,
+        limit: options?.limit ?? pagination.value.pageSize,
+        user: options?.user ?? null,
+        categoryId: options?.categoryId ?? null,
+        subCategoryId: options?.subCategoryId ?? null,
+        status: options?.status ?? null,
+        employeeId: options?.employeeId ?? null,
+        locationId: options?.locationId ?? null,
+        branchId: options?.branchId ?? null,
+        startDate: options?.startDate ?? null,
+        endDate: options?.endDate ?? null,
+        hasHolder: options?.hasHolder ?? null,
+        isLendable: options?.isLendable ?? null,
+        labels: options?.labels ?? null,
+        sort: options?.sort ?? null,
+        order: options?.order ?? null
+      })
 
       assets.value = res.data
       apiPagination.value = res.meta?.pagination ?? null
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch assets'
+      error.value = extractErrorMessage(err, 'Failed to fetch assets')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -156,8 +134,7 @@ export const useAsset = (): AssetState => {
       selectedAsset.value = res.data
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch asset detail'
+      error.value = extractErrorMessage(err, 'Failed to fetch asset detail')
       toast.add({ title: 'Failed', description: error.value, color: 'error' })
       return null
     } finally {
@@ -172,8 +149,7 @@ export const useAsset = (): AssetState => {
       const res = await assetService.getAssetLogs(id)
       return res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch asset logs'
+      error.value = extractErrorMessage(err, 'Failed to fetch asset logs')
       toast.add({ title: 'Failed', description: error.value, color: 'error' })
       return null
     } finally {
@@ -191,8 +167,7 @@ export const useAsset = (): AssetState => {
       return res
     } catch (err: unknown) {
       if (!silent) {
-        const fetchError = err as FetchError<ApiError>
-        error.value = fetchError.data?.message ?? 'Failed to fetch asset detail'
+        error.value = extractErrorMessage(err, 'Failed to fetch asset detail')
         toast.add({ title: 'Failed', description: error.value, color: 'error' })
       }
       return null
@@ -208,8 +183,7 @@ export const useAsset = (): AssetState => {
       const res = await assetService.getAssetByImage(image)
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to identify asset from image'
+      error.value = extractErrorMessage(err, 'Failed to identify asset from image')
       toast.add({ title: 'AI Scan Failed', description: error.value, color: 'error' })
       return null
     } finally {
@@ -226,8 +200,7 @@ export const useAsset = (): AssetState => {
       await refreshAssets()
       return res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to create asset'
+      error.value = extractErrorMessage(err, 'Failed to create asset')
       toast.add({ title: 'Create failed', description: error.value, color: 'error' })
       throw err
     } finally {
@@ -244,8 +217,7 @@ export const useAsset = (): AssetState => {
       await refreshAssets()
       return res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to create asset'
+      error.value = extractErrorMessage(err, 'Failed to create asset')
       toast.add({ title: 'Create failed', description: error.value, color: 'error' })
       throw err
     } finally {
@@ -261,8 +233,7 @@ export const useAsset = (): AssetState => {
       toast.add({ title: 'Updated', description: 'Asset updated successfully', color: 'success' })
       await refreshAssets()
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to update asset'
+      error.value = extractErrorMessage(err, 'Failed to update asset')
       toast.add({ title: 'Update failed', description: error.value, color: 'error' })
       throw err
     } finally {
@@ -278,8 +249,7 @@ export const useAsset = (): AssetState => {
       toast.add({ title: 'Deleted', description: 'Asset deleted successfully', color: 'success' })
       await refreshAssets()
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to delete asset'
+      error.value = extractErrorMessage(err, 'Failed to delete asset')
       toast.add({ title: 'Delete failed', description: error.value, color: 'error' })
       throw err
     } finally {
@@ -294,8 +264,7 @@ export const useAsset = (): AssetState => {
       const res = await assetService.getLabels(search)
       return res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch labels'
+      error.value = extractErrorMessage(err, 'Failed to fetch labels')
       toast.add({ title: 'Failed', description: error.value, color: 'error' })
       return []
     } finally {
@@ -319,19 +288,7 @@ export const useAsset = (): AssetState => {
     loading.value = true
     error.value = null
     try {
-      const { blob, filename } = await assetService.exportAssets(
-        filters.user || null,
-        filters.categoryId || null,
-        filters.subCategoryId || null,
-        filters.status || null,
-        filters.employeeId || null,
-        filters.locationId || null,
-        filters.branchId || null,
-        filters.startDate || null,
-        filters.endDate || null,
-        filters.isLendable !== undefined ? filters.isLendable : null,
-        filters.labels || null
-      )
+      const { blob, filename } = await assetService.exportAssets(filters)
 
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -350,9 +307,7 @@ export const useAsset = (): AssetState => {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      console.log(fetchError)
-      error.value = fetchError.data?.message ?? 'Failed to export assets'
+      error.value = extractErrorMessage(err, 'Failed to export assets')
       toast.add({
         title: 'Export failed',
         description: error.value,

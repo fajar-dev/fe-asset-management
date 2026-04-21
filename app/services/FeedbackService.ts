@@ -1,3 +1,4 @@
+import { BaseService } from '~/services/base'
 import type {
   Feedback,
   FeedbackDetailResponse,
@@ -6,32 +7,10 @@ import type {
   UpdateFeedbackPayload
 } from '~/types/feedback'
 
-export class FeedbackService {
+export class FeedbackService extends BaseService {
   private basePath = '/feedback'
 
-  private get api() {
-    const { $api } = useNuxtApp()
-    return $api
-  }
-
-  private getAuthHeader() {
-    const token = localStorage.getItem('accessToken') || ''
-    return { Authorization: `Bearer ${token}` }
-  }
-
-  /**
-   * Get paginated feedbacks (by user or all)
-   * @param search optional search keyword
-   * @param page page number (default: 1)
-   * @param limit items per page (default: 10)
-   * @param byUser filter feedback by current user (default: true)
-   */
-  async getFeedbacks(
-    search = '',
-    page = 1,
-    limit = 10,
-    byUser = true
-  ): Promise<FeedbackResponse> {
+  async getFeedbacks(search = '', page = 1, limit = 10, byUser = true): Promise<FeedbackResponse> {
     return await this.api<FeedbackResponse>(this.basePath, {
       method: 'GET',
       params: { search, page, limit, 'by-user': byUser },
@@ -60,7 +39,6 @@ export class FeedbackService {
     formData.append('type', payload.type)
     formData.append('description', payload.description)
     payload.images?.forEach(file => formData.append('images', file))
-
     return await this.api<Feedback>(this.basePath, {
       method: 'POST',
       body: formData,

@@ -1,3 +1,4 @@
+import { BaseService } from '~/services/base'
 import type {
   Property,
   PropertyDetailResponse,
@@ -6,26 +7,10 @@ import type {
   UpdatePropertyPayload
 } from '~/types/property'
 
-export class PropertyService {
+export class PropertyService extends BaseService {
   private basePath = '/v1/sub-category'
 
-  private get api() {
-    const { $api } = useNuxtApp()
-    return $api
-  }
-
-  private getAuthHeader() {
-    const token = localStorage.getItem('accessToken') || ''
-    return { Authorization: `Bearer ${token}` }
-  }
-
-  // Fetch paginate properties with pagination
-  async getProperties(
-    subCategoryId: string,
-    search = '',
-    page = 1,
-    limit = 10
-  ): Promise<PropertyResponse> {
+  async getProperties(subCategoryId: string, search = '', page = 1, limit = 10): Promise<PropertyResponse> {
     return await this.api<PropertyResponse>(`${this.basePath}/${subCategoryId}/property`, {
       method: 'GET',
       params: { search, page, limit },
@@ -33,7 +18,6 @@ export class PropertyService {
     })
   }
 
-  // Fetch all properties (without pagination, optional all flag)
   async getAllProperties(subCategoryId: string, all = true): Promise<PropertyResponse> {
     return await this.api<PropertyResponse>(`${this.basePath}/${subCategoryId}/property`, {
       method: 'GET',
@@ -42,7 +26,6 @@ export class PropertyService {
     })
   }
 
-  // Fetch single property by ID
   async getPropertyById(subCategoryId: string, propertyId: string): Promise<PropertyDetailResponse> {
     return await this.api<PropertyDetailResponse>(`${this.basePath}/${subCategoryId}/property/${propertyId}`, {
       method: 'GET',
@@ -50,7 +33,6 @@ export class PropertyService {
     })
   }
 
-  // Create a new property
   async createProperty(subCategoryId: string, payload: CreatePropertyPayload): Promise<Property> {
     return await this.api<Property>(`${this.basePath}/${subCategoryId}/property`, {
       method: 'POST',
@@ -59,12 +41,7 @@ export class PropertyService {
     })
   }
 
-  // Update existing property
-  async updateProperty(
-    subCategoryId: string,
-    propertyId: string,
-    payload: UpdatePropertyPayload
-  ): Promise<void> {
+  async updateProperty(subCategoryId: string, propertyId: string, payload: UpdatePropertyPayload): Promise<void> {
     await this.api(`${this.basePath}/${subCategoryId}/property/${propertyId}`, {
       method: 'PUT',
       body: payload,
@@ -72,7 +49,6 @@ export class PropertyService {
     })
   }
 
-  // Delete a property
   async deleteProperty(subCategoryId: string, propertyId: string): Promise<void> {
     await this.api(`${this.basePath}/${subCategoryId}/property/${propertyId}`, {
       method: 'DELETE',

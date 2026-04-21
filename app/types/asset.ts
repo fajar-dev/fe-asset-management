@@ -1,3 +1,5 @@
+import type { Pagination } from './api'
+
 export interface AssetPropertyPayload {
   id: string
   value: string | number
@@ -42,6 +44,40 @@ export interface UpdateAssetPayload {
   labels?: AssetLabel[]
   image?: File | null
   isLendable: boolean
+}
+
+export interface AssetFilterOptions {
+  search?: string
+  page?: number
+  limit?: number
+  user?: string | null
+  categoryId?: string | null
+  subCategoryId?: string | null
+  status?: string | null
+  employeeId?: string | null
+  locationId?: string | null
+  branchId?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  hasHolder?: boolean | null
+  isLendable?: boolean | null
+  labels?: string | null
+  sort?: string | null
+  order?: string | null
+}
+
+export interface AssetExportOptions {
+  user?: string | null
+  categoryId?: string | null
+  subCategoryId?: string | null
+  status?: string | null
+  employeeId?: string | null
+  locationId?: string | null
+  branchId?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  isLendable?: boolean | null
+  labels?: string | null
 }
 
 export interface AssetHolder {
@@ -121,14 +157,6 @@ export interface Asset {
   lastLocation?: AssetLocation | null
 }
 
-export interface Pagination {
-  totalItems: number
-  itemCount: number
-  itemsPerPage: number
-  totalPages: number
-  currentPage: number
-}
-
 export interface AssetResponse {
   success: boolean
   statusCode: number
@@ -145,3 +173,5 @@ export interface AssetDetailResponse {
   message: string
   data: Asset
 }
+
+export type { Pagination }

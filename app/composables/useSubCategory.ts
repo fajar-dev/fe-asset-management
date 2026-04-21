@@ -8,8 +8,7 @@ import type {
   Pagination,
   SubCategoryDetailResponse
 } from '~/types/subCategory'
-import type { ApiError } from '~/types/api'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface SubCategoryState {
   subCategories: Ref<SubCategory[]>
@@ -33,7 +32,7 @@ interface SubCategoryState {
   getFlattenedTree: (tree: SubCategory[], level?: number) => Array<SubCategory & { indent: string }>
 }
 
-export const useSubCategory = (): SubCategoryState => {
+export function useSubCategory(): SubCategoryState {
   const subCategories = ref<SubCategory[]>([])
   const hierarchyTree = ref<SubCategory[]>([])
   const selectedSubCategory = ref<SubCategory | null>(null)
@@ -58,8 +57,7 @@ export const useSubCategory = (): SubCategoryState => {
       subCategories.value = res.data
       apiPagination.value = res.meta.pagination
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch sub-categories'
+      error.value = extractErrorMessage(err, 'Failed to fetch sub-categories')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -73,8 +71,7 @@ export const useSubCategory = (): SubCategoryState => {
       const res = await subCategoryService.getHierarchyTree(categoryUuid)
       hierarchyTree.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch hierarchy tree'
+      error.value = extractErrorMessage(err, 'Failed to fetch hierarchy tree')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -88,8 +85,7 @@ export const useSubCategory = (): SubCategoryState => {
       const res = await subCategoryService.getSubCategoriesByCategory(categoryUuid)
       subCategories.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch sub-categories'
+      error.value = extractErrorMessage(err, 'Failed to fetch sub-categories')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -113,8 +109,7 @@ export const useSubCategory = (): SubCategoryState => {
       await refreshSubCategories()
       return res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to create sub category'
+      error.value = extractErrorMessage(err, 'Failed to create sub category')
       toast.add({ title: 'Create failed', description: error.value, color: 'error' })
       throw err
     } finally {
@@ -131,8 +126,7 @@ export const useSubCategory = (): SubCategoryState => {
       selectedSubCategory.value = res.data
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch sub category detail'
+      error.value = extractErrorMessage(err, 'Failed to fetch sub category detail')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
       return null
     } finally {
@@ -147,8 +141,7 @@ export const useSubCategory = (): SubCategoryState => {
       const res = await subCategoryService.getSubCategoryPath(id)
       breadcrumbPath.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch sub category path'
+      error.value = extractErrorMessage(err, 'Failed to fetch sub category path')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -167,8 +160,7 @@ export const useSubCategory = (): SubCategoryState => {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to update sub category'
+      error.value = extractErrorMessage(err, 'Failed to update sub category')
       toast.add({ title: 'Update failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -187,21 +179,18 @@ export const useSubCategory = (): SubCategoryState => {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to delete sub category'
+      error.value = extractErrorMessage(err, 'Failed to delete sub category')
       toast.add({ title: 'Delete failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
     }
   }
 
-  // Helper: Get available parents (exclude self and descendants)
   function getAvailableParents(categoryUuid: string, currentId?: string): SubCategory[] {
     if (!currentId) return subCategories.value
 
     const excludedIds = new Set<string>([currentId])
 
-    // Recursively collect all descendant IDs
     function collectDescendants(subCat: SubCategory) {
       if (subCat.children) {
         for (const child of subCat.children) {
@@ -219,7 +208,6 @@ export const useSubCategory = (): SubCategoryState => {
     return subCategories.value.filter(s => !excludedIds.has(s.id))
   }
 
-  // Helper: Flatten tree for dropdown display with indentation
   function getFlattenedTree(
     tree: SubCategory[],
     level = 0

@@ -1,8 +1,7 @@
 import type { Ref, ComputedRef } from 'vue'
 import type { User } from '~/types/auth'
-import type { ApiError } from '~/types/api'
 import { authService } from '~/services/AuthServices'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface AuthState {
   accessToken: Ref<string | null>
@@ -16,7 +15,7 @@ interface AuthState {
   getMe: () => Promise<boolean>
 }
 
-export const useAuth = (): AuthState => {
+export function useAuth(): AuthState {
   const router = useRouter()
   const toast = useToast()
 
@@ -74,10 +73,9 @@ export const useAuth = (): AuthState => {
       toast.add({ title: 'Success', description: 'Logged in successfully' })
       return true
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
       toast.add({
         title: 'Login failed',
-        description: fetchError.data?.message || 'Something went wrong',
+        description: extractErrorMessage(err, 'Something went wrong'),
         color: 'error'
       })
       return false
@@ -92,10 +90,9 @@ export const useAuth = (): AuthState => {
       toast.add({ title: 'Success', description: 'Logged in successfully' })
       return true
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
       toast.add({
         title: 'Login failed',
-        description: fetchError.data?.message || 'Something went wrong',
+        description: extractErrorMessage(err, 'Something went wrong'),
         color: 'error'
       })
       return false
@@ -119,10 +116,9 @@ export const useAuth = (): AuthState => {
       await getMe()
       return true
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
       toast.add({
         title: 'Session expired',
-        description: fetchError.data?.message || 'Please login again',
+        description: extractErrorMessage(err, 'Please login again'),
         color: 'error'
       })
       clearTokens()
@@ -140,10 +136,9 @@ export const useAuth = (): AuthState => {
       }
       return true
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
       toast.add({
         title: 'Failed to fetch user',
-        description: fetchError.data?.message || 'Something went wrong',
+        description: extractErrorMessage(err, 'Something went wrong'),
         color: 'error'
       })
       clearTokens()

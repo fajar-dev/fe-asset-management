@@ -1,8 +1,7 @@
 // ~/composables/useBranch.ts
 import { branchService } from '~/services/BranchService'
 import type { Branch } from '~/types/branch'
-import type { ApiError } from '~/types/api'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface BranchState {
   branches: Ref<Branch[]>
@@ -12,7 +11,7 @@ interface BranchState {
   refreshBranches: () => Promise<void>
 }
 
-export const useBranch = (): BranchState => {
+export function useBranch(): BranchState {
   const branches = ref<Branch[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -25,8 +24,7 @@ export const useBranch = (): BranchState => {
       const res = await branchService.getAllBranches(search)
       branches.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch branches'
+      error.value = extractErrorMessage(err, 'Failed to fetch branches')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false

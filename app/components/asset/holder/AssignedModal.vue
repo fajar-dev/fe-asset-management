@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import * as z from 'zod'
-import { CalendarDate } from '@internationalized/date'
 import { useAssetHolder } from '~/composables/useAssetHolder'
 import { useEmployee } from '~/composables/useEmployee'
+import { assignHolderSchema, type AssignHolderSchema } from '~/schemas/holderSchema'
+import { formatCalendarDate, calendarDateToISOString } from '~/utils/date'
 
 const props = defineProps<{
   assetId: string
@@ -10,14 +10,8 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ (e: 'created'): void }>()
 
-// Validation schema
-const schema = z.object({
-  assignedAt: z.string().min(1, 'Assigned date is required'),
-  employeeId: z.string().min(1, 'Employee is required'),
-  purpose: z.string().min(1, 'Purpose is required'),
-  attachments: z.array(z.custom<File>((val) => val instanceof File, 'Must be a File')).optional()
-})
-type Schema = z.output<typeof schema>
+const schema = assignHolderSchema
+type Schema = AssignHolderSchema
 
 const open = ref(false)
 const saving = ref(false)
@@ -31,29 +25,8 @@ const state = reactive({
 
 const assignedDateModel = ref<any>(null)
 
-function formatDateDisplay(date: any): string {
-  if (!date) return 'Select a date'
-  
-  const day = String(date.day).padStart(2, '0')
-  const month = String(date.month).padStart(2, '0')
-  const year = date.year
-  
-  return `${day}/${month}/${year}`
-}
-
-function calendarDateToString(date: any): string {
-  const year = date.year
-  const month = String(date.month).padStart(2, '0')
-  const day = String(date.day).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 watch(assignedDateModel, (newDate) => {
-  if (newDate) {
-    state.assignedAt = calendarDateToString(newDate)
-  } else {
-    state.assignedAt = ''
-  }
+  state.assignedAt = newDate ? calendarDateToISOString(newDate) : ''
 })
 
 const { assignHolder } = useAssetHolder()
@@ -123,7 +96,7 @@ async function openModal() {
           <UPopover :popper="{ placement: 'bottom-start' }">
             <UButton
               icon="i-lucide-calendar"
-              :label="assignedDateModel ? formatDateDisplay(assignedDateModel) : 'Select a date'"
+              :label="formatCalendarDate(assignedDateModel)"
               variant="subtle"
               color="neutral"
               class="w-full justify-start"

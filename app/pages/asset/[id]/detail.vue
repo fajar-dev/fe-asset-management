@@ -3,6 +3,7 @@ import { h } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import { useAssetHolder } from '~/composables/useAssetHolder'
 import { useAssetMaintenance } from '~/composables/useAssetMaintenance'
+import { formatCurrency } from '~/utils/formatters'
 
 const UAvatar = resolveComponent('UAvatar')
 const UBadge = resolveComponent('UBadge')
@@ -29,14 +30,6 @@ function openImageModal(url: string) {
 
 function closeImageModal() {
   previewImage.value = null
-}
-
-function IDRFormat(value: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0
-  }).format(Number(value))
 }
 
 async function loadHolders() {
@@ -403,7 +396,7 @@ async function loadLogs() {
                   <div>
                     <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Price</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
-                      {{ IDRFormat(assetDetail.price) }}
+                      {{ formatCurrency(assetDetail.price) }}
                     </p>
                   </div>
 
