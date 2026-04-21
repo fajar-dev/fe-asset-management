@@ -2,6 +2,7 @@ import { BaseService } from '~/services/base'
 import type {
   Feedback,
   FeedbackDetailResponse,
+  FeedbackFilterOptions,
   FeedbackResponse,
   CreateFeedbackPayload,
   UpdateFeedbackPayload
@@ -10,7 +11,8 @@ import type {
 export class FeedbackService extends BaseService {
   private basePath = '/feedback'
 
-  async getFeedbacks(search = '', page = 1, limit = 10, byUser = true): Promise<FeedbackResponse> {
+  async getFeedbacks(options: FeedbackFilterOptions = {}): Promise<FeedbackResponse> {
+    const { search = '', page = 1, limit = 10, byUser = true } = options
     return await this.api<FeedbackResponse>(this.basePath, {
       method: 'GET',
       params: { search, page, limit, 'by-user': byUser },

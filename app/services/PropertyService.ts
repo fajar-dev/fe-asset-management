@@ -2,6 +2,7 @@ import { BaseService } from '~/services/base'
 import type {
   Property,
   PropertyDetailResponse,
+  PropertyFilterOptions,
   PropertyResponse,
   CreatePropertyPayload,
   UpdatePropertyPayload
@@ -10,7 +11,8 @@ import type {
 export class PropertyService extends BaseService {
   private basePath = '/v1/sub-category'
 
-  async getProperties(subCategoryId: string, search = '', page = 1, limit = 10): Promise<PropertyResponse> {
+  async getProperties(subCategoryId: string, options: PropertyFilterOptions = {}): Promise<PropertyResponse> {
+    const { search = '', page = 1, limit = 10 } = options
     return await this.api<PropertyResponse>(`${this.basePath}/${subCategoryId}/property`, {
       method: 'GET',
       params: { search, page, limit },

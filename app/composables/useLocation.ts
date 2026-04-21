@@ -48,7 +48,7 @@ export function useLocation(): LocationState {
     loading.value = true
     error.value = null
     try {
-      const res = await locationService.getLocations(search, page, limit)
+      const res = await locationService.getLocations({ search, page, limit })
       locations.value = res.data
       apiPagination.value = res.meta?.pagination ?? null
       pagination.value.pageIndex = page - 1

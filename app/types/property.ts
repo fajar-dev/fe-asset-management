@@ -6,6 +6,12 @@ export interface Property {
   dataType: 'string' | 'number'
 }
 
+export interface PropertyFilterOptions {
+  search?: string
+  page?: number
+  limit?: number
+}
+
 export interface CreatePropertyPayload {
   name: string
   dataType: 'string' | 'number'

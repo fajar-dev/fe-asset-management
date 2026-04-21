@@ -35,7 +35,7 @@ export function useAssetStatus() {
     loading.value = true
     error.value = null
     try {
-      const res = await assetStatusService.getStatuses(assetUuid, page, limit, search)
+      const res = await assetStatusService.getStatuses(assetUuid, { page, limit, search })
       statuses.value = res.data
       return res
     } catch (err: unknown) {
