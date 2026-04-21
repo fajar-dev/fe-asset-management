@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useSubCategory } from '~/composables/useSubCategory'
 import { propertyService } from '~/services/PropertyService'
+import { propertySchema as schema, type PropertySchema as Schema } from '~/schemas/subCategorySchema'
 
 const props = defineProps<{
   id: string
@@ -13,12 +13,6 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'updated'): void
 }>()
-
-const schema = z.object({
-  name: z.string().min(1, 'Property name is required'),
-  dataType: z.enum(['string', 'number'], { message: 'Type is required' })
-})
-type Schema = z.output<typeof schema>
 
 // state
 const saving = ref(false)

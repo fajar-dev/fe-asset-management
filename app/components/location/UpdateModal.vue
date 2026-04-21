@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { reactive, ref, watch } from 'vue'
 import { useLocation } from '~/composables/useLocation'
 import { useBranch } from '~/composables/useBranch'
+import { locationSchema as schema, type LocationSchema as Schema } from '~/schemas/locationSchema'
 
 const props = defineProps<{
   id: string | null
@@ -14,13 +14,6 @@ const emit = defineEmits<{
   (e: 'updated'): void
   (e: 'update:open', value: boolean): void
 }>()
-
-// ✅ schema pakai branchId, sama seperti add
-const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  branchId: z.string().min(1, 'Branch is required')
-})
-type Schema = z.output<typeof schema>
 
 const formData = reactive<Schema>({
   name: '',

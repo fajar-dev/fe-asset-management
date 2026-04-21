@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useFeedback } from '~/composables/useFeedback'
+import { replyFeedbackSchema as schema, type ReplyFeedbackSchema as Schema } from '~/schemas/feedbackSchema'
 
 /** Props */
 const props = defineProps<{
@@ -14,21 +14,6 @@ const emit = defineEmits<{
   (e: 'updated'): void
   (e: 'update:open', value: boolean): void
 }>()
-
-/** Zod schema */
-const schema = z.object({
-  status: z.enum([
-    'new',
-    'ignored',
-    'noted',
-    'need discussion',
-    'accepted',
-    'in progress',
-    'done'
-  ]),
-  reply: z.string().min(1, 'Reply is required')
-})
-type Schema = z.output<typeof schema>
 
 /** Reactive form state */
 const formData = reactive<Schema>({

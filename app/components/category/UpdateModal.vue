@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useCategory } from '~/composables/useCategory'
+import { categorySchema as schema, type CategorySchema as Schema } from '~/schemas/categorySchema'
 
 const props = defineProps<{
   id: string | null
@@ -12,14 +12,6 @@ const emit = defineEmits<{
   (e: 'updated'): void
   (e: 'update:open', value: boolean): void
 }>()
-
-const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  hasLocation: z.boolean().default(false),
-  hasMaintenance: z.boolean().default(false),
-  hasHolder: z.boolean().default(false)
-})
-type Schema = z.output<typeof schema>
 
 const formData = reactive<Schema>({
   name: '',

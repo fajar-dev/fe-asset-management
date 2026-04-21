@@ -8,3 +8,10 @@ export const feedbackSchema = z.object({
 })
 
 export type FeedbackSchema = z.infer<typeof feedbackSchema>
+
+export const replyFeedbackSchema = z.object({
+  status: z.enum(['new', 'ignored', 'noted', 'need discussion', 'accepted', 'in progress', 'done']),
+  reply: z.string().min(1, 'Reply is required')
+})
+
+export type ReplyFeedbackSchema = z.output<typeof replyFeedbackSchema>

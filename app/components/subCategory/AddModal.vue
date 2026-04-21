@@ -1,23 +1,9 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useSubCategory } from '~/composables/useSubCategory'
 import { useCategory } from '~/composables/useCategory'
 import { useProperty } from '~/composables/useProperty'
-
-const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  categoryId: z.string().min(1, 'Category is required'),
-  labels: z.array(z.string()).optional(),
-  properties: z.array(
-    z.object({
-      name: z.string().min(1, 'Property name is required'),
-      dataType: z.enum(['string', 'number'], { message: 'Type is required' })
-    })
-  )
-})
-
-type Schema = z.output<typeof schema>
+import { createSubCategorySchema as schema, type CreateSubCategorySchema as Schema } from '~/schemas/subCategorySchema'
 
 const emit = defineEmits<{ (e: 'created'): void }>()
 const open = ref(false)
