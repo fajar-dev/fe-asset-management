@@ -62,6 +62,7 @@ export function useProperty(): PropertyState {
     error.value = null
     try {
       await propertyService.createProperty(subCategoryId, payload)
+      toast.add({ title: 'Created', description: 'Property created successfully', color: 'success' })
     } catch (err: unknown) {
       error.value = extractErrorMessage(err, 'Failed to create property')
       toast.add({ title: 'Create failed', description: error.value, color: 'error' })

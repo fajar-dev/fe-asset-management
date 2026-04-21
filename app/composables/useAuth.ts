@@ -70,7 +70,7 @@ export function useAuth(): AuthState {
       const res = await authService.login(username, password)
       setTokens(res.data.accessToken, res.data.refreshToken)
       await getMe()
-      toast.add({ title: 'Success', description: 'Logged in successfully' })
+      toast.add({ title: 'Success', description: 'Logged in successfully', color: 'success' })
       return true
     } catch (err: unknown) {
       toast.add({
@@ -87,7 +87,7 @@ export function useAuth(): AuthState {
       const res = await authService.google(code)
       setTokens(res.data.accessToken, res.data.refreshToken)
       await getMe()
-      toast.add({ title: 'Success', description: 'Logged in successfully' })
+      toast.add({ title: 'Success', description: 'Logged in successfully', color: 'success' })
       return true
     } catch (err: unknown) {
       toast.add({
