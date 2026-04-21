@@ -1,5 +1,5 @@
 import type { Branch } from './branch'
-import type { Pagination } from './api'
+import type { ApiListResponse, ApiDetailResponse, Pagination } from './api'
 
 export interface Location {
   locationUuid: any
@@ -8,22 +8,8 @@ export interface Location {
   branch: Branch
 }
 
-export interface LocationResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: Location[]
-  meta: {
-    pagination: Pagination
-  }
-}
-
-export interface LocationDetailResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: Location
-}
+export type LocationResponse = ApiListResponse<Location>
+export type LocationDetailResponse = ApiDetailResponse<Location>
 
 export interface CreateLocationPayload {
   name: string

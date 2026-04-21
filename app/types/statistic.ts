@@ -1,9 +1,6 @@
-export interface ApiResponse<T> {
-  success: boolean
-  statusCode: number
-  message: string
-  data: T
-}
+import type { ApiDetailResponse } from './api'
+
+type ApiResponse<T> = ApiDetailResponse<T>
 
 // ---- Count ----
 export interface CountData {

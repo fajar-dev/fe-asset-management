@@ -1,4 +1,4 @@
-import type { Pagination } from './api'
+import type { ApiListResponse, ApiDetailResponse, Pagination } from './api'
 
 export type FeedbackType = 'keluhan' | 'saran' | 'pujian'
 
@@ -52,16 +52,8 @@ export interface FeedbackRaw {
   reply: string
 }
 
-export interface FeedbackDetailResponse {
-  data: Feedback
-}
-
-export interface FeedbackResponse {
-  data: FeedbackRaw[]
-  meta?: {
-    pagination: Pagination
-  }
-}
+export type FeedbackDetailResponse = ApiDetailResponse<Feedback>
+export type FeedbackResponse = ApiListResponse<FeedbackRaw>
 
 export interface CreateFeedbackPayload {
   url: string

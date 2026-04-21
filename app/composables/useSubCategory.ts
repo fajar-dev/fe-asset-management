@@ -55,7 +55,7 @@ export function useSubCategory(): SubCategoryState {
     try {
       const res = await subCategoryService.getSubCategories(search, page, limit, categoryUuid)
       subCategories.value = res.data
-      apiPagination.value = res.meta.pagination
+      apiPagination.value = res.meta?.pagination ?? null
     } catch (err: unknown) {
       error.value = extractErrorMessage(err, 'Failed to fetch sub-categories')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })

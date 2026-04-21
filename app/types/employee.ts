@@ -1,4 +1,5 @@
 import type { Branch } from './branch'
+import type { ApiListResponse } from './api'
 
 export interface Employee {
   employeeId: string
@@ -9,9 +10,4 @@ export interface Employee {
   photoProfile: string
   branch: Branch
 }
-export interface EmployeeResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: Employee[]
-}
+export type EmployeeResponse = ApiListResponse<Employee>

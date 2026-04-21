@@ -50,7 +50,7 @@ export function useLocation(): LocationState {
     try {
       const res = await locationService.getLocations(search, page, limit)
       locations.value = res.data
-      apiPagination.value = res.meta.pagination
+      apiPagination.value = res.meta?.pagination ?? null
       pagination.value.pageIndex = page - 1
     } catch (err: unknown) {
       error.value = extractErrorMessage(err, 'Failed to fetch locations')

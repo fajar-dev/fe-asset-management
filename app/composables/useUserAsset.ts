@@ -16,8 +16,8 @@ export function useUserAsset() {
     try {
       const res = await userAssetService.getActiveAssets(page, limit)
       assets.value = res.data
-      apiPagination.value = res.meta.pagination
-      pagination.value.pageIndex = res.meta.pagination.currentPage - 1
+      apiPagination.value = res.meta?.pagination ?? null
+      pagination.value.pageIndex = (res.meta?.pagination?.currentPage ?? 1) - 1
     } catch (error) {
       // Handled globally
     } finally {
@@ -30,8 +30,8 @@ export function useUserAsset() {
     try {
       const res = await userAssetService.getHistoryAssets(page, limit)
       assets.value = res.data
-      apiPagination.value = res.meta.pagination
-      pagination.value.pageIndex = res.meta.pagination.currentPage - 1
+      apiPagination.value = res.meta?.pagination ?? null
+      pagination.value.pageIndex = (res.meta?.pagination?.currentPage ?? 1) - 1
     } catch (error) {
       // Handled globally
     } finally {

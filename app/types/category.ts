@@ -1,4 +1,4 @@
-import type { Pagination } from './api'
+import type { ApiListResponse, ApiDetailResponse, Pagination } from './api'
 
 export interface Category {
   data?: any
@@ -9,22 +9,8 @@ export interface Category {
   hasHolder: boolean
 }
 
-export interface CategoryResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: Category[]
-  meta: {
-    pagination: Pagination
-  }
-}
-
-export interface CategoryDetailResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: Category
-}
+export type CategoryResponse = ApiListResponse<Category>
+export type CategoryDetailResponse = ApiDetailResponse<Category>
 
 export interface CreateCategoryPayload {
   name: string

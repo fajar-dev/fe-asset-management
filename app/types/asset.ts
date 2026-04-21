@@ -1,4 +1,4 @@
-import type { Pagination } from './api'
+import type { ApiListResponse, ApiDetailResponse, Pagination } from './api'
 
 export interface AssetPropertyPayload {
   id: string
@@ -157,21 +157,7 @@ export interface Asset {
   lastLocation?: AssetLocation | null
 }
 
-export interface AssetResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: Asset[]
-  meta?: {
-    pagination: Pagination
-  }
-}
-
-export interface AssetDetailResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: Asset
-}
+export type AssetResponse = ApiListResponse<Asset>
+export type AssetDetailResponse = ApiDetailResponse<Asset>
 
 export type { Pagination }
