@@ -55,6 +55,13 @@ export interface FeedbackRaw {
 export type FeedbackDetailResponse = ApiDetailResponse<Feedback>
 export type FeedbackResponse = ApiListResponse<FeedbackRaw>
 
+export interface FeedbackFilterOptions {
+  search?: string
+  page?: number
+  limit?: number
+  byUser?: boolean
+}
+
 export interface CreateFeedbackPayload {
   url: string
   type: FeedbackType

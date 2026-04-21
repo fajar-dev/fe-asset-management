@@ -1,11 +1,12 @@
 import { BaseService } from '~/services/base'
-import type { Category, CategoryDetailResponse, CategoryResponse, CreateCategoryPayload, UpdateCategoryPayload } from '~/types/category'
+import type { Category, CategoryDetailResponse, CategoryFilterOptions, CategoryResponse, CreateCategoryPayload, UpdateCategoryPayload } from '~/types/category'
 import type { SubCategoryResponse } from '~/types/subCategory'
 
 export class CategoryService extends BaseService {
   private basePath = '/v1/category'
 
-  async getCategories(search = '', page = 1, limit = 10): Promise<CategoryResponse> {
+  async getCategories(options: CategoryFilterOptions = {}): Promise<CategoryResponse> {
+    const { search = '', page = 1, limit = 10 } = options
     return await this.api<CategoryResponse>(this.basePath, {
       method: 'GET',
       params: { search, page, limit },

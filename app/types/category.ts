@@ -12,6 +12,12 @@ export interface Category {
 export type CategoryResponse = ApiListResponse<Category>
 export type CategoryDetailResponse = ApiDetailResponse<Category>
 
+export interface CategoryFilterOptions {
+  search?: string
+  page?: number
+  limit?: number
+}
+
 export interface CreateCategoryPayload {
   name: string
   hasLocation: boolean

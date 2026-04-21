@@ -28,7 +28,8 @@ export class AssetStatusService extends BaseService {
     })
   }
 
-  async getStatuses(assetUuid: string, page = 1, limit = 10, search = ''): Promise<ApiListResponse<AssetStatusResponse>> {
+  async getStatuses(assetUuid: string, options: { page?: number, limit?: number, search?: string } = {}): Promise<ApiListResponse<AssetStatusResponse>> {
+    const { page = 1, limit = 10, search = '' } = options
     return await this.api<ApiListResponse<AssetStatusResponse>>(`${this.basePath}/${assetUuid}/status`, {
       method: 'GET',
       params: { page, limit, search },

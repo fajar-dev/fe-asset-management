@@ -53,7 +53,7 @@ export function useSubCategory(): SubCategoryState {
     loading.value = true
     error.value = null
     try {
-      const res = await subCategoryService.getSubCategories(search, page, limit, categoryUuid)
+      const res = await subCategoryService.getSubCategories({ search, page, limit, categoryUuid })
       subCategories.value = res.data
       apiPagination.value = res.meta?.pagination ?? null
     } catch (err: unknown) {

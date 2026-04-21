@@ -2,6 +2,7 @@ import { BaseService } from '~/services/base'
 import type {
   SubCategory,
   SubCategoryDetailResponse,
+  SubCategoryFilterOptions,
   SubCategoryResponse,
   SubCategoryHierarchyResponse,
   SubCategoryPathResponse,
@@ -12,7 +13,8 @@ import type {
 export class SubCategoryService extends BaseService {
   private basePath = '/v1/sub-category'
 
-  async getSubCategories(search = '', page = 1, limit = 10, categoryUuid?: string): Promise<SubCategoryResponse> {
+  async getSubCategories(options: SubCategoryFilterOptions = {}): Promise<SubCategoryResponse> {
+    const { search = '', page = 1, limit = 10, categoryUuid } = options
     const params: Record<string, any> = { search, page, limit }
     if (categoryUuid) params.categoryUuid = categoryUuid
     return await this.api<SubCategoryResponse>(this.basePath, {

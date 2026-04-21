@@ -25,6 +25,13 @@ export interface SubCategory {
   labels?: string[]
 }
 
+export interface SubCategoryFilterOptions {
+  search?: string
+  page?: number
+  limit?: number
+  categoryUuid?: string
+}
+
 export interface CreateSubCategoryPayload {
   name: string
   categoryId: string

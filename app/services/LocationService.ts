@@ -1,10 +1,11 @@
 import { BaseService } from '~/services/base'
-import type { LocationDetailResponse, LocationResponse, CreateLocationPayload, UpdateLocationPayload } from '~/types/location'
+import type { LocationDetailResponse, LocationFilterOptions, LocationResponse, CreateLocationPayload, UpdateLocationPayload } from '~/types/location'
 
 export class LocationService extends BaseService {
   private basePath = '/v1/location'
 
-  async getLocations(search = '', page = 1, limit = 10): Promise<LocationResponse> {
+  async getLocations(options: LocationFilterOptions = {}): Promise<LocationResponse> {
+    const { search = '', page = 1, limit = 10 } = options
     return await this.api<LocationResponse>(this.basePath, {
       method: 'GET',
       params: { search, page, limit },

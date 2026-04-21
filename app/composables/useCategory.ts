@@ -50,7 +50,7 @@ export function useCategory(): CategoryState {
     loading.value = true
     error.value = null
     try {
-      const res = await categoryService.getCategories(search, page, limit)
+      const res = await categoryService.getCategories({ search, page, limit })
       categories.value = res.data
       apiPagination.value = res.meta?.pagination ?? null
     } catch (err: unknown) {

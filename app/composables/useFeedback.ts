@@ -37,7 +37,7 @@ export function useFeedback(): FeedbackState {
     loading.value = true
     error.value = null
     try {
-      const res = await feedbackService.getFeedbacks(search, page, limit, byUser)
+      const res = await feedbackService.getFeedbacks({ search, page, limit, byUser })
       feedbacks.value = res.data.map((raw: FeedbackRaw): Feedback => ({
         type: raw.category,
         description: raw.message,

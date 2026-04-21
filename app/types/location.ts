@@ -11,6 +11,12 @@ export interface Location {
 export type LocationResponse = ApiListResponse<Location>
 export type LocationDetailResponse = ApiDetailResponse<Location>
 
+export interface LocationFilterOptions {
+  search?: string
+  page?: number
+  limit?: number
+}
+
 export interface CreateLocationPayload {
   name: string
   branchId: string
