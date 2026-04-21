@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useUserAsset } from '~/composables/useUserAsset'
+import { returnLoanSchema as schema, type ReturnLoanSchema as Schema } from '~/schemas/loanSchema'
 
 const props = defineProps<{
   assetUuid: string
@@ -10,12 +10,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{ (e: 'returned'): void }>()
 
-// validation schema
-const schema = z.object({
-  image: z.custom<File>((val) => val instanceof File, 'Photo is required')
-})
-
-type Schema = z.output<typeof schema>
 
 const open = ref(false)
 const saving = ref(false)

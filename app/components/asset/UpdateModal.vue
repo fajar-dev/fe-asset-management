@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useCategory } from '~/composables/useCategory'
 import { CalendarDate } from '@internationalized/date'
@@ -7,68 +6,14 @@ import { useSubCategory } from '~/composables/useSubCategory'
 import { useAsset } from '~/composables/useAsset'
 import { useProperty } from '~/composables/useProperty'
 import { formatCalendarDate, calendarDateToISOString } from '~/utils/date'
-
-const schema = z.object({
-  code: z.string().min(1, 'Asset code is required'),
-  name: z.string().min(1, 'Asset name is required'),
-  description: z.string().optional(),
-  brand: z.string().optional(),
-  model: z.string().optional(),
-  user: z.string().min(1, 'User is required'),
-  price: z.union([z.string(), z.number()]).refine(val => val !== undefined && val !== '', {
-    message: 'Price is required'
-  }),
-  purchaseDate: z.string().min(1, 'Purchase date is required'),
-  categoryId: z.string().min(1, 'Category is required'),
-  subCategoryId: z.string().min(1, 'Sub category is required'),
-  isLendable: z.boolean().default(false),
-  image: z.any().optional(),
-  properties: z.array(
-    z.object({
-      id: z.string(),
-      value: z.union([z.string(), z.number()]).optional()
-    })
-  ).optional(),
-  labels: z.array(
-    z.object({
-      key: z.string().min(1, 'Label key is required'),
-      value: z.string().min(1, 'Label value is required')
-    })
-  ).optional()
-}).superRefine((data, ctx) => {
-  if (data.labels) {
-    const keys = new Map<string, number[]>()
-    data.labels.forEach((item, index) => {
-      const k = item.key.toLowerCase().trim()
-      if (k) {
-        if (!keys.has(k)) keys.set(k, [])
-        keys.get(k)!.push(index)
-      }
-    })
-  }
-})
-
-const categorySchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  hasMaintenance: z.boolean().default(false),
-  hasHolder: z.boolean().default(false),
-  hasLocation: z.boolean().default(false)
-})
-
-const subCategorySchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  categoryId: z.string().min(1, 'Category is required'),
-  properties: z.array(
-    z.object({
-      name: z.string().min(1, 'Property name is required'),
-      dataType: z.enum(['string', 'number'], { message: 'Type is required' })
-    })
-  )
-})
-
-type Schema = z.output<typeof schema>
-type CategorySchema = z.infer<typeof categorySchema>
-type SubCategorySchema = z.infer<typeof subCategorySchema>
+import {
+  updateAssetSchema as schema,
+  categorySchema,
+  subCategorySchema,
+  type UpdateAssetSchema as Schema,
+  type CategorySchema,
+  type SubCategorySchema,
+} from '~/schemas/assetSchema'
 
 const props = defineProps<{
   assetId: string

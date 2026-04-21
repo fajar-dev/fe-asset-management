@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useFeedback } from '~/composables/useFeedback'
+import { feedbackSchema as schema, type FeedbackSchema as Schema } from '~/schemas/feedbackSchema'
 
 const props = defineProps<{
   open: boolean
@@ -18,14 +18,6 @@ const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
 
-const schema = z.object({
-  url: z.string().min(1, 'Url is required'),
-  type: z.enum(['keluhan', 'saran', 'pujian']),
-  description: z.string().min(1, 'Description is required'),
-  images: z.array(z.instanceof(File)).min(1, 'At least 1 image is required').max(3, 'Maximum 3 images allowed')
-})
-
-type Schema = z.infer<typeof schema>
 
 const state = reactive<Schema>({
   url: props.formState.url,
