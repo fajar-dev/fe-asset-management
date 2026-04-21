@@ -3,7 +3,7 @@ import { h } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import { useAssetHolder } from '~/composables/useAssetHolder'
 import { useAssetMaintenance } from '~/composables/useAssetMaintenance'
-import { formatCurrency } from '~/utils/formatters'
+import { formatCurrency, formatStatusLabel, getStatusColor } from '~/utils/formatters'
 
 const UAvatar = resolveComponent('UAvatar')
 const UBadge = resolveComponent('UBadge')
@@ -138,13 +138,7 @@ const statusColumns: TableColumn<any>[] = [
     header: 'Status',
     cell: ({ row }) => {
       const type = (row.original as any).type
-      const colorMap: Record<string, 'success' | 'error' | 'warning' | 'primary' | 'neutral'> = {
-        'active': 'success',
-        'disposed': 'error',
-        'sold': 'warning',
-        'granted': 'primary'
-      }
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color: colorMap[type] || 'neutral', size: 'sm' }, () => type.replace('_', ' '))
+      return h(UBadge, { class: 'capitalize', variant: 'subtle', color: getStatusColor(type), size: 'sm' }, () => formatStatusLabel(type))
     }
   },
   { 
@@ -177,6 +171,25 @@ function getIconByLogType(type: string): string {
     case 'note': return 'i-lucide-notebook-pen'
     default: return 'i-lucide-history'
   }
+}
+
+const STATUS_ICON_MAP: Record<string, string> = {
+  active: 'i-lucide-check-circle',
+  disposed: 'i-lucide-trash-2',
+  sold: 'i-lucide-shopping-cart',
+  granted: 'i-lucide-gift'
+}
+const STATUS_TEXT_COLOR_MAP: Record<string, string> = {
+  active: 'text-green-500',
+  disposed: 'text-red-500'
+}
+
+function getStatusIcon(status: string): string {
+  return STATUS_ICON_MAP[status] ?? 'i-lucide-info'
+}
+
+function getStatusTextColor(status: string): string {
+  return STATUS_TEXT_COLOR_MAP[status] ?? 'text-yellow-500'
 }
 
 async function loadLogs() {
@@ -364,12 +377,12 @@ async function loadLogs() {
                       <UTooltip :text="assetDetail.lastStatus?.note || 'No note provided'" :disabled="!assetDetail.lastStatus?.note">
                         <div class="flex items-center gap-2">
                           <UIcon
-                            :name="assetDetail.lastStatus?.type === 'active' ? 'i-lucide-check-circle' : assetDetail.lastStatus?.type === 'disposed' ? 'i-lucide-trash-2' : assetDetail.lastStatus?.type === 'sold' ? 'i-lucide-shopping-cart' : assetDetail.lastStatus?.type === 'granted' ? 'i-lucide-gift' : 'i-lucide-info'"
-                            :class="assetDetail.lastStatus?.type === 'active' ? 'text-green-500' : assetDetail.lastStatus?.type === 'disposed' ? 'text-red-500' : 'text-yellow-500'"
+                            :name="getStatusIcon(assetDetail.lastStatus?.type ?? '')"
+                            :class="getStatusTextColor(assetDetail.lastStatus?.type ?? '')"
                             class="w-4 h-4"
                           />
                           <span class="text-gray-900 dark:text-white text-sm capitalize">
-                            {{ assetDetail.lastStatus?.type ? assetDetail.lastStatus.type.replace('_', ' ') : '-' }}
+                            {{ assetDetail.lastStatus?.type ? formatStatusLabel(assetDetail.lastStatus.type) : '-' }}
                           </span>
                         </div>
                       </UTooltip>

@@ -10,6 +10,7 @@ import { useCategory } from '~/composables/useCategory'
 import { useEmployee } from '~/composables/useEmployee'
 import { useLocation } from '~/composables/useLocation'
 import { useRole } from '~/composables/useRole'
+import { formatStatusLabel, getStatusColor } from '~/utils/formatters'
 
 interface EmployeeItem {
   id: string
@@ -862,22 +863,10 @@ const columns: TableColumn<any>[] = [
       const statusType = row.original.lastStatus?.type
       if (!statusType) return h('span', { class: 'text-xs text-muted' }, '-')
 
-      const colorMap: Record<string, 'success' | 'error' | 'warning' | 'primary' | 'neutral'> = {
-        'active': 'success',
-        'disposed': 'error',
-        'sold': 'warning',
-        'granted': 'primary'
-      }
-      
-      const displayStatus = statusType
-        .split('_')
-        .map((s: string) => s.charAt(0).toUpperCase() + s.slice(1))
-        .join(' ')
-        
       return h(
         UBadge,
-        { class: 'capitalize', variant: 'subtle', color: colorMap[statusType] || 'neutral' },
-        () => displayStatus
+        { class: 'capitalize', variant: 'subtle', color: getStatusColor(statusType) },
+        () => formatStatusLabel(statusType)
       )
     }
   },
