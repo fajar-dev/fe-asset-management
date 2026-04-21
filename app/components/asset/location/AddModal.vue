@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { ref, reactive, watch } from 'vue'
 import { useLocation } from '~/composables/useLocation'
 import { useAssetLocation } from '~/composables/useAssetLocation'
+import { assetLocationSelectSchema as schema, type AssetLocationSelectSchema as Schema } from '~/schemas/importSchema'
 
 const props = defineProps<{ assetId: string }>()
 const emit = defineEmits<{ (e: 'created'): void }>()
-
-const schema = z.object({
-  locationId: z.string().min(1, 'Location is required')
-})
-type Schema = z.output<typeof schema>
 
 const state = reactive<Partial<Schema>>({
   locationId: undefined

@@ -1,15 +1,7 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useAsset } from '~/composables/useAsset'
-
-const schema = z.object({
-  file: z.any().refine(file => file !== null && file !== undefined, {
-    message: 'Asset image is required'
-  })
-})
-
-type Schema = z.output<typeof schema>
+import { assetImportSchema as schema, type AssetImportSchema as Schema } from '~/schemas/importSchema'
 
 const emit = defineEmits<{ (e: 'created'): void }>()
 const open = defineModel<boolean>('open', { default: false })

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useAssetStatus } from '~/composables/useAssetStatus'
+import { assetStatusSchema as schema, type AssetStatusSchema as Schema } from '~/schemas/statusSchema'
 
 const props = defineProps<{
   assetId: string
@@ -15,12 +15,6 @@ const emit = defineEmits<{
 const open = defineModel<boolean>()
 const { updateAssetStatus, loading } = useAssetStatus()
 
-const schema = z.object({
-  type: z.enum(['active', 'sold', 'granted', 'disposed']),
-  note: z.string().optional()
-})
-
-type Schema = z.output<typeof schema>
 
 const state = reactive({
   type: undefined as any,
