@@ -3,29 +3,23 @@ import type {
   Feedback,
   FeedbackRaw,
   CreateFeedbackPayload,
-  FeedbackDetailResponse,
   Pagination,
-  UpdateFeedbackPayload
 } from '~/types/feedback'
 import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface FeedbackState {
   feedbacks: Ref<Feedback[]>
-  selectedFeedback: Ref<Feedback | null>
   pagination: Ref<{ pageIndex: number, pageSize: number }>
   apiPagination: Ref<any>
   loading: Ref<boolean>
   error: Ref<string | null>
   fetchFeedbacks: (search?: string, page?: number, limit?: number, byUser?: boolean) => Promise<void>
   refreshFeedbacks: () => Promise<void>
-  getFeedbackById: (id: string) => Promise<FeedbackDetailResponse | null>
   createFeedback: (payload: CreateFeedbackPayload) => Promise<Feedback | undefined>
-  updateFeedback: (id: string, payload: UpdateFeedbackPayload) => Promise<Feedback | undefined>
 }
 
 export function useFeedback(): FeedbackState {
   const feedbacks = ref<Feedback[]>([])
-  const selectedFeedback = ref<Feedback | null>(null)
   const apiPagination = ref<Pagination | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -77,50 +71,14 @@ export function useFeedback(): FeedbackState {
     }
   }
 
-  async function getFeedbackById(id: string): Promise<FeedbackDetailResponse | null> {
-    loading.value = true
-    error.value = null
-    selectedFeedback.value = null
-    try {
-      const res = await feedbackService.getFeedbackById(id)
-      selectedFeedback.value = res.data
-      return res
-    } catch (err: unknown) {
-      error.value = extractErrorMessage(err, 'Failed to fetch feedback detail')
-      toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
-      return null
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function updateFeedback(id: string, payload: UpdateFeedbackPayload): Promise<Feedback | undefined> {
-    loading.value = true
-    error.value = null
-    try {
-      const res = await feedbackService.updateFeedback(id, payload)
-      await refreshFeedbacks()
-      toast.add({ title: 'Updated', description: 'Feedback updated successfully', color: 'success' })
-      return res
-    } catch (err: unknown) {
-      error.value = extractErrorMessage(err, 'Failed to update feedback')
-      toast.add({ title: 'Update failed', description: error.value, color: 'error' })
-    } finally {
-      loading.value = false
-    }
-  }
-
   return {
     feedbacks,
-    selectedFeedback,
     pagination,
     apiPagination,
     loading,
     error,
     fetchFeedbacks,
     refreshFeedbacks,
-    getFeedbackById,
     createFeedback,
-    updateFeedback
   }
 }
