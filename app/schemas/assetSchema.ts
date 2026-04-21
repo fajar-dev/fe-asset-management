@@ -1,4 +1,10 @@
 import * as z from 'zod'
+import { categorySchema, type CategorySchema } from './categorySchema'
+import { propertySchema } from './subCategorySchema'
+import { locationSchema as assetLocationSchema, type LocationSchema as AssetLocationSchema } from './locationSchema'
+
+export { categorySchema, type CategorySchema }
+export { assetLocationSchema, type AssetLocationSchema }
 
 const propertyEntry = z.object({
   id: z.string(),
@@ -22,6 +28,14 @@ const labelSuperRefine = (data: { labels?: { key: string; value: string }[] }, c
     })
   }
 }
+
+export const subCategorySchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  categoryId: z.string().min(1, 'Category is required'),
+  properties: z.array(propertySchema)
+})
+
+export type SubCategorySchema = z.infer<typeof subCategorySchema>
 
 export const createAssetSchema = z.object({
   codes: z.array(z.string().min(1, 'Asset code is required')).min(1, 'At least one code is required'),
@@ -64,31 +78,5 @@ export const updateAssetSchema = z.object({
   labels: z.array(labelEntry).optional()
 }).superRefine(labelSuperRefine)
 
-export const categorySchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  hasMaintenance: z.boolean().default(false),
-  hasHolder: z.boolean().default(false),
-  hasLocation: z.boolean().default(false)
-})
-
-export const subCategorySchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  categoryId: z.string().min(1, 'Category is required'),
-  properties: z.array(
-    z.object({
-      name: z.string().min(1, 'Property name is required'),
-      dataType: z.enum(['string', 'number'], { message: 'Type is required' })
-    })
-  )
-})
-
-export const assetLocationSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  branchId: z.string().min(1, 'Branch is required')
-})
-
 export type CreateAssetSchema = z.output<typeof createAssetSchema>
 export type UpdateAssetSchema = z.output<typeof updateAssetSchema>
-export type CategorySchema = z.infer<typeof categorySchema>
-export type SubCategorySchema = z.infer<typeof subCategorySchema>
-export type AssetLocationSchema = z.infer<typeof assetLocationSchema>

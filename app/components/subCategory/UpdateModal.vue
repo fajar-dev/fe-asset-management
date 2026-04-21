@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useSubCategory } from '~/composables/useSubCategory'
 import { useCategory } from '~/composables/useCategory'
+import { updateSubCategorySchema as schema, type UpdateSubCategorySchema as Schema } from '~/schemas/subCategorySchema'
 
 const props = defineProps<{
   id: string
@@ -13,14 +13,6 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'updated'): void
 }>()
-
-const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  categoryId: z.string().min(1, 'Category is required'),
-  labels: z.array(z.string()).optional()
-})
-
-type Schema = z.output<typeof schema>
 
 const saving = ref(false)
 const state = reactive<Partial<Schema>>({

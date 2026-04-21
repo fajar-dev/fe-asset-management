@@ -1,15 +1,8 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { useLocation } from '~/composables/useLocation'
 import { useBranch } from '~/composables/useBranch'
-
-const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  branchId: z.string().min(1, 'Branch is required')
-})
-
-type Schema = z.output<typeof schema>
+import { locationSchema as schema, type LocationSchema as Schema } from '~/schemas/locationSchema'
 
 const emit = defineEmits<{ (e: 'created'): void }>()
 
