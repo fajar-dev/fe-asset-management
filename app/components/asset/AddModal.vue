@@ -9,6 +9,7 @@ import { useProperty } from '~/composables/useProperty'
 import { useLocation } from '~/composables/useLocation'
 import { useAssetLocation } from '~/composables/useAssetLocation'
 import { useBranch } from '~/composables/useBranch'
+import { formatCalendarDate, calendarDateToISOString } from '~/utils/date'
 
 const props = defineProps<{
   initialCode?: string
@@ -130,26 +131,9 @@ function handlePriceInput(value: string) {
   displayPrice.value = digits ? Number(digits).toLocaleString('id-ID') : ''
 }
 
-function formatDateDisplay(date: any): string {
-  if (!date) return 'Select a date'
-  
-  const day = String(date.day).padStart(2, '0')
-  const month = String(date.month).padStart(2, '0')
-  const year = date.year
-  
-  return `${day}/${month}/${year}`
-}
-
-function calendarDateToString(date: any): string {
-  const year = date.year
-  const month = String(date.month).padStart(2, '0')
-  const day = String(date.day).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 watch(purchaseDateModel, (newDate) => {
   if (newDate) {
-    state.purchaseDate = calendarDateToString(newDate)
+    state.purchaseDate = calendarDateToISOString(newDate)
   } else {
     state.purchaseDate = ''
   }
@@ -1019,7 +1003,7 @@ onBeforeUnmount(() => {
                 block
                 class="justify-start"
               >
-                {{ formatDateDisplay(purchaseDateModel) }}
+                {{ formatCalendarDate(purchaseDateModel) }}
               </UButton>
               <template #content>
                 <UCalendar v-model="purchaseDateModel" class="p-2" />
