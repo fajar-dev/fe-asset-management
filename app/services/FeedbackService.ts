@@ -1,11 +1,9 @@
 import { BaseService } from '~/services/base'
 import type {
   Feedback,
-  FeedbackDetailResponse,
   FeedbackFilterOptions,
   FeedbackResponse,
   CreateFeedbackPayload,
-  UpdateFeedbackPayload
 } from '~/types/feedback'
 
 export class FeedbackService extends BaseService {
@@ -16,21 +14,6 @@ export class FeedbackService extends BaseService {
     return await this.api<FeedbackResponse>(this.basePath, {
       method: 'GET',
       params: { search, page, limit, 'by-user': byUser },
-      headers: this.getAuthHeader()
-    })
-  }
-
-  async getFeedbackById(id: string): Promise<FeedbackDetailResponse> {
-    return await this.api<FeedbackDetailResponse>(`${this.basePath}/${id}`, {
-      method: 'GET',
-      headers: this.getAuthHeader()
-    })
-  }
-
-  async updateFeedback(id: string, payload: UpdateFeedbackPayload): Promise<Feedback> {
-    return await this.api<Feedback>(`${this.basePath}/${id}`, {
-      method: 'PUT',
-      body: payload,
       headers: this.getAuthHeader()
     })
   }
