@@ -52,7 +52,7 @@ export function useCategory(): CategoryState {
     try {
       const res = await categoryService.getCategories(search, page, limit)
       categories.value = res.data
-      apiPagination.value = res.meta.pagination
+      apiPagination.value = res.meta?.pagination ?? null
     } catch (err: unknown) {
       error.value = extractErrorMessage(err, 'Failed to fetch categories')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })

@@ -1,5 +1,5 @@
 import type { Employee } from './employee'
-import type { Pagination } from './api'
+import type { ApiListResponse, ApiDetailResponse, Pagination } from './api'
 
 export interface AssetHolder {
   id: string
@@ -26,21 +26,7 @@ export interface ReturnAssetHolderPayload {
   attachments?: File[]
 }
 
-export interface AssetHolderResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: AssetHolder[]
-  meta?: {
-    pagination: Pagination
-  }
-}
-
-export interface AssetHolderDetailResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: AssetHolder
-}
+export type AssetHolderResponse = ApiListResponse<AssetHolder>
+export type AssetHolderDetailResponse = ApiDetailResponse<AssetHolder>
 
 export type { Pagination }

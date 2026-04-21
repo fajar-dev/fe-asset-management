@@ -1,4 +1,4 @@
-import type { Pagination } from './api'
+import type { ApiListResponse, ApiDetailResponse, Pagination } from './api'
 
 export interface AssetMaintenance {
   id: string
@@ -17,21 +17,7 @@ export interface CreateAssetMaintenancePayload {
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UpdateAssetMaintenancePayload extends Partial<CreateAssetMaintenancePayload> {}
 
-export interface AssetMaintenanceResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: AssetMaintenance[]
-  meta?: {
-    pagination: Pagination
-  }
-}
-
-export interface AssetMaintenanceDetailResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: AssetMaintenance
-}
+export type AssetMaintenanceResponse = ApiListResponse<AssetMaintenance>
+export type AssetMaintenanceDetailResponse = ApiDetailResponse<AssetMaintenance>
 
 export type { Pagination }

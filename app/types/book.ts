@@ -18,12 +18,9 @@ export interface BookData {
   }
 }
 
-export interface BookResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: BookData
-}
+import type { ApiListResponse, ApiDetailResponse } from './api'
+
+export type BookResponse = ApiDetailResponse<BookData>
 
 export interface LoanData {
   id: string
@@ -36,9 +33,4 @@ export interface LoanData {
   asset: BookData
 }
 
-export interface LoanListResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: LoanData[]
-}
+export type LoanListResponse = ApiListResponse<LoanData>

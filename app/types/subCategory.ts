@@ -1,4 +1,4 @@
-import type { Pagination } from './api'
+import type { ApiListResponse, ApiDetailResponse, Pagination } from './api'
 
 export interface AssetProperty {
   id: string
@@ -39,35 +39,9 @@ export interface UpdateSubCategoryPayload {
   labels?: string[]
 }
 
-export interface SubCategoryResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: SubCategory[]
-  meta: {
-    pagination: Pagination
-  }
-}
-
-export interface SubCategoryDetailResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: SubCategory
-}
-
-export interface SubCategoryHierarchyResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: SubCategory[]
-}
-
-export interface SubCategoryPathResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: SubCategory[]
-}
+export type SubCategoryResponse = ApiListResponse<SubCategory>
+export type SubCategoryDetailResponse = ApiDetailResponse<SubCategory>
+export type SubCategoryHierarchyResponse = ApiListResponse<SubCategory>
+export type SubCategoryPathResponse = ApiListResponse<SubCategory>
 
 export type { Pagination }

@@ -1,4 +1,4 @@
-import type { Pagination } from './api'
+import type { ApiListResponse, ApiDetailResponse, Pagination } from './api'
 
 export interface Property {
   id: string
@@ -15,21 +15,7 @@ export interface UpdatePropertyPayload extends Partial<CreatePropertyPayload> {
   id?: string
 }
 
-export interface PropertyResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: Property[]
-  meta?: {
-    pagination?: Pagination
-  }
-}
-
-export interface PropertyDetailResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: Property
-}
+export type PropertyResponse = ApiListResponse<Property>
+export type PropertyDetailResponse = ApiDetailResponse<Property>
 
 export type { Pagination }

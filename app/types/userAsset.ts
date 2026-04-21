@@ -1,5 +1,5 @@
 import type { Asset } from './asset'
-import type { Pagination } from './api'
+import type { ApiListResponse, Pagination } from './api'
 
 export interface UserAsset {
   id: string
@@ -12,12 +12,4 @@ export interface UserAsset {
   asset: Partial<Asset>
 }
 
-export interface UserAssetResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: UserAsset[]
-  meta: {
-    pagination: Pagination
-  }
-}
+export type UserAssetResponse = ApiListResponse<UserAsset>

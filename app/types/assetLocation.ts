@@ -1,4 +1,4 @@
-import type { Pagination } from './api'
+import type { ApiListResponse, Pagination } from './api'
 
 export interface CreateAssetLocationPayload {
   locationId: string
@@ -15,14 +15,6 @@ export interface AssetLocation {
   location: AssetLocationDetail
 }
 
-export interface AssetLocationResponse {
-  success: boolean
-  statusCode: number
-  message: string
-  data: AssetLocation[]
-  meta: {
-    pagination: Pagination
-  }
-}
+export type AssetLocationResponse = ApiListResponse<AssetLocation>
 
 export type { Pagination }
