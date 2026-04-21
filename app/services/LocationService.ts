@@ -1,17 +1,8 @@
+import { BaseService } from '~/services/base'
 import type { LocationDetailResponse, LocationResponse, CreateLocationPayload, UpdateLocationPayload } from '~/types/location'
 
-export class LocationService {
+export class LocationService extends BaseService {
   private basePath = '/v1/location'
-
-  private get api() {
-    const { $api } = useNuxtApp()
-    return $api
-  }
-
-  private getAuthHeader() {
-    const token = localStorage.getItem('accessToken') || ''
-    return { Authorization: `Bearer ${token}` }
-  }
 
   async getLocations(search = '', page = 1, limit = 10): Promise<LocationResponse> {
     return await this.api<LocationResponse>(this.basePath, {

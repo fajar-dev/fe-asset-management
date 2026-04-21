@@ -1,9 +1,7 @@
 import { categoryService } from '~/services/CategoryService'
 import type { Category, CreateCategoryPayload, UpdateCategoryPayload, Pagination, CategoryDetailResponse } from '~/types/category'
 import type { SubCategory } from '~/types/subCategory'
-
-import type { ApiError } from '~/types/api'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface CategoryState {
   categories: Ref<Category[]>
@@ -23,7 +21,7 @@ interface CategoryState {
   getAllCategories: () => Promise<void>
 }
 
-export const useCategory = (): CategoryState => {
+export function useCategory(): CategoryState {
   const categories = ref<Category[]>([])
   const selectedCategory = ref<Category | null>(null)
   const subCategories = ref<SubCategory[]>([])
@@ -41,8 +39,7 @@ export const useCategory = (): CategoryState => {
       const res = await categoryService.getAllCategories(true)
       categories.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch categories'
+      error.value = extractErrorMessage(err, 'Failed to fetch categories')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -57,8 +54,7 @@ export const useCategory = (): CategoryState => {
       categories.value = res.data
       apiPagination.value = res.meta.pagination
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch categories'
+      error.value = extractErrorMessage(err, 'Failed to fetch categories')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -78,8 +74,7 @@ export const useCategory = (): CategoryState => {
       toast.add({ title: 'Created', description: 'Category created successfully', color: 'success' })
       return res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to create category'
+      error.value = extractErrorMessage(err, 'Failed to create category')
       toast.add({ title: 'Create failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -95,8 +90,7 @@ export const useCategory = (): CategoryState => {
       selectedCategory.value = res.data
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch category detail'
+      error.value = extractErrorMessage(err, 'Failed to fetch category detail')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
       return null
     } finally {
@@ -111,8 +105,7 @@ export const useCategory = (): CategoryState => {
       const res = await categoryService.getSubCategoriesByCategory(id)
       subCategories.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch sub-categories'
+      error.value = extractErrorMessage(err, 'Failed to fetch sub-categories')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -127,8 +120,7 @@ export const useCategory = (): CategoryState => {
       await refreshCategories()
       toast.add({ title: 'Updated', description: 'Category updated successfully', color: 'success' })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to update category'
+      error.value = extractErrorMessage(err, 'Failed to update category')
       toast.add({ title: 'Update failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -143,8 +135,7 @@ export const useCategory = (): CategoryState => {
       await refreshCategories()
       toast.add({ title: 'Deleted', description: 'Category deleted successfully', color: 'success' })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to delete category'
+      error.value = extractErrorMessage(err, 'Failed to delete category')
       toast.add({ title: 'Delete failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false

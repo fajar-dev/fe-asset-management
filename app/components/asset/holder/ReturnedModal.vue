@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { CalendarDate } from '@internationalized/date'
 import { useAssetHolder } from '~/composables/useAssetHolder'
+import { returnHolderSchema, type ReturnHolderSchema } from '~/schemas/holderSchema'
+import { formatCalendarDate, calendarDateToISOString } from '~/utils/date'
 
 const props = defineProps<{
   assetId: string
@@ -11,13 +11,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ (e: 'returned'): void }>()
 
-// validation schema
-const schema = z.object({
-  returnedAt: z.string().min(1, 'Returned date is required'),
-  attachments: z.array(z.custom<File>((val) => val instanceof File, 'Must be a File')).optional()
-})
-
-type Schema = z.output<typeof schema>
+const schema = returnHolderSchema
+type Schema = ReturnHolderSchema
 
 const open = ref(false)
 const saving = ref(false)
@@ -29,29 +24,8 @@ const state = reactive<Partial<Schema>>({
 
 const returnedDateModel = ref<any>(null)
 
-function formatDateDisplay(date: any): string {
-  if (!date) return 'Select a date'
-  
-  const day = String(date.day).padStart(2, '0')
-  const month = String(date.month).padStart(2, '0')
-  const year = date.year
-  
-  return `${day}/${month}/${year}`
-}
-
-function calendarDateToString(date: any): string {
-  const year = date.year
-  const month = String(date.month).padStart(2, '0')
-  const day = String(date.day).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 watch(returnedDateModel, (newDate) => {
-  if (newDate) {
-    state.returnedAt = calendarDateToString(newDate)
-  } else {
-    state.returnedAt = ''
-  }
+  state.returnedAt = newDate ? calendarDateToISOString(newDate) : ''
 })
 
 const { returnHolder } = useAssetHolder()
@@ -101,7 +75,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           <UPopover :popper="{ placement: 'bottom-start' }">
             <UButton
               icon="i-lucide-calendar"
-              :label="returnedDateModel ? formatDateDisplay(returnedDateModel) : 'Select a date'"
+              :label="formatCalendarDate(returnedDateModel)"
               variant="subtle"
               color="neutral"
               class="w-full justify-start"

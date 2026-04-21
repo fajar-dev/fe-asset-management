@@ -1,8 +1,7 @@
 import { assetStatusService, type CreateAssetStatusPayload, type AssetStatusResponse } from '~/services/AssetStatusService'
-import type { ApiError } from '~/types/api'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
-export const useAssetStatus = () => {
+export function useAssetStatus() {
   const statuses = ref<AssetStatusResponse[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -20,8 +19,7 @@ export const useAssetStatus = () => {
       })
       return res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to update status'
+      error.value = extractErrorMessage(err, 'Failed to update status')
       toast.add({
         title: 'Update Failed',
         description: error.value,
@@ -41,8 +39,7 @@ export const useAssetStatus = () => {
       statuses.value = res.data
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch statuses'
+      error.value = extractErrorMessage(err, 'Failed to fetch statuses')
       toast.add({
         title: 'Fetch Failed',
         description: error.value,

@@ -1,3 +1,5 @@
+import type { Pagination } from './api'
+
 export type FeedbackType = 'keluhan' | 'saran' | 'pujian'
 
 export const FeedbackTypeColor: Record<FeedbackType, string> = {
@@ -38,7 +40,6 @@ export interface Feedback {
   url?: string
 }
 
-/** Raw shape returned by the API before mapping */
 export interface FeedbackRaw {
   timestamp: string
   email: string
@@ -62,14 +63,6 @@ export interface FeedbackResponse {
   }
 }
 
-export interface Pagination {
-  totalItems: number
-  itemCount: number
-  itemsPerPage: number
-  totalPages: number
-  currentPage: number
-}
-
 export interface CreateFeedbackPayload {
   url: string
   type: FeedbackType
@@ -81,3 +74,5 @@ export interface UpdateFeedbackPayload {
   status: FeedbackStatus
   reply: string
 }
+
+export type { Pagination }

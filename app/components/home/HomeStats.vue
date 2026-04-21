@@ -1,21 +1,10 @@
 <script setup lang="ts">
 import { useStatistic } from '~/composables/useStatistic'
+import { formatCurrency, formatNumber } from '~/utils/formatters'
 
 const { count, loading, getCount } = useStatistic()
 
 await getCount()
-
-function formatNumber(value: number): string {
-  return value.toLocaleString('en-US')
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0
-  }).format(value)
-}
 
 const stats = computed(() => {
   if (!count.value) return []

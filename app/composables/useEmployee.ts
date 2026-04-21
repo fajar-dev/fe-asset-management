@@ -1,8 +1,7 @@
 // ~/composables/useEmployee.ts
 import { employeeService } from '~/services/EmployeeService'
 import type { Employee } from '~/types/employee'
-import type { ApiError } from '~/types/api'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface EmployeeState {
   employees: Ref<Employee[]>
@@ -12,7 +11,7 @@ interface EmployeeState {
   refreshEmployees: () => Promise<void>
 }
 
-export const useEmployee = (): EmployeeState => {
+export function useEmployee(): EmployeeState {
   const employees = ref<Employee[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -25,8 +24,7 @@ export const useEmployee = (): EmployeeState => {
       const res = await employeeService.getAllEmployees(search)
       employees.value = res.data
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch employees'
+      error.value = extractErrorMessage(err, 'Failed to fetch employees')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false

@@ -1,8 +1,8 @@
 import { userAssetService } from '~/services/UserAssetService'
 import type { UserAsset, UserAssetResponse } from '~/types/userAsset'
-import type { Pagination } from '~/types/assetHolder'
+import type { Pagination } from '~/types/api'
 
-export const useUserAsset = () => {
+export function useUserAsset() {
   const assets = ref<UserAsset[]>([])
   const loading = ref(false)
   const apiPagination = ref<Pagination | null>(null)
@@ -11,7 +11,7 @@ export const useUserAsset = () => {
     pageSize: 10
   })
 
-  const fetchActiveAssets = async (page = pagination.value.pageIndex + 1, limit = pagination.value.pageSize) => {
+  async function fetchActiveAssets(page = pagination.value.pageIndex + 1, limit = pagination.value.pageSize) {
     loading.value = true
     try {
       const res = await userAssetService.getActiveAssets(page, limit)
@@ -25,7 +25,7 @@ export const useUserAsset = () => {
     }
   }
 
-  const fetchHistoryAssets = async (page = pagination.value.pageIndex + 1, limit = pagination.value.pageSize) => {
+  async function fetchHistoryAssets(page = pagination.value.pageIndex + 1, limit = pagination.value.pageSize) {
     loading.value = true
     try {
       const res = await userAssetService.getHistoryAssets(page, limit)
@@ -39,7 +39,7 @@ export const useUserAsset = () => {
     }
   }
 
-  const returnAsset = async (assetUuid: string, uuid: string, payload: { image: File }) => {
+  async function returnAsset(assetUuid: string, uuid: string, payload: { image: File }) {
     loading.value = true
     try {
       await userAssetService.returnRequest(assetUuid, uuid, payload)

@@ -1,18 +1,8 @@
-// ~/services/EmployeeService.ts
+import { BaseService } from '~/services/base'
 import type { EmployeeResponse } from '~/types/employee'
 
-export class EmployeeService {
+export class EmployeeService extends BaseService {
   private basePath = '/v1/employee'
-
-  private get api() {
-    const { $api } = useNuxtApp()
-    return $api
-  }
-
-  private getAuthHeader() {
-    const token = localStorage.getItem('accessToken') || ''
-    return { Authorization: `Bearer ${token}` }
-  }
 
   async getAllEmployees(search = ''): Promise<EmployeeResponse> {
     return await this.api<EmployeeResponse>(this.basePath, {

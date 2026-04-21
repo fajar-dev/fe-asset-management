@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { useAuth } from './useAuth'
 
-export const useRole = () => {
+export function useRole() {
   const { user } = useAuth()
 
   const isAdmin = computed(() => user.value?.role === 'admin')

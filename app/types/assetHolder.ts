@@ -1,6 +1,5 @@
-// ~/types/assetHolder.ts
-
 import type { Employee } from './employee'
+import type { Pagination } from './api'
 
 export interface AssetHolder {
   id: string
@@ -15,7 +14,6 @@ export interface AssetHolder {
   updatedAt?: string
 }
 
-// Payload for assign
 export interface AssignAssetHolderPayload {
   assignedAt: string
   purpose: string
@@ -23,22 +21,11 @@ export interface AssignAssetHolderPayload {
   attachments?: File[]
 }
 
-// Payload for return
 export interface ReturnAssetHolderPayload {
   returnedAt: string
   attachments?: File[]
 }
 
-// Pagination
-export interface Pagination {
-  totalItems: number
-  itemCount: number
-  itemsPerPage: number
-  totalPages: number
-  currentPage: number
-}
-
-// Response for multiple holders
 export interface AssetHolderResponse {
   success: boolean
   statusCode: number
@@ -49,10 +36,11 @@ export interface AssetHolderResponse {
   }
 }
 
-// Response for single holder
 export interface AssetHolderDetailResponse {
   success: boolean
   statusCode: number
   message: string
   data: AssetHolder
 }
+
+export type { Pagination }

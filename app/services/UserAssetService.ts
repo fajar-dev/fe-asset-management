@@ -1,17 +1,8 @@
+import { BaseService } from '~/services/base'
 import type { UserAssetResponse } from '~/types/userAsset'
 
-export class UserAssetService {
+export class UserAssetService extends BaseService {
   private basePath = '/v1/user/my-assets'
-
-  private get api() {
-    const { $api } = useNuxtApp()
-    return $api
-  }
-
-  private getAuthHeader() {
-    const token = localStorage.getItem('accessToken') || ''
-    return { Authorization: `Bearer ${token}` }
-  }
 
   async getActiveAssets(page = 1, limit = 10): Promise<UserAssetResponse> {
     return await this.api<UserAssetResponse>(`${this.basePath}/active`, {
@@ -32,7 +23,6 @@ export class UserAssetService {
   async returnRequest(assetUuid: string, uuid: string, payload: { image: File }): Promise<void> {
     const formData = new FormData()
     formData.append('image', payload.image)
-
     return await this.api(`/v1/asset/${assetUuid}/holder/${uuid}/return-request`, {
       method: 'POST',
       body: formData as any,

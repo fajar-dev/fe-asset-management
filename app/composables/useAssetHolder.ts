@@ -7,8 +7,7 @@ import type {
   AssetHolderDetailResponse,
   Pagination
 } from '~/types/assetHolder'
-import type { ApiError } from '~/types/api'
-import type { FetchError } from 'ofetch'
+import { extractErrorMessage } from '~/utils/errorHandler'
 
 interface AssetHolderState {
   holders: Ref<AssetHolder[]>
@@ -80,8 +79,7 @@ export function useAssetHolder(): AssetHolderState {
         total: res.meta?.pagination?.totalItems ?? 0
       }
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch holders'
+      error.value = extractErrorMessage(err, 'Failed to fetch holders')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -109,8 +107,7 @@ export function useAssetHolder(): AssetHolderState {
       selectedHolder.value = res.data
       return res
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to fetch holder detail'
+      error.value = extractErrorMessage(err, 'Failed to fetch holder detail')
       toast.add({ title: 'Fetch failed', description: error.value, color: 'error' })
       return null
     } finally {
@@ -133,8 +130,7 @@ export function useAssetHolder(): AssetHolderState {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to assign holder'
+      error.value = extractErrorMessage(err, 'Failed to assign holder')
       toast.add({ title: 'Assign failed', description: error.value, color: 'error' })
       throw err
     } finally {
@@ -158,8 +154,7 @@ export function useAssetHolder(): AssetHolderState {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to return holder'
+      error.value = extractErrorMessage(err, 'Failed to return holder')
       toast.add({ title: 'Return failed', description: error.value, color: 'error' })
     } finally {
       loading.value = false
@@ -184,8 +179,7 @@ export function useAssetHolder(): AssetHolderState {
         color: 'success'
       })
     } catch (err: unknown) {
-      const fetchError = err as FetchError<ApiError>
-      error.value = fetchError.data?.message ?? 'Failed to request asset'
+      error.value = extractErrorMessage(err, 'Failed to request asset')
       toast.add({ title: 'Request failed', description: error.value, color: 'error' })
       throw err
     } finally {

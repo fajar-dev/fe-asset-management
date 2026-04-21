@@ -1,14 +1,4 @@
-export interface Pagination {
-  totalItems: number
-  itemCount: number
-  itemsPerPage: number
-  totalPages: number
-  currentPage: number
-}
-
-export interface MetaPagination {
-  pagination: Pagination
-}
+import type { Pagination } from './api'
 
 export interface CreateAssetLocationPayload {
   locationId: string
@@ -30,5 +20,9 @@ export interface AssetLocationResponse {
   statusCode: number
   message: string
   data: AssetLocation[]
-  meta: MetaPagination
+  meta: {
+    pagination: Pagination
+  }
 }
+
+export type { Pagination }
