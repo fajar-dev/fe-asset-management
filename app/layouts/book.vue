@@ -2,9 +2,9 @@
   <div class="h-screen flex items-center justify-center px-4">
     <UPageCard
       variant="subtle"
-      class="max-w-sm w-full bg-elevated/5"
+      class="w-full md:!max-w-lg lg:!max-w-xl bg-elevated/5"
     >
-      <slot />
+        <slot />
     </UPageCard>
   </div>
 </template>

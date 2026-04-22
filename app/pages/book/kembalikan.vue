@@ -207,6 +207,9 @@ onUnmounted(() => {
           :placeholder="t('page.book.selectBookPlaceholder')"
           icon="i-lucide-book"
           class="w-full"
+          :ui="{
+            value: 'truncate max-w-[240px] lg:max-w-[450px] md:max-w-[350px]'
+          }"
         />
       </UFormField>
 
