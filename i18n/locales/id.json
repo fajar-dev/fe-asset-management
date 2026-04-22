@@ -4,7 +4,7 @@
     "asset": "Aset",
     "setting": "Pengaturan",
     "assetLoan": "Peminjaman Aset",
-    "feedback": "Masukan",
+    "feedback": "Feedback",
     "scanAsset": "Scan Aset",
     "category": "Kategori",
     "subCategory": "Sub Kategori",
@@ -16,7 +16,7 @@
     "dark": "Gelap",
     "system": "Sistem",
     "language": "Bahasa",
-    "myFeedback": "Masukan Saya",
+    "myFeedback": "Feedback Saya",
     "logout": "Keluar"
   },
   "common": {
@@ -229,7 +229,7 @@
       "deleteDescription": "Apakah Anda yakin? Tindakan ini tidak dapat dibatalkan."
     },
     "myFeedback": {
-      "title": "Masukan Saya",
+      "title": "Feedback Saya",
       "searchPlaceholder": "Cari masukan...",
       "date": "Tanggal",
       "type": "Tipe",
@@ -273,9 +273,9 @@
       "returnPhoto": "Foto Pengembalian",
       "returnPhotoSubtitle": "Ambil foto buku yang dikembalikan",
       "takeReturnPhoto": "Ambil foto pengembalian terlebih dahulu sebagai bukti",
-      "returnSuccess": "Pengembalian Berhasil",
-      "returnSuccessMessage": "Buku telah berhasil dikembalikan ke perpustakaan.",
-      "returnFailed": "Gagal Mengembalikan",
+      "returnSuccess": "Berhasil",
+      "returnSuccessMessage": "Buku telah berhasil dikembalikan.",
+      "returnFailed": "Gagal",
       "returnFailedMessage": "Terjadi kesalahan saat memproses pengembalian.",
       "returnBook": "Kembalikan Buku"
     },

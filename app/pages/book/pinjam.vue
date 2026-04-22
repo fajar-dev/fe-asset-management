@@ -133,7 +133,7 @@ async function lookupBySerial(code: string) {
     })
   } catch (err: any) {
     toast.add({
-      title: 'Gagal',
+      title: t('page.book.borrowFailed'),
       description: err.data?.message,
       color: 'error'
     })
