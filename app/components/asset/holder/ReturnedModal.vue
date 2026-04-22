@@ -14,6 +14,7 @@ const emit = defineEmits<{ (e: 'returned'): void }>()
 const schema = returnHolderSchema
 type Schema = ReturnHolderSchema
 
+const { t } = useI18n()
 const open = ref(false)
 const saving = ref(false)
 
@@ -54,11 +55,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 <template>
   <UModal
     v-model:open="open"
-    title="Return Asset"
-    description="Set the return date for this asset"
+    :title="t('modal.asset.holder.returnTitle')"
+    :description="t('modal.asset.holder.returnSubtitle')"
   >
     <UButton
-      label="Return Asset"
+      :label="t('modal.asset.holder.returnTitle')"
       icon="i-lucide-rotate-ccw"
       size="xs"
       color="primary"
@@ -71,7 +72,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Returned At" name="returnedAt" required>
+        <UFormField :label="t('modal.asset.holder.returnedAt')" name="returnedAt" required>
           <UPopover :popper="{ placement: 'bottom-start' }">
             <UButton
               icon="i-lucide-calendar"
@@ -86,7 +87,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           </UPopover>
         </UFormField>
 
-        <UFormField name="attachments" label="Attachments (Max 3)">
+        <UFormField name="attachments" :label="t('modal.asset.holder.attachments')">
           <UFileUpload
             v-model="state.attachments"
             layout="grid"
@@ -96,7 +97,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           >
             <template #actions="{ open }">
               <UButton
-                label="Select attachments"
+                :label="t('modal.asset.holder.selectAttachments')"
                 icon="i-lucide-upload"
                 color="neutral"
                 variant="outline"
@@ -107,11 +108,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             <template #files-top="{ open, files }">
               <div v-if="files?.length" class="mb-2 flex items-center justify-between">
                 <p class="font-bold">
-                  Attachments ({{ files.length }})
+                  {{ t('modal.asset.holder.attachments') }} ({{ files.length }})
                 </p>
                 <UButton
                   icon="i-lucide-plus"
-                  label="Add more"
+                  :label="t('modal.asset.holder.addMore')"
                   color="neutral"
                   variant="outline"
                   :disabled="!canAddMoreImages"
@@ -124,14 +125,14 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.holder.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="open = false"
           />
           <UButton
-            label="Save"
+            :label="t('modal.asset.holder.save')"
             color="primary"
             variant="solid"
             type="submit"

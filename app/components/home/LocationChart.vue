@@ -10,6 +10,7 @@ import {
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
+const { t } = useI18n()
 const router = useRouter()
 
 const { assetsByLocation, getAssetsByLocation, loading } = useStatistic()
@@ -62,10 +63,10 @@ onMounted(() => {
     <template #header>
       <div>
         <p class="text-highlighted font-semibold">
-          Location
+          {{ t('component.locationChart.title') }}
         </p>
         <p class="text-xs text-muted mb-1.5">
-          Asset by Location
+          {{ t('component.locationChart.subtitle') }}
         </p>
       </div>
     </template>
@@ -101,7 +102,7 @@ onMounted(() => {
     </div>
 
     <div v-else class="flex justify-center items-center h-[275px] text-muted">
-      No data available
+      {{ t('component.locationChart.noData') }}
     </div>
   </UCard>
 </template>

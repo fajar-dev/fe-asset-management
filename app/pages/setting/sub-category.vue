@@ -10,6 +10,8 @@ const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UBadge = resolveComponent('UBadge')
 
+const { t } = useI18n()
+
 // state
 const search = ref('')
 const pageLimit = ref(10)
@@ -69,9 +71,9 @@ async function confirmDelete() {
 
 function getRowItems(row: Row<any>) {
   return [
-    { type: 'label', label: 'Actions' },
+    { type: 'label', label: t('common.actions') },
     {
-      label: 'Add Property',
+      label: t('page.subCategory.addProperty'),
       icon: 'i-lucide-plus',
       onSelect: () => {
         AddPropertySubCategoryId.value = row.original.id
@@ -79,7 +81,7 @@ function getRowItems(row: Row<any>) {
       }
     },
     {
-      label: 'Edit',
+      label: t('common.edit'),
       icon: 'i-lucide-pencil',
       onSelect: () => {
         editingSubCategoryId.value = row.original.id
@@ -87,7 +89,7 @@ function getRowItems(row: Row<any>) {
       }
     },
     {
-      label: 'Delete',
+      label: t('common.delete'),
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect: () => {
@@ -106,7 +108,7 @@ async function confirmDeleteProperty() {
   isDeletePropertyModalOpen.value = false
 }
 
-const columns: TableColumn<any>[] = [
+const columns = computed<TableColumn<any>[]>(() => [
   {
     id: 'expand',
     cell: ({ row }) =>
@@ -127,16 +129,16 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'name',
-    header: 'Name'
+    header: t('page.subCategory.name')
   },
   {
     accessorKey: 'category',
-    header: 'Category',
+    header: t('page.subCategory.category'),
     cell: ({ row }) => row.original.category?.name ?? '-'
   },
   {
     accessorKey: 'labels',
-    header: 'Labels',
+    header: t('page.subCategory.labels'),
     cell: ({ row }) => {
       const labels = row.original.labels as string[] | undefined
       if (!labels || labels.length === 0) return '-'
@@ -166,14 +168,14 @@ const columns: TableColumn<any>[] = [
       )
     }
   }
-]
+])
 </script>
 
 <template>
   <UDashboardPanel id="sub-categories">
     <!-- Header -->
     <template #header>
-      <UDashboardNavbar title="Sub Categories">
+      <UDashboardNavbar :title="t('page.subCategory.title')">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -190,18 +192,18 @@ const columns: TableColumn<any>[] = [
         <!-- Delete Sub Category Modal -->
         <ConfirmModal
           v-model:open="isDeleteModalOpen"
-          title="Delete Sub Category"
-          description="Are you sure? This action cannot be undone."
-          confirm-label="Delete"
+          :title="t('page.subCategory.deleteTitle')"
+          :description="t('page.subCategory.deleteDescription')"
+          :confirm-label="t('common.delete')"
           :on-confirm="confirmDelete"
         />
 
         <!-- Delete Property Modal -->
         <ConfirmModal
           v-model:open="isDeletePropertyModalOpen"
-          title="Delete Property"
-          description="Are you sure you want to delete this property? This action cannot be undone."
-          confirm-label="Delete"
+          :title="t('page.subCategory.deletePropertyTitle')"
+          :description="t('page.subCategory.deletePropertyDescription')"
+          :confirm-label="t('common.delete')"
           :on-confirm="confirmDeleteProperty"
         />
 
@@ -228,7 +230,7 @@ const columns: TableColumn<any>[] = [
             v-model="search"
             class="w-full"
             icon="i-lucide-search"
-            placeholder="Search sub categories..."
+            :placeholder="t('page.subCategory.searchPlaceholder')"
           />
           <USelect
             v-model="pageLimit"
@@ -262,14 +264,14 @@ const columns: TableColumn<any>[] = [
                 <thead class="bg-elevated/50">
                   <tr>
                     <th class="px-3 py-2 text-left">
-                      Property Name
+                      {{ t('page.subCategory.propertyName') }}
                     </th>
                     <th class="px-3 py-2 text-left">
-                      Type
+                      {{ t('page.subCategory.type') }}
                     </th>
                     <RoleWrapper role="admin">
                       <th class="px-3 py-2 text-right">
-                        Actions
+                        {{ t('common.actions') }}
                       </th>
                     </RoleWrapper>
                   </tr>
@@ -308,7 +310,7 @@ const columns: TableColumn<any>[] = [
             </div>
 
             <div v-else class="text-sm text-muted italic">
-              No properties for this sub category.
+              {{ t('page.subCategory.noProperties') }}
             </div>
           </div>
         </template>
@@ -327,7 +329,7 @@ const columns: TableColumn<any>[] = [
         />
 
         <div v-if="apiPagination" class="text-sm text-muted mb-2">
-          Showing {{ showingFrom }} to {{ showingTo }} of {{ apiPagination.totalItems }} results
+          {{ t('common.showing') }} {{ showingFrom }} {{ t('common.to') }} {{ showingTo }} {{ t('common.of') }} {{ apiPagination.totalItems }} {{ t('common.results') }}
         </div>
       </div>
     </template>

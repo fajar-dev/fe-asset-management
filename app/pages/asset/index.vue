@@ -33,6 +33,7 @@ const AssetUpdateModal = resolveComponent('AssetUpdateModal')
 const UTooltip = resolveComponent('UTooltip')
 const UIcon = resolveComponent('UIcon')
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const search = ref('')
@@ -93,12 +94,12 @@ const filteredLabels = computed(() => {
 
 const pageLimitOptions = [10, 25, 50, 100, 200, 500]
 
-const statusItems: SelectMenuItem[] = [
-  { label: 'Active', id: 'active' },
-  { label: 'Sold', id: 'sold' },
-  { label: 'Granted', id: 'granted' },
-  { label: 'Disposed', id: 'disposed' }
-]
+const statusItems = computed<SelectMenuItem[]>(() => [
+  { label: t('page.asset.status.active'), id: 'active' },
+  { label: t('page.asset.status.sold'), id: 'sold' },
+  { label: t('page.asset.status.granted'), id: 'granted' },
+  { label: t('page.asset.status.disposed'), id: 'disposed' }
+])
 
 onMounted(async () => {
   await getAllCategories()
@@ -436,7 +437,7 @@ const activeFiltersCount = computed(() => {
 })
 
 const formattedDateRange = computed(() => {
-  if (!tempDateRange.value?.start || !tempDateRange.value?.end) return 'Select date range'
+  if (!tempDateRange.value?.start || !tempDateRange.value?.end) return t('page.asset.selectDateRange')
   const start = new Date(
     tempDateRange.value.start.year,
     tempDateRange.value.start.month - 1,
@@ -583,11 +584,11 @@ function getRowItems(row: Row<any>) {
   const category = row.original.subCategory?.category
   if (!category) return []
 
-  const items: any[] = [{ type: 'label', label: 'Actions' }]
+  const items: any[] = [{ type: 'label', label: t('common.actions') }]
 
   if (category.hasLocation) {
     items.push({
-      label: 'Location',
+      label: t('page.asset.actions.location'),
       icon: 'i-lucide-map-pin',
       to: `/asset/${row.original.id}/location`
     })
@@ -595,7 +596,7 @@ function getRowItems(row: Row<any>) {
 
   if (category.hasMaintenance) {
     items.push({
-      label: 'Maintenance',
+      label: t('page.asset.actions.maintenance'),
       icon: 'i-lucide-calendar-cog',
       to: `/asset/${row.original.id}/maintenance`
     })
@@ -603,7 +604,7 @@ function getRowItems(row: Row<any>) {
 
   if (category.hasHolder) {
     items.push({
-      label: 'Holder',
+      label: t('page.asset.actions.holder'),
       icon: 'i-lucide-users',
       to: `/asset/${row.original.id}/holder`
     })
@@ -611,7 +612,7 @@ function getRowItems(row: Row<any>) {
 
   items.push(
     {
-      label: 'Detail',
+      label: t('page.asset.actions.detail'),
       icon: 'i-lucide-notebook-pen',
       to: `/asset/${row.original.id}/detail`
     }
@@ -621,7 +622,7 @@ function getRowItems(row: Row<any>) {
     items.push(
       { type: 'separator' },
       {
-        label: 'Delete',
+        label: t('page.asset.actions.delete'),
         icon: 'i-lucide-trash',
         color: 'error',
         onSelect: () => {
@@ -635,7 +636,7 @@ function getRowItems(row: Row<any>) {
   return items
 }
 
-const columns: TableColumn<any>[] = [
+const columns = computed<TableColumn<any>[]>(() => [
   {
     id: 'select',
     header: ({ table }) =>
@@ -666,7 +667,7 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'name',
-    header: ({ column }) => getHeader(column, 'Asset'),
+    header: ({ column }) => getHeader(column, t('page.asset.columns.asset')),
     cell: ({ row }) =>
       h(
         NuxtLink,
@@ -698,11 +699,11 @@ const columns: TableColumn<any>[] = [
         'div',
         { class: 'flex items-center gap-1' },
         [
-          h('span', 'Category'),
+          h('span', t('page.asset.columns.category')),
           h(
             UTooltip,
             {
-              text: 'Shows the main category this asset belongs to.',
+              text: t('page.asset.columns.categoryTooltip'),
               delayDuration: 0
             },
             () =>
@@ -722,11 +723,11 @@ const columns: TableColumn<any>[] = [
         'div',
         { class: 'flex items-center gap-1' },
         [
-          h('span', 'Sub Category'),
+          h('span', t('page.asset.columns.subCategory')),
           h(
             UTooltip,
             {
-              text: 'Shows the specific subcategory this asset belongs to.',
+              text: t('page.asset.columns.subCategoryTooltip'),
               delayDuration: 0
             },
             () =>
@@ -741,12 +742,12 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'brand',
-    header: ({ column }) => getHeader(column, 'Brand'),
+    header: ({ column }) => getHeader(column, t('page.asset.columns.brand')),
     cell: ({ row }) => row.original.brand ?? '-'
   },
   {
     accessorKey: 'model',
-    header: ({ column }) => getHeader(column, 'Model'),
+    header: ({ column }) => getHeader(column, t('page.asset.columns.model')),
     cell: ({ row }) => row.original.model ?? '-'
   },
   {
@@ -756,11 +757,11 @@ const columns: TableColumn<any>[] = [
         'div',
         { class: 'flex items-center gap-1' },
         [
-          h('span', 'Last Location'),
+          h('span', t('page.asset.columns.lastLocation')),
           h(
             UTooltip,
             {
-              text: 'Shows the most recent location where this asset was recorded.',
+              text: t('page.asset.columns.lastLocationTooltip'),
               delayDuration: 0
             },
             () =>
@@ -788,11 +789,11 @@ const columns: TableColumn<any>[] = [
         'div',
         { class: 'flex items-center gap-1' },
         [
-          h('span', 'Active Holder'),
+          h('span', t('page.asset.columns.activeHolder')),
           h(
             UTooltip,
             {
-              text: 'Displays the current employee responsible for this asset.',
+              text: t('page.asset.columns.activeHolderTooltip'),
               delayDuration: 0
             },
             () =>
@@ -820,12 +821,12 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'user',
-    header: ({ column }) => getHeader(column, 'User'),
+    header: ({ column }) => getHeader(column, t('page.asset.columns.user')),
     cell: ({ row }) => row.original.user ?? '-'
   },
   {
     accessorKey: 'price',
-    header: ({ column }) => getHeader(column, 'Price'),
+    header: ({ column }) => getHeader(column, t('page.asset.columns.price')),
     cell: ({ row }) => {
       const price = row.original.price
       if (!price) return h('span', { class: 'text-xs text-muted' }, '-')
@@ -839,7 +840,7 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'purchaseDate',
-    header: ({ column }) => getHeader(column, 'Purchase Date'),
+    header: ({ column }) => getHeader(column, t('page.asset.columns.purchaseDate')),
     cell: ({ row }) => {
       const date = row.original.purchaseDate
       const age = row.original.age
@@ -857,7 +858,7 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'status',
-    header: ({ column }) => getHeader(column, 'Status'),
+    header: ({ column }) => getHeader(column, t('page.asset.columns.status')),
     filterFn: 'equals',
     cell: ({ row }) => {
       const statusType = row.original.lastStatus?.type
@@ -889,7 +890,7 @@ const columns: TableColumn<any>[] = [
         )
       )
   }
-]
+])
 </script>
 
 <template>

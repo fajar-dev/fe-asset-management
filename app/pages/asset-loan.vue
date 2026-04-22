@@ -4,31 +4,39 @@ import { useUserAsset } from '~/composables/useUserAsset'
 import type { UserAsset } from '~/types/userAsset'
 
 const { assets, loading, apiPagination, pagination, fetchActiveAssets, fetchHistoryAssets } = useUserAsset()
+const { t } = useI18n()
 
 const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
 const UIcon = resolveComponent('UIcon')
 
-const tabs = [
-  { label: 'Active', icon: 'i-lucide-check-circle', key: 'active' },
-  { label: 'History', icon: 'i-lucide-history', key: 'history' }
-]
-
 const activeTab = ref('active')
 const expanded = ref<Record<string | number, boolean>>({})
 
 const navigationItems = computed(() => [
-  tabs.map(tab => ({
-    label: tab.label,
-    icon: tab.icon,
-    active: activeTab.value === tab.key,
-    onSelect: () => {
-      activeTab.value = tab.key
-      pagination.value.pageIndex = 0
-      loadData()
+  [
+    {
+      label: t('page.assetLoan.active'),
+      icon: 'i-lucide-check-circle',
+      active: activeTab.value === 'active',
+      onSelect: () => {
+        activeTab.value = 'active'
+        pagination.value.pageIndex = 0
+        loadData()
+      }
+    },
+    {
+      label: t('page.assetLoan.history'),
+      icon: 'i-lucide-history',
+      active: activeTab.value === 'history',
+      onSelect: () => {
+        activeTab.value = 'history'
+        pagination.value.pageIndex = 0
+        loadData()
+      }
     }
-  }))
+  ]
 ])
 
 function loadData() {
@@ -99,7 +107,7 @@ const columns = computed(() => {
     },
     {
       accessorKey: 'asset',
-      header: 'Asset',
+      header: t('page.assetLoan.columns.asset'),
       cell: ({ row }: { row: Row<UserAsset> }) => {
         const asset = row.original.asset
         return h('div', { class: 'flex items-center gap-3' }, [
@@ -118,30 +126,30 @@ const columns = computed(() => {
     },
     {
       accessorKey: 'purpose',
-      header: 'Purpose'
+      header: t('page.assetLoan.columns.purpose')
     },
     {
       accessorKey: 'assignedAt',
-      header: 'Assigned At'
+      header: t('page.assetLoan.columns.assignedAt')
     }
   ]
 
   if (activeTab.value === 'history') {
     baseColumns.push({
       accessorKey: 'returnedAt',
-      header: 'Returned At'
+      header: t('page.assetLoan.columns.returnedAt')
     })
   }
 
   baseColumns.push({
     accessorKey: 'isRequest',
-    header: 'Type',
+    header: t('page.assetLoan.columns.type'),
     cell: ({ row }: { row: Row<UserAsset> }) => {
       return h(UBadge, {
         color: row.original.isRequest ? 'warning' : 'success',
         variant: 'soft',
         size: 'sm'
-      }, () => row.original.isRequest ? 'Request' : 'Assigned')
+      }, () => row.original.isRequest ? t('page.assetLoan.columns.request') : t('page.assetLoan.columns.assigned'))
     }
   } as any)
 
@@ -151,7 +159,7 @@ const columns = computed(() => {
       cell: ({ row }: { row: Row<UserAsset> }) => {
         if (row.original.isRequest) {
           return h(UButton, {
-            label: 'Return',
+            label: t('page.assetLoan.columns.return'),
             color: 'primary',
             variant: 'subtle',
             size: 'xs',
@@ -176,7 +184,7 @@ const columns = computed(() => {
 <template>
   <UDashboardPanel id="asset-loan">
     <template #header>
-      <UDashboardNavbar title="Asset Loan">
+      <UDashboardNavbar :title="t('page.assetLoan.title')">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -217,10 +225,10 @@ const columns = computed(() => {
                 <div>
                   <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Asset Details</h4>
                   <div class="space-y-1">
-                    <p class="text-sm"><span class="font-medium">Category:</span> {{ row.original.asset?.subCategory?.name || '-' }}</p>
-                    <p class="text-sm"><span class="font-medium">Brand:</span> {{ row.original.asset?.brand || '-' }}</p>
-                    <p class="text-sm"><span class="font-medium">Model:</span> {{ row.original.asset?.model || '-' }}</p>
-                    <p class="text-sm line-clamp-2"><span class="font-medium">Description:</span> {{ row.original.asset?.description || '-' }}</p>
+                    <p class="text-sm"><span class="font-medium">{{ t('page.assetLoan.details.category') }}:</span> {{ row.original.asset?.subCategory?.name || '-' }}</p>
+                    <p class="text-sm"><span class="font-medium">{{ t('page.assetLoan.details.brand') }}:</span> {{ row.original.asset?.brand || '-' }}</p>
+                    <p class="text-sm"><span class="font-medium">{{ t('page.assetLoan.details.model') }}:</span> {{ row.original.asset?.model || '-' }}</p>
+                    <p class="text-sm line-clamp-2"><span class="font-medium">{{ t('page.assetLoan.details.description') }}:</span> {{ row.original.asset?.description || '-' }}</p>
                   </div>
                 </div>
               </div>
@@ -230,7 +238,7 @@ const columns = computed(() => {
                 <div class="flex items-center gap-2 mb-3">
                   <UIcon name="i-lucide-paperclip" class="w-4 h-4 text-gray-500" />
                   <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Attachments ({{ row.original.attachmentUrls.length }})
+                    {{ t('page.assetLoan.attachments') }} ({{ row.original.attachmentUrls.length }})
                   </p>
                 </div>
                 <div class="flex flex-wrap gap-4">
@@ -249,9 +257,9 @@ const columns = computed(() => {
                     >
                     <div v-else class="flex flex-col items-center gap-2 text-gray-400 group-hover:text-primary-500 transition-colors">
                       <UIcon name="i-lucide-file-text" class="w-10 h-10" />
-                      <span class="text-xs font-medium px-2 text-center truncate w-full">Document</span>
+                      <span class="text-xs font-medium px-2 text-center truncate w-full">{{ t('page.assetLoan.document') }}</span>
                     </div>
-                    
+
                     <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                       <UIcon name="i-lucide-external-link" class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
                     </div>
@@ -260,7 +268,7 @@ const columns = computed(() => {
               </div>
               <div v-else class="border-t border-default pt-4 text-sm text-gray-500 italic flex items-center gap-2">
                 <UIcon name="i-lucide-info" class="w-4 h-4" />
-                No attachments
+                {{ t('page.assetLoan.noAttachments') }}
               </div>
             </div>
           </template>
@@ -268,7 +276,7 @@ const columns = computed(() => {
           <template #empty>
             <div class="flex flex-col items-center justify-center py-12">
               <UIcon name="i-lucide-package-open" class="w-12 h-12 text-gray-400 mb-4" />
-              <p class="text-gray-500">No assets found</p>
+              <p class="text-gray-500">{{ t('page.assetLoan.noAssets') }}</p>
             </div>
           </template>
         </UTable>
@@ -286,8 +294,8 @@ const columns = computed(() => {
         />
 
         <div v-if="apiPagination" class="text-sm text-muted mb-2">
-          Showing {{ showingFrom }} to {{ showingTo }} of
-          {{ apiPagination.totalItems }} results
+          {{ t('common.showing') }} {{ showingFrom }} {{ t('common.to') }} {{ showingTo }} {{ t('common.of') }}
+          {{ apiPagination.totalItems }} {{ t('common.results') }}
         </div>
       </div>
     </template>

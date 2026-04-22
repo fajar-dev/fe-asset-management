@@ -2,6 +2,7 @@
 import { useStatistic } from '~/composables/useStatistic'
 import { formatCurrency, formatNumber } from '~/utils/formatters'
 
+const { t } = useI18n()
 const { count, loading, getCount } = useStatistic()
 
 await getCount()
@@ -11,31 +12,31 @@ const stats = computed(() => {
 
   return [
     {
-      title: 'Assets',
+      title: t('component.homeStats.assets'),
       icon: 'i-lucide-box',
       value: formatNumber(count.value.assets),
       to: '/asset'
     },
     {
-      title: 'Price',
+      title: t('component.homeStats.price'),
       icon: 'i-lucide-dollar-sign',
       value: formatCurrency(count.value.totalPrice),
       to: '/asset'
     },
     {
-      title: 'Categories',
+      title: t('component.homeStats.categories'),
       icon: 'i-lucide-layers',
       value: formatNumber(count.value.categories),
       to: '/setting/category'
     },
     {
-      title: 'Sub Categories',
+      title: t('component.homeStats.subCategories'),
       icon: 'i-lucide-list',
       value: formatNumber(count.value.subCategories),
       to: '/setting/sub-category'
     },
     {
-      title: 'Locations',
+      title: t('component.homeStats.locations'),
       icon: 'i-lucide-map-pin',
       value: formatNumber(count.value.locations),
       to: '/setting/location'

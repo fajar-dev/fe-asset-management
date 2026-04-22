@@ -5,6 +5,8 @@ import { useCategory } from '~/composables/useCategory'
 import { useProperty } from '~/composables/useProperty'
 import { createSubCategorySchema as schema, type CreateSubCategorySchema as Schema } from '~/schemas/subCategorySchema'
 
+const { t } = useI18n()
+
 const emit = defineEmits<{ (e: 'created'): void }>()
 const open = ref(false)
 const saving = ref(false)
@@ -76,9 +78,9 @@ function removeProperty(index: number) {
 </script>
 
 <template>
-  <UButton label="New Sub Category" icon="i-lucide-plus" @click="openModal" />
+  <UButton :label="t('modal.subCategory.addTitle')" icon="i-lucide-plus" @click="openModal" />
 
-  <UModal v-model:open="open" title="New Sub Category" description="Add a new sub category">
+  <UModal v-model:open="open" :title="t('modal.subCategory.addTitle')" :description="t('modal.subCategory.addSubtitle')">
     <template #body>
       <UForm
         :schema="schema"
@@ -87,8 +89,8 @@ function removeProperty(index: number) {
         @submit="onSubmit"
       >
         <!-- Name -->
-        <UFormField label="Name" name="name" required>
-          <UInput v-model="state.name" class="w-full" placeholder="Sub Category name" />
+        <UFormField :label="t('common.name')" name="name" required>
+          <UInput v-model="state.name" class="w-full" :placeholder="t('modal.subCategory.namePlaceholder')" />
         </UFormField>
 
         <!-- Category -->
@@ -99,22 +101,22 @@ function removeProperty(index: number) {
             value-key="id"
             label-key="name"
             :items="items"
-            placeholder="Select category"
+            :placeholder="t('modal.subCategory.selectCategory')"
           />
         </UFormField>
 
         <!-- Labels -->
-        <UFormField label="Labels" name="labels">
-          <UInputTags v-model="state.labels" class="w-full" placeholder="Add labels..." />
+        <UFormField :label="t('modal.subCategory.labels')" name="labels">
+          <UInputTags v-model="state.labels" class="w-full" :placeholder="t('modal.subCategory.labelsPlaceholder')" />
         </UFormField>
 
         <!-- Properties -->
         <div class="space-y-2">
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-1">
-              <label class="text-sm font-medium">Properties</label>
+              <label class="text-sm font-medium">{{ t('modal.subCategory.properties') }}</label>
               <UTooltip
-                text="Define additional attributes for this sub category (e.g. serial number, size, capacity)"
+                :text="t('modal.subCategory.propertiesHint')"
                 :delay-duration="0"
               >
                 <UIcon
@@ -125,7 +127,7 @@ function removeProperty(index: number) {
             </div>
 
             <UButton
-              label="Add Property"
+              :label="t('modal.subCategory.addProperty')"
               icon="i-lucide-plus"
               size="xs"
               @click="addProperty"
@@ -138,19 +140,19 @@ function removeProperty(index: number) {
             class="flex gap-3 py-1 items-start"
           >
             <UFormField :name="`properties.${i}.name`" class="flex-1">
-              <UInput v-model="prop.name" placeholder="Property name" class="w-full" />
+              <UInput v-model="prop.name" :placeholder="t('modal.subCategory.propertyNamePlaceholder')" class="w-full" />
             </UFormField>
 
             <UFormField :name="`properties.${i}.dataType`" class="w-30">
               <USelectMenu
                 v-model="prop.dataType"
                 :items="[
-                  { label: 'String', value: 'string' },
-                  { label: 'Number', value: 'number' }
+                  { label: t('modal.subCategory.string'), value: 'string' },
+                  { label: t('modal.subCategory.number'), value: 'number' }
                 ]"
                 value-key="value"
                 label-key="label"
-                placeholder="Select type"
+                :placeholder="t('modal.subCategory.selectType')"
                 class="w-full"
               />
             </UFormField>
@@ -169,14 +171,14 @@ function removeProperty(index: number) {
         <!-- Actions -->
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.subCategory.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="open = false"
           />
           <UButton
-            label="Save"
+            :label="t('modal.subCategory.save')"
             color="primary"
             variant="solid"
             type="submit"

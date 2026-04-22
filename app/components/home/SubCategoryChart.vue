@@ -11,6 +11,7 @@ import {
 // register chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend)
 
+const { t } = useI18n()
 const router = useRouter()
 
 const { assetsBySubCategory, getAssetsBySubCategory, loading } = useStatistic()
@@ -63,10 +64,10 @@ onMounted(() => {
     <template #header>
       <div>
         <p class="text-highlighted font-semibold">
-          Sub Category
+          {{ t('component.subCategoryChart.title') }}
         </p>
         <p class="text-xs text-muted mb-1.5">
-          Asset by Sub Category
+          {{ t('component.subCategoryChart.subtitle') }}
         </p>
       </div>
     </template>
@@ -102,7 +103,7 @@ onMounted(() => {
     </div>
 
     <div v-else class="flex justify-center items-center h-[275px] text-muted">
-      No data available
+      {{ t('component.subCategoryChart.noData') }}
     </div>
   </UCard>
 </template>

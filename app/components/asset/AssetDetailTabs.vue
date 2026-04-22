@@ -31,6 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false
 })
 
+const { t } = useI18n()
 const router = useRouter()
 
 // Read the last visited asset list URL (set by index.vue's loadAssets via useState)
@@ -42,20 +43,20 @@ function goBack() {
 
 const navigationItems = computed<NavigationMenuItem[][]>(() => {
   if (!props.assetDetail || !props.assetId) {
-    return [[{ label: 'Back', icon: 'i-lucide-move-left', onClick: goBack }], []]
+    return [[{ label: t('modal.asset.tabs.back'), icon: 'i-lucide-move-left', onClick: goBack }], []]
   }
 
   const category = props.assetDetail.subCategory.category
 
   const items: NavigationMenuItem[] = [
     {
-      label: 'Detail',
+      label: t('modal.asset.tabs.detail'),
       icon: 'i-lucide-notebook-tabs',
       to: `/asset/${props.assetId}/detail`,
       exact: true
     },
     {
-      label: 'Note',
+      label: t('modal.asset.tabs.note'),
       icon: 'i-lucide-notebook-pen',
       to: `/asset/${props.assetId}/note`,
       exact: true
@@ -64,7 +65,7 @@ const navigationItems = computed<NavigationMenuItem[][]>(() => {
 
   if (category.hasLocation) {
     items.push({
-      label: 'Location',
+      label: t('modal.asset.tabs.location'),
       icon: 'i-lucide-map-pin',
       to: `/asset/${props.assetId}/location`
     })
@@ -72,7 +73,7 @@ const navigationItems = computed<NavigationMenuItem[][]>(() => {
 
   if (category.hasHolder) {
     items.push({
-      label: 'Holder',
+      label: t('modal.asset.tabs.holder'),
       icon: 'i-lucide-users',
       to: `/asset/${props.assetId}/holder`
     })
@@ -80,7 +81,7 @@ const navigationItems = computed<NavigationMenuItem[][]>(() => {
 
   if (category.hasMaintenance) {
     items.push({
-      label: 'Maintenance',
+      label: t('modal.asset.tabs.maintenance'),
       icon: 'i-lucide-calendar-cog',
       to: `/asset/${props.assetId}/maintenance`
     })
@@ -88,7 +89,7 @@ const navigationItems = computed<NavigationMenuItem[][]>(() => {
 
   return [[
     {
-      label: 'Back',
+      label: t('modal.asset.tabs.back'),
       icon: 'i-lucide-move-left',
       onClick: goBack
     }

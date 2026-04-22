@@ -12,6 +12,7 @@ import {
 const search = ref('')
 const expanded = ref<Record<number | string, boolean>>({})
 const { feedbacks, apiPagination, pagination, loading, fetchFeedbacks } = useFeedback()
+const { t } = useI18n()
 
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
@@ -49,7 +50,7 @@ const showingTo = computed(() =>
     : 0
 )
 
-const columns = [
+const columns = computed(() => [
   {
     id: 'expand',
     cell: ({ row }: { row: Row<Feedback> }) =>
@@ -70,7 +71,7 @@ const columns = [
   },
   {
     accessorKey: 'createdAt',
-    header: 'Date',
+    header: t('page.myFeedback.date'),
     cell: ({ row }: { row: Row<Feedback> }) => {
       const date = new Date(row.original.createdAt)
       const gmt7 = new Date(date.getTime() + 7 * 60 * 60 * 1000)
@@ -79,7 +80,7 @@ const columns = [
   },
   {
     accessorKey: 'type',
-    header: 'Type',
+    header: t('page.myFeedback.type'),
     cell: ({ row }: { row: Row<Feedback> }) => {
       const type = row.original.type as FeedbackType
       return h(UBadge, {
@@ -89,10 +90,10 @@ const columns = [
       }, () => type)
     }
   },
-  { accessorKey: 'description', header: 'Description' },
+  { accessorKey: 'description', header: t('page.myFeedback.description') },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: t('page.myFeedback.status'),
     cell: ({ row }: { row: Row<Feedback> }) => {
       const status = row.original.status as FeedbackStatus
       if (!status) return null
@@ -103,13 +104,13 @@ const columns = [
       }, () => status)
     }
   }
-]
+])
 </script>
 
 <template>
   <UDashboardPanel id="feedbacks">
     <template #header>
-      <UDashboardNavbar title="My Feedback">
+      <UDashboardNavbar :title="t('page.myFeedback.title')">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -122,7 +123,7 @@ const columns = [
           v-model="search"
           class="max-w-sm"
           icon="i-lucide-search"
-          placeholder="Search feedbacks..."
+          :placeholder="t('page.myFeedback.searchPlaceholder')"
         />
       </div>
 
@@ -149,7 +150,7 @@ const columns = [
                 <UIcon name="i-lucide-message-square" class="w-4 h-4 text-gray-500 mt-0.5" />
                 <div class="flex-1">
                   <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Reply
+                    {{ t('page.myFeedback.reply') }}
                   </p>
                   <div v-if="row.original.reply" class="space-y-2">
                     <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
@@ -160,7 +161,7 @@ const columns = [
                   </div>
                   <div v-else class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-md text-sm">
                     <UIcon name="i-lucide-alert-circle" class="w-4 h-4" />
-                    <span>No reply yet</span>
+                    <span>{{ t('page.myFeedback.noReply') }}</span>
                   </div>
                 </div>
               </div>
@@ -170,7 +171,7 @@ const columns = [
               <div class="flex items-center gap-2 mb-3">
                 <UIcon name="i-lucide-image" class="w-4 h-4 text-gray-500" />
                 <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Attachments ({{ row.original.imageUrls.length }})
+                  {{ t('page.myFeedback.attachments') }} ({{ row.original.imageUrls.length }})
                 </p>
               </div>
               <div class="flex flex-wrap gap-4">
@@ -204,7 +205,7 @@ const columns = [
           @update:page="handlePageChange"
         />
         <div v-if="apiPagination" class="text-sm text-muted mb-2">
-          Showing {{ showingFrom }} to {{ showingTo }} of {{ apiPagination.totalItems }} results
+          {{ t('common.showing') }} {{ showingFrom }} {{ t('common.to') }} {{ showingTo }} {{ t('common.of') }} {{ apiPagination.totalItems }} {{ t('common.results') }}
         </div>
       </div>
 

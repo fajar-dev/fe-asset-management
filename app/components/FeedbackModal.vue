@@ -35,12 +35,14 @@ watch(() => props.formState, (v) => {
   state.images = v.images
 }, { deep: true })
 
+const { t } = useI18n()
+
 const saving = ref(false)
-const items = [
-  { label: 'Issue', value: 'keluhan' },
-  { label: 'Suggestion', value: 'saran' },
-  { label: 'Compliment', value: 'pujian' }
-]
+const items = computed(() => [
+  { label: t('modal.feedback.issue'), value: 'keluhan' },
+  { label: t('modal.feedback.suggestion'), value: 'saran' },
+  { label: t('modal.feedback.compliment'), value: 'pujian' }
+])
 
 const { createFeedback } = useFeedback()
 const canAddMoreImages = computed(() => !state.images || state.images.length < 3)
@@ -65,13 +67,13 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
   <div id="feedback-modal-screenshot">
     <UModal
       :open="props.open"
-      title="Report an Issue"
-      description="Please provide detailed information about the issue."
+      :title="t('modal.feedback.title')"
+      :description="t('modal.feedback.subtitle')"
       @update:open="emit('update:open', $event)"
     >
       <template #body>
         <div class="mb-4">
-          <p>We are improving the information system so it works well for everyone. Thank you for your feedback.</p>
+          <p>{{ t('modal.feedback.note') }}</p>
           <span class="text-blue-500 font-medium underline">{{ state.url }}</span>
         </div>
         <UForm
@@ -94,7 +96,7 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
           <UFormField name="description">
             <UTextarea
               v-model="state.description"
-              placeholder="Please describe your problem..."
+              :placeholder="t('modal.feedback.placeholder')"
               class="w-full"
               :rows="4"
             />
@@ -110,7 +112,7 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
             >
               <template #actions="{ open }">
                 <UButton
-                  label="Select images"
+                  :label="t('modal.feedback.selectImages')"
                   icon="i-lucide-upload"
                   color="neutral"
                   variant="outline"
@@ -122,11 +124,11 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
               <template #files-top="{ open, files }">
                 <div v-if="files?.length" class="mb-2 flex items-center justify-between">
                   <p class="font-bold">
-                    Screenshot ({{ files.length }})
+                    {{ t('modal.feedback.screenshot') }} ({{ files.length }})
                   </p>
                   <UButton
                     icon="i-lucide-plus"
-                    label="Add more"
+                    :label="t('modal.feedback.addMore')"
                     color="neutral"
                     variant="outline"
                     :disabled="!canAddMoreImages"
@@ -138,12 +140,12 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
           </UFormField>
 
           <div class="text-center text-sm text-gray-500">
-            <span>- Feeback is a gift -</span>
+            <span>{{ t('modal.feedback.tagline') }}</span>
           </div>
 
           <div class="flex justify-between items-center w-full">
             <UButton
-              label="History"
+              :label="t('modal.feedback.history')"
               color="primary"
               variant="ghost"
               icon="i-lucide-history"
@@ -152,14 +154,14 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
             />
             <div class="flex justify-end gap-2">
               <UButton
-                label="Cancel"
+                :label="t('modal.feedback.cancel')"
                 color="neutral"
                 variant="subtle"
                 :disabled="saving"
                 @click="emit('update:open', false)"
               />
               <UButton
-                label="Send"
+                :label="t('modal.feedback.send')"
                 color="primary"
                 variant="solid"
                 type="submit"

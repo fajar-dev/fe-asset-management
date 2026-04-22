@@ -1,13 +1,15 @@
 <script setup lang="ts">
+const { t } = useI18n()
+
 const props = withDefaults(defineProps<{
   title?: string
   description?: string
   confirmLabel?: string
   onConfirm?: () => Promise<void> | void
 }>(), {
-  title: 'Confirm',
-  description: 'Are you sure?',
-  confirmLabel: 'Confirm'
+  title: undefined,
+  description: undefined,
+  confirmLabel: undefined
 })
 
 const emit = defineEmits(['update:open'])
@@ -27,21 +29,21 @@ function handleCancel() {
       <div class="p-5">
         <div class="space-y-1">
           <h3 class="text-lg font-semibold">
-            {{ title }}
+            {{ title ?? t('modal.confirm.title') }}
           </h3>
-          <p v-if="description" class="text-gray-500 text-sm">
-            {{ description }}
+          <p v-if="description ?? t('common.cannotBeUndone')" class="text-gray-500 text-sm">
+            {{ description ?? t('common.cannotBeUndone') }}
           </p>
         </div>
         <div class="flex justify-end gap-2 mt-4">
           <UButton
-            label="Cancel"
+            :label="t('modal.confirm.cancel')"
             color="neutral"
             variant="subtle"
             @click="handleCancel"
           />
           <UButton
-            :label="confirmLabel"
+            :label="confirmLabel ?? t('modal.confirm.confirm')"
             color="error"
             variant="solid"
             loading-auto

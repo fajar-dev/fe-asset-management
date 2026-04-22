@@ -10,6 +10,8 @@ const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UIcon = resolveComponent('UIcon')
 const UTooltip = resolveComponent('UTooltip')
 
+const { t } = useI18n()
+
 // state
 const search = ref('')
 const pageLimit = ref(10)
@@ -67,9 +69,9 @@ async function confirmDelete() {
 
 function getRowItems(row: Row<any>) {
   return [
-    { type: 'label', label: 'Actions' },
+    { type: 'label', label: t('common.actions') },
     {
-      label: 'Edit',
+      label: t('common.edit'),
       icon: 'i-lucide-pencil',
       onSelect: () => {
         editingCategoryId.value = row.original.id
@@ -77,7 +79,7 @@ function getRowItems(row: Row<any>) {
       }
     },
     {
-      label: 'Delete',
+      label: t('common.delete'),
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect: () => {
@@ -102,8 +104,8 @@ const renderBooleanIcon = (value: boolean) => {
   )
 }
 
-const columns: TableColumn<any>[] = [
-  { accessorKey: 'name', header: 'Name' },
+const columns = computed<TableColumn<any>[]>(() => [
+  { accessorKey: 'name', header: t('page.category.name') },
   {
     accessorKey: 'hasLocation',
     header: () =>
@@ -111,7 +113,7 @@ const columns: TableColumn<any>[] = [
         'div',
         { class: 'flex items-center justify-center gap-1' },
         [
-          h('span', 'Has Location'),
+          h('span', t('page.category.hasLocation')),
           h(
             UTooltip,
             {
@@ -135,7 +137,7 @@ const columns: TableColumn<any>[] = [
         'div',
         { class: 'flex items-center justify-center gap-1' },
         [
-          h('span', 'Has Maintenance'),
+          h('span', t('page.category.hasMaintenance')),
           h(
             UTooltip,
             {
@@ -159,7 +161,7 @@ const columns: TableColumn<any>[] = [
         'div',
         { class: 'flex items-center justify-center gap-1' },
         [
-          h('span', 'Has Holder'),
+          h('span', t('page.category.hasHolder')),
           h(
             UTooltip,
             {
@@ -197,13 +199,13 @@ const columns: TableColumn<any>[] = [
       )
     }
   }
-]
+])
 </script>
 
 <template>
   <UDashboardPanel id="categories">
     <template #header>
-      <UDashboardNavbar title="Categories">
+      <UDashboardNavbar :title="t('page.category.title')">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -219,9 +221,9 @@ const columns: TableColumn<any>[] = [
       <RoleWrapper role="admin">
         <ConfirmModal
           v-model:open="isDeleteModalOpen"
-          title="Delete Category"
-          description="Are you sure? This action cannot be undone."
-          confirm-label="Delete"
+          :title="t('page.category.deleteTitle')"
+          :description="t('page.category.deleteDescription')"
+          :confirm-label="t('common.delete')"
           :on-confirm="confirmDelete"
         />
         <CategoryUpdateModal
@@ -237,7 +239,7 @@ const columns: TableColumn<any>[] = [
             v-model="search"
             class="w-full"
             icon="i-lucide-search"
-            placeholder="Search category..."
+            :placeholder="t('page.category.searchPlaceholder')"
           />
           <USelect
             v-model="pageLimit"
@@ -275,7 +277,7 @@ const columns: TableColumn<any>[] = [
         />
 
         <div v-if="apiPagination" class="text-sm text-muted mb-2">
-          Showing {{ showingFrom }} to {{ showingTo }} of {{ apiPagination.totalItems }} results
+          {{ t('common.showing') }} {{ showingFrom }} {{ t('common.to') }} {{ showingTo }} {{ t('common.of') }} {{ apiPagination.totalItems }} {{ t('common.results') }}
         </div>
       </div>
     </template>

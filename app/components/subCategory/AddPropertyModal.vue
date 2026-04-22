@@ -4,6 +4,8 @@ import { useSubCategory } from '~/composables/useSubCategory'
 import { propertyService } from '~/services/PropertyService'
 import { propertySchema as schema, type PropertySchema as Schema } from '~/schemas/subCategorySchema'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   id: string
   modelValue: boolean
@@ -62,8 +64,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 <template>
   <UModal
     :open="props.modelValue"
-    title="Add Property"
-    :description="`Add new property for ${subCategoryName}`"
+    :title="t('modal.subCategory.addPropertyTitle')"
+    :description="`${t('modal.subCategory.addPropertySubtitle')} ${subCategoryName}`"
     @update:open="emit('update:modelValue', $event)"
   >
     <template #body>
@@ -74,11 +76,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         @submit="onSubmit"
       >
         <!-- Property Name -->
-        <UFormField label="Name" name="name" required>
+        <UFormField :label="t('common.name')" name="name" required>
           <UInput
             v-model="state.name"
             class="w-full"
-            placeholder="Property name"
+            :placeholder="t('modal.subCategory.propertyNamePlaceholder')"
           />
         </UFormField>
 
@@ -88,7 +90,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             <div class="flex items-center gap-1">
               <span>Type<span class="text-red-500 ml-0.5">*</span></span>
               <UTooltip
-                text="Select the data type for this property (e.g. text or numeric)"
+                :text="t('modal.subCategory.typeHint')"
                 :delay-duration="0"
               >
                 <UIcon
@@ -101,8 +103,13 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
           <USelectMenu
             v-model="state.dataType"
-            :items="['string', 'number']"
-            placeholder="Select type"
+            :items="[
+              { label: t('modal.subCategory.string'), value: 'string' },
+              { label: t('modal.subCategory.number'), value: 'number' }
+            ]"
+            value-key="value"
+            label-key="label"
+            :placeholder="t('modal.subCategory.selectType')"
             class="w-full"
           />
         </UFormField>
@@ -110,7 +117,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         <!-- Action Buttons -->
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.subCategory.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
@@ -118,7 +125,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           />
 
           <UButton
-            label="Add"
+            :label="t('modal.subCategory.add')"
             color="primary"
             variant="solid"
             type="submit"

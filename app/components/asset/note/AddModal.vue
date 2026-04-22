@@ -4,6 +4,7 @@ import { useAssetNote } from '~/composables/useAssetNote'
 import { noteSchema, type NoteSchema } from '~/schemas/noteSchema'
 import { formatCalendarDate, calendarDateToISOString } from '~/utils/date'
 
+const { t } = useI18n()
 const props = defineProps<{ assetId: string }>()
 const emit = defineEmits<{ (e: 'created'): void }>()
 
@@ -46,8 +47,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 </script>
 
 <template>
-  <UModal v-model:open="open" title="New Note" description="Add a new note record">
-    <UButton label="Add Note" icon="i-lucide-plus" />
+  <UModal v-model:open="open" :title="t('modal.asset.note.addTitle')" :description="t('modal.asset.note.addSubtitle')">
+    <UButton :label="t('modal.asset.note.addTitle')" icon="i-lucide-plus" />
 
     <template #body>
       <UForm
@@ -56,7 +57,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Date" name="occuredAt" required>
+        <UFormField :label="t('modal.asset.note.date')" name="occuredAt" required>
           <UPopover :popper="{ placement: 'bottom-start' }">
             <UButton
               icon="i-lucide-calendar"
@@ -71,24 +72,24 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           </UPopover>
         </UFormField>
 
-        <UFormField label="Note" name="note" required>
+        <UFormField :label="t('modal.asset.note.note')" name="note" required>
           <UTextarea
             v-model="state.note"
-            placeholder="Note"
+            :placeholder="t('modal.asset.note.note')"
             class="w-full"
           />
         </UFormField>
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.note.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="open = false"
           />
           <UButton
-            label="Save"
+            :label="t('modal.asset.note.save')"
             color="primary"
             variant="solid"
             type="submit"

@@ -10,6 +10,7 @@ import {
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
+const { t } = useI18n()
 const router = useRouter()
 
 const { assetsByCategory, getAssetsByCategory, loading } = useStatistic()
@@ -70,10 +71,10 @@ onMounted(() => {
     <template #header>
       <div>
         <p class="text-highlighted font-semibold">
-          Category
+          {{ t('component.categoryChart.title') }}
         </p>
         <p class="text-xs text-muted mb-1.5">
-          Asset by Category
+          {{ t('component.categoryChart.title') }}
         </p>
       </div>
     </template>
@@ -112,7 +113,7 @@ onMounted(() => {
             color="neutral"
             size="xs"
             :icon="isExpanded ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-            :label="isExpanded ? 'Show Less' : 'Read More'"
+            :label="isExpanded ? t('component.categoryChart.showLess') : t('component.categoryChart.readMore')"
             @click="isExpanded = !isExpanded"
           />
         </div>
@@ -120,7 +121,7 @@ onMounted(() => {
     </div>
 
     <div v-else class="flex justify-center items-center h-[275px] text-muted">
-      No data available
+      {{ t('component.categoryChart.noData') }}
     </div>
   </UCard>
 </template>

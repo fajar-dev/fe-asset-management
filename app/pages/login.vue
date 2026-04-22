@@ -51,11 +51,13 @@ const { isReady, login } = useCodeClient({
   onSuccess: handleOnSuccess
 })
 
-const fields = [
-  { name: 'employeeId', type: 'text' as const, label: 'Employee ID', placeholder: 'Enter your employee ID', required: true },
-  { name: 'password', type: 'password' as const, label: 'Password', placeholder: 'Enter your password', required: true },
-  { name: 'remember', type: 'checkbox' as const, label: 'Remember me' }
-]
+const { t } = useI18n()
+
+const fields = computed(() => [
+  { name: 'employeeId', type: 'text' as const, label: t('page.login.employeeId'), placeholder: t('page.login.employeeIdPlaceholder'), required: true },
+  { name: 'password', type: 'password' as const, label: t('page.login.password'), placeholder: t('page.login.passwordPlaceholder'), required: true },
+  { name: 'remember', type: 'checkbox' as const, label: t('page.login.rememberMe') }
+])
 
 const schema = z.object({
   employeeId: z.string().min(1, 'Employee ID is required'),
@@ -128,7 +130,7 @@ function handleGoogleLogin() {
         <template v-if="!googleLoading" #leading>
           <Icon name="logos:google-icon" class="w-5 h-5" />
         </template>
-        {{ googleLoading ? 'Signing in...' : 'Continue with Google' }}
+        {{ googleLoading ? t('page.login.signingIn') : t('page.login.continueWithGoogle') }}
       </UButton>
     </div>
   </div>

@@ -4,6 +4,8 @@ import { useLocation } from '~/composables/useLocation'
 import { useBranch } from '~/composables/useBranch'
 import { locationSchema as schema, type LocationSchema as Schema } from '~/schemas/locationSchema'
 
+const { t } = useI18n()
+
 const emit = defineEmits<{ (e: 'created'): void }>()
 
 const open = ref(false)
@@ -45,12 +47,12 @@ async function openModal() {
 <template>
   <div>
     <UButton
-      label="New Location"
+      :label="t('modal.location.addTitle')"
       icon="i-lucide-plus"
       @click="openModal"
     />
 
-    <UModal v-model:open="open" title="New Location" description="Add a new location">
+    <UModal v-model:open="open" :title="t('modal.location.addTitle')" :description="t('modal.location.addSubtitle')">
       <template #body>
         <UForm
           :schema="schema"
@@ -58,31 +60,31 @@ async function openModal() {
           class="space-y-4"
           @submit="onSubmit"
         >
-          <UFormField label="Name" name="name">
-            <UInput v-model="state.name" class="w-full" placeholder="Location name" />
+          <UFormField :label="t('common.name')" name="name">
+            <UInput v-model="state.name" class="w-full" :placeholder="t('modal.location.namePlaceholder')" />
           </UFormField>
 
-          <UFormField label="Branch" name="branchId">
+          <UFormField :label="t('common.branch')" name="branchId">
             <UInputMenu
               v-model="state.branchId"
               class="w-full"
               value-key="id"
               label-key="name"
               :items="items"
-              placeholder="Select branch"
+              :placeholder="t('modal.location.selectBranch')"
             />
           </UFormField>
 
           <div class="flex justify-end gap-2">
             <UButton
-              label="Cancel"
+              :label="t('modal.location.cancel')"
               color="neutral"
               variant="subtle"
               :disabled="saving"
               @click="open = false"
             />
             <UButton
-              label="Save"
+              :label="t('modal.location.save')"
               color="primary"
               variant="solid"
               type="submit"

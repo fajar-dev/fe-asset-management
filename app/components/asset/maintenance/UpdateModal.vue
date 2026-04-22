@@ -16,6 +16,7 @@ const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
 
+const { t } = useI18n()
 const schema = maintenanceSchema
 type Schema = MaintenanceSchema
 
@@ -105,8 +106,8 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
 <template>
   <UModal
     :open="props.open"
-    title="Edit Maintenance"
-    description="Update maintenance details"
+    :title="t('modal.asset.maintenance.editTitle')"
+    :description="t('modal.asset.maintenance.editSubtitle')"
     @update:open="emit('update:open', $event)"
   >
     <template #body>
@@ -116,7 +117,7 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Date" name="maintenanceAt" required>
+        <UFormField :label="t('modal.asset.maintenance.date')" name="maintenanceAt" required>
           <UPopover :popper="{ placement: 'bottom-start' }">
             <UButton
               icon="i-lucide-calendar"
@@ -131,24 +132,24 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
           </UPopover>
         </UFormField>
 
-        <UFormField label="Note" name="note" required>
+        <UFormField :label="t('modal.asset.maintenance.note')" name="note" required>
           <UTextarea
             v-model="formData.note"
-            placeholder="Note"
+            :placeholder="t('modal.asset.maintenance.note')"
             class="w-full"
           />
         </UFormField>
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.maintenance.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="emit('update:open', false)"
           />
           <UButton
-            label="Save"
+            :label="t('modal.asset.maintenance.save')"
             color="primary"
             variant="solid"
             type="submit"

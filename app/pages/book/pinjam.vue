@@ -3,6 +3,7 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { bookService } from '~/services/BookService'
 import type { BookData } from '~/types/book'
+import { nextTick } from 'vue'
 
 definePageMeta({
   layout: 'book',
@@ -14,15 +15,26 @@ useSeoMeta({
 })
 
 const route = useRoute()
-const tabs = [
-  { label: 'Pinjam', to: '/book/pinjam', icon: 'i-lucide-book-open' },
-  { label: 'Kembalikan', to: '/book/kembalikan', icon: 'i-lucide-book-check' },
-]
+const normalizePath = (path?: string) => {
+  if (!path) return '/'
+  const normalized = path.replace(/\/+$/, '')
+  return normalized || '/'
+}
+
+const isTabActive = (to: string) => {
+  return normalizePath(route.path) === normalizePath(to)
+}
+const { t } = useI18n()
+const tabs = computed(() => [
+  { label: t('page.book.borrow'), to: '/book/pinjam', icon: 'i-lucide-book-open' },
+  { label: t('page.book.return'), to: '/book/kembalikan', icon: 'i-lucide-book-check' },
+])
 
 const toast = useToast()
 const loading = ref(false)
 const lookupLoading = ref(false)
 const barcodeScannerRef = ref<any>(null)
+const formRef = ref<any>(null)
 const bookData = ref<BookData | null>(null)
 
 // Camera state
@@ -49,7 +61,7 @@ async function startCamera() {
       videoRef.value.srcObject = mediaStream
     }
   } catch {
-    cameraError.value = 'Tidak dapat mengakses kamera. Pastikan izin kamera sudah diberikan.'
+    cameraError.value = t('page.book.cameraError')
     isCameraOpen.value = false
   }
 }
@@ -105,15 +117,24 @@ async function lookupBySerial(code: string) {
   state.category = undefined
   bookData.value = null
 
+  // Clear serialNumber error since we have a value
+  nextTick(() => formRef.value?.clear('serialNumber'))
+
   try {
     const res = await bookService.getBookByCode(code.trim())
     bookData.value = res.data
     state.judulBuku = res.data.name
     state.category = res.data.subCategory.name
-  } catch {
+
+    // Clear validation errors for auto-filled fields
+    nextTick(() => {
+      formRef.value?.clear('judulBuku')
+      formRef.value?.clear('category')
+    })
+  } catch (err: any) {
     toast.add({
-      title: 'Buku tidak ditemukan',
-      description: `Tidak ada buku dengan kode "${code}"`,
+      title: 'Gagal',
+      description: err.data?.message,
       color: 'error'
     })
   } finally {
@@ -131,37 +152,37 @@ function resetBook() {
   state.judulBuku = undefined
   state.category = undefined
   bookData.value = null
+  formRef.value?.clear()
 }
 
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
   if (!photoFile.value) {
-    toast.add({ title: 'Foto wajib diisi', description: 'Ambil foto peminjaman terlebih dahulu', color: 'error' })
+    toast.add({ title: t('page.book.photoRequired'), description: t('page.book.takeBorrowPhoto'), color: 'error' })
     return
   }
   if (!bookData.value?.id) {
-    toast.add({ title: 'Data buku tidak lengkap', description: 'Silakan scan ulang buku', color: 'error' })
+    toast.add({ title: t('page.book.incompleteData'), description: t('page.book.scanAgain'), color: 'error' })
     return
   }
 
   loading.value = true
   try {
     await bookService.assignLoan(bookData.value.id, photoFile.value)
-    
+
     toast.add({
-      title: 'Peminjaman Berhasil',
-      description: `Buku "${bookData.value.name}" berhasil dipinjam.`,
+      title: t('page.book.borrowSuccess'),
+      description: `"${bookData.value.name}" ${t('page.book.borrowSuccessMessage')}`,
       color: 'success'
     })
 
-    // Reset form
     resetBook()
     capturedImage.value = null
     photoFile.value = null
     isCameraOpen.value = false
   } catch (err: any) {
     toast.add({
-      title: 'Gagal Meminjam',
-      description: err.data?.message || 'Terjadi kesalahan saat memproses peminjaman.',
+      title: t('page.book.borrowFailed'),
+      description: err.data?.message || t('page.book.borrowFailedMessage'),
       color: 'error'
     })
   } finally {
@@ -180,8 +201,8 @@ onUnmounted(() => stopCamera())
         <UIcon name="i-lucide-library" class="w-5 h-5 text-primary" />
       </div>
       <div>
-        <h1 class="text-base font-semibold text-highlighted">Form Baca Buku</h1>
-        <p class="text-xs text-muted">Peminjaman &amp; pengembalian buku</p>
+        <h1 class="text-base font-semibold text-highlighted">{{ t('page.book.title') }}</h1>
+        <p class="text-xs text-muted">{{ t('page.book.subtitle') }}</p>
       </div>
     </div>
 
@@ -192,10 +213,10 @@ onUnmounted(() => stopCamera())
         :key="tab.to"
         :to="tab.to"
         class="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors"
-        :class="route.path === tab.to
-          ? 'bg-primary text-white pointer-events-none'
+        :class="isTabActive(tab.to)
+          ? 'bg-primary text-white'
           : 'text-muted hover:text-highlighted hover:bg-elevated'"
-      >
+>
         <UIcon :name="tab.icon" class="w-4 h-4" />
         {{ tab.label }}
       </NuxtLink>
@@ -203,17 +224,18 @@ onUnmounted(() => stopCamera())
 
     <!-- Form Pinjam -->
     <UForm
+      ref="formRef"
       :schema="schema"
       :state="state"
       class="space-y-4"
       @submit="onSubmit"
     >
       <!-- Serial Number + Scan Button -->
-      <UFormField label="Serial Number" name="serialNumber" required>
+      <UFormField :label="t('page.book.serialNumber')" name="serialNumber" required>
         <div class="flex gap-2">
           <UInput
             v-model="state.serialNumber"
-            placeholder="Ketik atau scan serial number"
+            :placeholder="t('page.book.serialNumberPlaceholder')"
             icon="i-lucide-hash"
             class="flex-1"
             :loading="lookupLoading"
@@ -227,7 +249,7 @@ onUnmounted(() => stopCamera())
               color="error"
               icon="i-lucide-x"
               class="shrink-0"
-              title="Reset"
+              :title="t('page.book.reset')"
               @click="resetBook"
             />
           </template>
@@ -239,7 +261,7 @@ onUnmounted(() => stopCamera())
               color="primary"
               icon="i-lucide-search"
               class="shrink-0"
-              title="Cari Buku"
+              :title="t('page.book.searchBook')"
               :loading="lookupLoading"
               :disabled="lookupLoading"
               @click="lookupBySerial(state.serialNumber!)"
@@ -250,7 +272,7 @@ onUnmounted(() => stopCamera())
               color="neutral"
               icon="i-lucide-scan-barcode"
               class="shrink-0"
-              title="Scan Barcode"
+              :title="t('page.book.scanBarcode')"
               :disabled="lookupLoading"
               @click="barcodeScannerRef?.openModal()"
             />
@@ -259,10 +281,10 @@ onUnmounted(() => stopCamera())
       </UFormField>
 
       <!-- Judul Buku (disabled, auto-filled) -->
-      <UFormField label="Judul Buku" name="judulBuku" required>
+      <UFormField :label="t('page.book.bookTitle')" name="judulBuku" required>
         <UInput
           v-model="state.judulBuku"
-          placeholder="Otomatis terisi setelah scan"
+          :placeholder="t('page.book.bookTitlePlaceholder')"
           icon="i-lucide-book"
           class="w-full"
           disabled
@@ -270,10 +292,10 @@ onUnmounted(() => stopCamera())
       </UFormField>
 
       <!-- Kategori (disabled, auto-filled) -->
-      <UFormField label="Kategori" name="category" required>
+      <UFormField :label="t('page.book.category')" name="category" required>
         <UInput
           v-model="state.category"
-          placeholder="Otomatis terisi setelah scan"
+          :placeholder="t('page.book.bookTitlePlaceholder')"
           icon="i-lucide-tag"
           class="w-full"
           disabled
@@ -281,7 +303,7 @@ onUnmounted(() => stopCamera())
       </UFormField>
 
       <!-- Foto Peminjaman -->
-      <UFormField label="Foto Peminjaman" name="image" required>
+      <UFormField :label="t('page.book.borrowPhoto')" name="image" required>
         <div class="space-y-2">
           <!-- Live Camera Preview -->
           <div v-if="isCameraOpen" class="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
@@ -309,7 +331,7 @@ onUnmounted(() => stopCamera())
             <div class="absolute top-2 right-2">
               <UButton
                 icon="i-lucide-refresh-cw"
-                label="Ulang"
+                :label="t('page.book.retake')"
                 size="xs"
                 color="neutral"
                 variant="soft"
@@ -324,9 +346,9 @@ onUnmounted(() => stopCamera())
             class="flex flex-col items-center justify-center border-2 border-dashed border-default rounded-lg p-8"
           >
             <UIcon name="i-lucide-camera" class="w-10 h-10 text-muted mb-3" />
-            <p class="text-sm text-muted mb-4 text-center">Ambil foto sebagai bukti peminjaman</p>
+            <p class="text-sm text-muted mb-4 text-center">{{ t('page.book.borrowPhotoSubtitle') }}</p>
             <UButton
-              label="Buka Kamera"
+              :label="t('page.book.openCamera')"
               icon="i-lucide-camera"
               color="neutral"
               variant="outline"
@@ -344,10 +366,10 @@ onUnmounted(() => stopCamera())
         type="submit"
         class="w-full justify-center"
         :loading="loading"
-        :disabled="!bookData || !bookData.isLendable"
+        :disabled="!bookData"
         icon="i-lucide-book-open"
       >
-        Pinjam Buku
+        {{ t('page.book.borrowBook') }}
       </UButton>
     </UForm>
   </div>

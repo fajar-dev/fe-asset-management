@@ -7,6 +7,7 @@ import { useAssetLocation } from '~/composables/useAssetLocation'
 const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
+const { t } = useI18n()
 
 // state asset detail
 const assetDetail = ref<any>(null)
@@ -59,25 +60,25 @@ const showingTo = computed(() =>
 )
 
 // columns
-const columns: TableColumn<any>[] = [
+const columns = computed<TableColumn<any>[]>(() => [
   {
     accessorKey: 'createdAt',
-    header: 'Date',
+    header: t('page.location.date'),
     cell: ({ row }) => {
       const date = new Date(row.original.createdAt)
       const gmt7 = new Date(date.getTime() + 7 * 60 * 60 * 1000)
       return gmt7.toISOString().replace('T', ' ').substring(0, 19)
     }
   },
-  { accessorKey: 'location.name', header: 'Location Name' },
+  { accessorKey: 'location.name', header: t('page.location.locationName') },
   {
-    header: 'Branch',
+    header: t('page.location.branch'),
     cell: ({ row }) => {
       const branch = row.original.location.branch
       return `${branch.branchId} - ${branch.name}`
     }
   }
-]
+])
 </script>
 
 <template>
@@ -141,8 +142,8 @@ const columns: TableColumn<any>[] = [
         />
 
         <div v-if="apiPagination" class="text-sm text-muted mb-2">
-          Showing {{ showingFrom }} to {{ showingTo }} of
-          {{ apiPagination.totalItems }} results
+          {{ t('common.showing') }} {{ showingFrom }} {{ t('common.to') }} {{ showingTo }} {{ t('common.of') }}
+          {{ apiPagination.totalItems }} {{ t('common.results') }}
         </div>
       </div>
     </template>

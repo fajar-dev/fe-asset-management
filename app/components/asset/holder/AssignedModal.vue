@@ -13,6 +13,7 @@ const emit = defineEmits<{ (e: 'created'): void }>()
 const schema = assignHolderSchema
 type Schema = AssignHolderSchema
 
+const { t } = useI18n()
 const open = ref(false)
 const saving = ref(false)
 
@@ -74,11 +75,11 @@ async function openModal() {
 <template>
   <UModal
     v-model:open="open"
-    title="Assign Asset Holder"
-    description="Assign a new employee to this asset"
+    :title="t('modal.asset.holder.assignTitle')"
+    :description="t('modal.asset.holder.assignSubtitle')"
   >
     <UButton
-      label="Assign Holder"
+      :label="t('modal.asset.holder.assignTitle')"
       icon="i-lucide-plus"
       :disabled="props.disabled"
       :ui="{ label: 'hidden sm:inline-block' }"
@@ -92,7 +93,7 @@ async function openModal() {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Assigned Date" name="assignedAt" required>
+        <UFormField :label="t('modal.asset.holder.assignedDate')" name="assignedAt" required>
           <UPopover :popper="{ placement: 'bottom-start' }">
             <UButton
               icon="i-lucide-calendar"
@@ -107,26 +108,26 @@ async function openModal() {
           </UPopover>
         </UFormField>
 
-        <UFormField label="Employee" name="employeeId" required>
+        <UFormField :label="t('modal.asset.holder.employee')" name="employeeId" required>
           <UInputMenu
             v-model="selectedEmployee"
             class="w-full"
             :items="items"
-            placeholder="Select employee"
+            :placeholder="t('modal.asset.holder.selectEmployee')"
             @update:model-value="val => state.employeeId = val?.value ?? ''"
           />
         </UFormField>
 
-        <UFormField label="Purpose" name="purpose">
+        <UFormField :label="t('modal.asset.holder.purpose')" name="purpose">
           <UTextarea
             v-model="state.purpose"
-            placeholder="Enter purpose"
+            :placeholder="t('modal.asset.holder.purposePlaceholder')"
             class="w-full"
             :rows="3"
           />
         </UFormField>
 
-        <UFormField name="attachments" label="Attachments (Max 3)">
+        <UFormField name="attachments" :label="t('modal.asset.holder.attachments')">
           <UFileUpload
             v-model="state.attachments"
             layout="grid"
@@ -136,7 +137,7 @@ async function openModal() {
           >
             <template #actions="{ open }">
               <UButton
-                label="Select attachments"
+                :label="t('modal.asset.holder.selectAttachments')"
                 icon="i-lucide-upload"
                 color="neutral"
                 variant="outline"
@@ -147,11 +148,11 @@ async function openModal() {
             <template #files-top="{ open, files }">
               <div v-if="files?.length" class="mb-2 flex items-center justify-between">
                 <p class="font-bold">
-                  Attachments ({{ files.length }})
+                  {{ t('modal.asset.holder.attachments') }} ({{ files.length }})
                 </p>
                 <UButton
                   icon="i-lucide-plus"
-                  label="Add more"
+                  :label="t('modal.asset.holder.addMore')"
                   color="neutral"
                   variant="outline"
                   :disabled="!canAddMoreImages"
@@ -164,14 +165,14 @@ async function openModal() {
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.holder.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="open = false"
           />
           <UButton
-            label="Save"
+            :label="t('modal.asset.holder.save')"
             color="primary"
             variant="solid"
             type="submit"

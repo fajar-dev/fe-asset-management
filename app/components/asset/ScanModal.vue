@@ -2,6 +2,8 @@
 import { BrowserMultiFormatReader } from '@zxing/library'
 import type { TabsItem } from '@nuxt/ui'
 
+const { t } = useI18n()
+
 // ─── Shared state ────────────────────────────────────────────────────────────
 const open = ref(false)
 const showLoadingModal = ref(false)
@@ -11,9 +13,9 @@ const scannedResult = ref<string>('')
 
 const activeTab = ref('conventional')
 
-const tabItems = ref<TabsItem[]>([
-  { label: 'Conventional', icon: 'i-lucide-scan-barcode', value: 'conventional' },
-  { label: 'With AI', icon: 'i-lucide-sparkles', value: 'ai' }
+const tabItems = computed<TabsItem[]>(() => [
+  { label: t('modal.asset.scan.conventional'), icon: 'i-lucide-scan-barcode', value: 'conventional' },
+  { label: t('modal.asset.scan.withAI'), icon: 'i-lucide-sparkles', value: 'ai' }
 ])
 
 // ─── Conventional (barcode) state ────────────────────────────────────────────
@@ -36,7 +38,6 @@ const aiAnalyzing = ref(false)
 
 const router = useRouter()
 const { getAssetByCode, getAssetByImage } = useAsset()
-const toast = useToast()
 
 const emit = defineEmits<{
   (e: 'add-asset', code: string): void
@@ -374,8 +375,8 @@ defineExpose({ openModal })
 <template>
   <UModal
     v-model:open="open"
-    title="Scan Asset"
-    description="Pilih metode scanning asset Anda"
+    :title="t('modal.asset.scan.title')"
+    :description="t('modal.asset.scan.subtitle')"
     @close="closeModal"
   >
     <UButton
@@ -423,7 +424,7 @@ defineExpose({ openModal })
             >
               <div class="text-center text-white">
                 <UIcon name="i-lucide-camera" class="w-12 h-12 mx-auto mb-2 animate-pulse" />
-                <p class="text-sm">Starting camera...</p>
+                <p class="text-sm">{{ t('modal.asset.scan.startingCamera') }}</p>
               </div>
             </div>
 
@@ -434,9 +435,9 @@ defineExpose({ openModal })
             >
               <div class="text-center p-4 max-w-sm">
                 <UIcon name="i-lucide-camera-off" class="w-12 h-12 text-red-500 mx-auto mb-3" />
-                <h3 class="font-semibold text-red-700 mb-2">Camera Error</h3>
+                <h3 class="font-semibold text-red-700 mb-2">{{ t('modal.asset.scan.cameraError') }}</h3>
                 <p class="text-red-600 text-sm mb-4">{{ cameraError }}</p>
-                <UButton label="Retry" size="sm" icon="i-lucide-refresh-cw" @click="retryCamera" />
+                <UButton :label="t('modal.asset.scan.tryAgain')" size="sm" icon="i-lucide-refresh-cw" @click="retryCamera" />
               </div>
             </div>
           </div>
@@ -446,13 +447,13 @@ defineExpose({ openModal })
             <div class="flex items-start space-x-2">
               <UIcon name="i-lucide-info" class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
               <div class="text-sm text-green-700">
-                <p class="font-medium mb-1">How to scan barcode:</p>
+                <p class="font-medium mb-1">{{ t('modal.asset.scan.howToScan') }}</p>
                 <ul class="text-xs space-y-1">
-                  <li>• Hold your device steady</li>
-                  <li>• Point camera at the barcode</li>
-                  <li>• Barcode will be detected automatically</li>
-                  <li>• Ensure good lighting and focus</li>
-                  <li>• Supports: Code128, EAN-13, UPC-A, Code39, etc.</li>
+                  <li>• {{ t('modal.asset.scan.scanTip1') }}</li>
+                  <li>• {{ t('modal.asset.scan.scanTip2') }}</li>
+                  <li>• {{ t('modal.asset.scan.scanTip3') }}</li>
+                  <li>• {{ t('modal.asset.scan.scanTip4') }}</li>
+                  <li>• {{ t('modal.asset.scan.scanSupports') }}</li>
                 </ul>
               </div>
             </div>
@@ -488,7 +489,7 @@ defineExpose({ openModal })
             >
               <div class="text-center text-white">
                 <UIcon name="i-lucide-camera" class="w-12 h-12 mx-auto mb-2 animate-pulse" />
-                <p class="text-sm">Starting camera...</p>
+                <p class="text-sm">{{ t('modal.asset.scan.startingCamera') }}</p>
               </div>
             </div>
 
@@ -499,9 +500,9 @@ defineExpose({ openModal })
             >
               <div class="text-center p-4 max-w-sm">
                 <UIcon name="i-lucide-camera-off" class="w-12 h-12 text-red-500 mx-auto mb-3" />
-                <h3 class="font-semibold text-red-700 mb-2">Camera Error</h3>
+                <h3 class="font-semibold text-red-700 mb-2">{{ t('modal.asset.scan.cameraError') }}</h3>
                 <p class="text-red-600 text-sm mb-4">{{ aiCameraError }}</p>
-                <UButton label="Retry" size="sm" icon="i-lucide-refresh-cw" @click="startAiCamera" />
+                <UButton :label="t('modal.asset.scan.tryAgain')" size="sm" icon="i-lucide-refresh-cw" @click="startAiCamera" />
               </div>
             </div>
 
@@ -524,7 +525,7 @@ defineExpose({ openModal })
               class="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center gap-3"
             >
               <UIcon name="i-lucide-sparkles" class="w-10 h-10 text-blue-400 animate-pulse" />
-              <p class="text-white text-sm font-medium">Menganalisis dengan AI...</p>
+              <p class="text-white text-sm font-medium">{{ t('modal.asset.scan.analyzingAI') }}</p>
             </div>
           </div>
 
@@ -533,12 +534,12 @@ defineExpose({ openModal })
             <div class="flex items-start space-x-2">
               <UIcon name="i-lucide-sparkles" class="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
               <div class="text-sm text-blue-700">
-                <p class="font-medium mb-1">Cara scan dengan AI:</p>
+                <p class="font-medium mb-1">{{ t('modal.asset.scan.howToScanAI') }}</p>
                 <ul class="text-xs space-y-1">
-                  <li>• Arahkan kamera ke asset</li>
-                  <li>• Tekan tombol kamera untuk mengambil foto</li>
-                  <li>• AI akan mengidentifikasi asset dari foto</li>
-                  <li>• Pastikan label/stiker asset terlihat jelas</li>
+                  <li>• {{ t('modal.asset.scan.aiTip1') }}</li>
+                  <li>• {{ t('modal.asset.scan.aiTip2') }}</li>
+                  <li>• {{ t('modal.asset.scan.aiTip3') }}</li>
+                  <li>• {{ t('modal.asset.scan.aiTip4') }}</li>
                 </ul>
               </div>
             </div>
@@ -548,14 +549,14 @@ defineExpose({ openModal })
         <!-- Footer buttons -->
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.scan.cancel')"
             color="neutral"
             variant="subtle"
             @click="closeModal"
           />
           <UButton
             v-if="activeTab === 'conventional' && cameraError"
-            label="Try Again"
+            :label="t('modal.asset.scan.tryAgain')"
             color="primary"
             variant="solid"
             icon="i-lucide-refresh-cw"
@@ -574,7 +575,7 @@ defineExpose({ openModal })
     <template #content>
       <div class="flex flex-col items-center justify-center text-center space-y-2">
         <UIcon name="i-lucide-loader" class="w-12 h-12 text-green-500 animate-spin" />
-        <span>Please Wait...</span>
+        <span>{{ t('modal.asset.scan.pleaseWait') }}</span>
       </div>
     </template>
   </UModal>
@@ -582,26 +583,26 @@ defineExpose({ openModal })
   <!-- Asset Not Found modal -->
   <UModal
     v-model:open="showNotFoundModal"
-    title="Asset Tidak Ditemukan"
-    description="Asset dengan barcode ini tidak ditemukan dalam sistem"
+    :title="t('modal.asset.scan.notFound')"
+    :description="t('modal.asset.scan.notFoundMessage')"
   >
     <template #content>
       <div class="p-5">
         <div class="space-y-1">
           <h3 class="text-lg font-semibold">{{ scannedResult }}</h3>
           <p class="text-gray-500 text-sm">
-            Asset not found. Would you like to add it as a new asset?
+            {{ t('modal.asset.scan.notFoundMessage') }}
           </p>
         </div>
         <div class="flex justify-end gap-2 mt-4">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.scan.cancel')"
             color="neutral"
             variant="subtle"
             @click="handleRetryScanning"
           />
           <UButton
-            label="Add New"
+            :label="t('modal.asset.scan.addNew')"
             color="primary"
             variant="solid"
             icon="i-lucide-plus"
