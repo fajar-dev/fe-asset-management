@@ -4,6 +4,8 @@ import { useSubCategory } from '~/composables/useSubCategory'
 import { useCategory } from '~/composables/useCategory'
 import { updateSubCategorySchema as schema, type UpdateSubCategorySchema as Schema } from '~/schemas/subCategorySchema'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   id: string
   modelValue: boolean
@@ -66,8 +68,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 <template>
   <UModal
     :open="props.modelValue"
-    title="Update Sub Category"
-    description="Edit sub category details"
+    :title="t('modal.subCategory.editTitle')"
+    :description="t('modal.subCategory.editSubtitle')"
     @update:open="emit('update:modelValue', $event)"
   >
     <template #body>
@@ -77,11 +79,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Name" name="name" required>
+        <UFormField :label="t('common.name')" name="name" required>
           <UInput
             v-model="state.name"
             class="w-full"
-            placeholder="Sub Category name"
+            :placeholder="t('modal.subCategory.namePlaceholder')"
           />
         </UFormField>
 
@@ -92,24 +94,24 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             value-key="id"
             label-key="name"
             :items="items"
-            placeholder="Select category"
+            :placeholder="t('modal.subCategory.selectCategory')"
           />
         </UFormField>
 
-        <UFormField label="Labels" name="labels">
-          <UInputTags v-model="state.labels" class="w-full" placeholder="Add labels..." />
+        <UFormField :label="t('modal.subCategory.labels')" name="labels">
+          <UInputTags v-model="state.labels" class="w-full" :placeholder="t('modal.subCategory.labelsPlaceholder')" />
         </UFormField>
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.subCategory.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="emit('update:modelValue', false)"
           />
           <UButton
-            label="Update"
+            :label="t('modal.subCategory.update')"
             color="primary"
             variant="solid"
             type="submit"

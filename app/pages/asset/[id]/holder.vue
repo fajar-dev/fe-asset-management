@@ -12,6 +12,7 @@ const UIcon = resolveComponent('UIcon')
 const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
+const { t } = useI18n()
 
 const expanded = ref({} as Record<string | number, boolean>)
 
@@ -67,7 +68,7 @@ const hasActiveHolder = computed(() =>
   holders.value?.some(h => !h.returnedAt)
 )
 
-const columns: TableColumn<any>[] = [
+const columns = computed<TableColumn<any>[]>(() => [
   {
     id: 'expand',
     cell: ({ row }: { row: Row<any> }) => {
@@ -89,7 +90,7 @@ const columns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'employeeId',
-    header: 'Employee',
+    header: t('page.holder.employee'),
     cell: ({ row }) => {
       return h('div', { class: 'flex items-center gap-3' }, [
         h(UAvatar, {
@@ -103,10 +104,10 @@ const columns: TableColumn<any>[] = [
       ])
     }
   },
-  { accessorKey: 'purpose', header: 'Purpose' },
-  { 
-    accessorKey: 'assignedAt', 
-    header: 'Assigned At',
+  { accessorKey: 'purpose', header: t('page.holder.purpose') },
+  {
+    accessorKey: 'assignedAt',
+    header: t('page.holder.assignedAt'),
     cell: ({ row }) => {
       const d = row.original.assignedAt ? new Date(row.original.assignedAt) : null
       return h('span', { class: 'text-xs' }, d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : '-')
@@ -114,7 +115,7 @@ const columns: TableColumn<any>[] = [
   },
   {
     id: 'returnedAt',
-    header: 'Returned At',
+    header: t('page.holder.returnedAt'),
     cell: ({ row }) => {
       const returnedAt = row.original.returnedAt
       if (!returnedAt) {
@@ -129,7 +130,7 @@ const columns: TableColumn<any>[] = [
       return h('span', { class: 'text-xs' }, isNaN(d.getTime()) ? returnedAt : `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`)
     }
   }
-]
+])
 </script>
 
 <template>
@@ -189,7 +190,7 @@ const columns: TableColumn<any>[] = [
                 <div class="flex items-center gap-2 mb-3">
                   <UIcon name="i-lucide-paperclip" class="w-4 h-4 text-gray-500" />
                   <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Attachments ({{ row.original.attachmentUrls.length }})
+                    {{ t('page.holder.attachments') }} ({{ row.original.attachmentUrls.length }})
                   </p>
                 </div>
                 <div class="flex flex-wrap gap-4">
@@ -208,9 +209,9 @@ const columns: TableColumn<any>[] = [
                     >
                     <div v-else class="flex flex-col items-center gap-2 text-gray-400 group-hover:text-primary-500 transition-colors">
                       <UIcon name="i-lucide-file-text" class="w-10 h-10" />
-                      <span class="text-xs font-medium px-2 text-center truncate w-full">Document</span>
+                      <span class="text-xs font-medium px-2 text-center truncate w-full">{{ t('page.holder.document') }}</span>
                     </div>
-                    
+
                     <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                       <UIcon name="i-lucide-external-link" class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
                     </div>
@@ -219,7 +220,7 @@ const columns: TableColumn<any>[] = [
               </div>
               <div v-else class="text-sm text-gray-500 italic flex items-center gap-2">
                 <UIcon name="i-lucide-info" class="w-4 h-4" />
-                No attachments assigned
+                {{ t('page.holder.noAttachments') }}
               </div>
             </div>
           </template>
@@ -238,8 +239,8 @@ const columns: TableColumn<any>[] = [
         />
 
         <div v-if="apiPagination" class="text-sm text-muted mb-2">
-          Showing {{ showingFrom }} to {{ showingTo }} of
-          {{ apiPagination.totalItems }} results
+          {{ t('common.showing') }} {{ showingFrom }} {{ t('common.to') }} {{ showingTo }} {{ t('common.of') }}
+          {{ apiPagination.totalItems }} {{ t('common.results') }}
         </div>
       </div>
     </template>

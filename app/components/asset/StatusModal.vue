@@ -12,6 +12,7 @@ const emit = defineEmits<{
   (e: 'updated'): void
 }>()
 
+const { t } = useI18n()
 const open = defineModel<boolean>()
 const { updateAssetStatus, loading } = useAssetStatus()
 
@@ -28,12 +29,12 @@ watch(open, (isOpen) => {
   }
 })
 
-const statusOptions = [
-  { label: 'Active', value: 'active', icon: 'i-lucide-check-circle', color: 'text-green-500' },
-  { label: 'Sold', value: 'sold', icon: 'i-lucide-shopping-cart', color: 'text-yellow-500' },
-  { label: 'Granted', value: 'granted', icon: 'i-lucide-gift', color: 'text-blue-500' },
-  { label: 'Disposed', value: 'disposed', icon: 'i-lucide-trash-2', color: 'text-red-500' }
-]
+const statusOptions = computed(() => [
+  { label: t('modal.asset.status.active'), value: 'active', icon: 'i-lucide-check-circle', color: 'text-green-500' },
+  { label: t('modal.asset.status.sold'), value: 'sold', icon: 'i-lucide-shopping-cart', color: 'text-yellow-500' },
+  { label: t('modal.asset.status.granted'), value: 'granted', icon: 'i-lucide-gift', color: 'text-blue-500' },
+  { label: t('modal.asset.status.disposed'), value: 'disposed', icon: 'i-lucide-trash-2', color: 'text-red-500' }
+])
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   try {
@@ -49,8 +50,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 <template>
   <UModal
     v-model:open="open"
-    title="Change Asset Status"
-    description="Update the current status of this asset"
+    :title="t('modal.asset.status.title')"
+    :description="t('modal.asset.status.subtitle')"
   >
     <template #body>
       <UForm
@@ -59,13 +60,13 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Status" name="type" required>
+        <UFormField :label="t('common.status')" name="type" required>
           <USelectMenu
             v-model="state.type"
             :items="statusOptions"
             value-key="value"
             label-key="label"
-            placeholder="Select new status"
+            :placeholder="t('modal.asset.status.selectStatus')"
             class="w-full"
           >
             <template #item="{ item }">
@@ -77,24 +78,24 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           </USelectMenu>
         </UFormField>
 
-        <UFormField label="Note" name="note">
+        <UFormField :label="t('common.note')" name="note">
           <UTextarea
             v-model="state.note"
             class="w-full"
-            placeholder="Optional note about this status change..."
+            :placeholder="t('modal.asset.status.notePlaceholder')"
           />
         </UFormField>
 
         <div class="flex justify-end gap-2 pt-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.status.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="loading"
             @click="open = false"
           />
           <UButton
-            label="Update Status"
+            :label="t('modal.asset.status.update')"
             color="primary"
             variant="solid"
             type="submit"

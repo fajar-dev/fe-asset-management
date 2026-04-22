@@ -10,6 +10,7 @@ const UBadge = resolveComponent('UBadge')
 const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
+const { t } = useI18n()
 
 const requestModal = ref()
 
@@ -46,12 +47,12 @@ async function loadAssetData() {
   if (res) {
     assetDetail.value = res.data
     await loadLogs()
-    
+
     // Load related data
     const promises = []
     if (hasHolder.value) promises.push(loadHolders())
     if (hasMaintenance.value) promises.push(loadMaintenances())
-    
+
     await Promise.all(promises)
   } else {
     await router.push(`/asset`)
@@ -79,10 +80,10 @@ onMounted(async () => {
   await loadAssetData()
 })
 
-const holderColumns: TableColumn<any>[] = [
+const holderColumns = computed<TableColumn<any>[]>(() => [
   {
     accessorKey: 'employeeId',
-    header: 'Employee',
+    header: t('page.assetDetail.employee'),
     cell: ({ row }) => {
       return h('div', { class: 'flex items-center gap-2 min-w-[120px]' }, [
         h(UAvatar, {
@@ -96,14 +97,14 @@ const holderColumns: TableColumn<any>[] = [
       ])
     }
   },
-  { 
-    accessorKey: 'purpose', 
-    header: 'Purpose',
+  {
+    accessorKey: 'purpose',
+    header: t('page.assetDetail.purpose'),
     cell: ({ row }) => h('p', { class: 'text-xs whitespace-normal min-w-[100px] line-clamp-2' }, row.original.purpose)
   },
-  { 
-    accessorKey: 'assignedAt', 
-    header: 'Assigned',
+  {
+    accessorKey: 'assignedAt',
+    header: t('page.assetDetail.assigned'),
     cell: ({ row }) => {
       const d = row.original.assignedAt ? new Date(row.original.assignedAt) : null
       return h('span', { class: 'text-xs whitespace-nowrap' }, d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : '-')
@@ -111,47 +112,47 @@ const holderColumns: TableColumn<any>[] = [
   },
   {
     accessorKey: 'returnedAt',
-    header: 'Returned',
+    header: t('page.assetDetail.returned'),
     cell: ({ row }) => {
       const d = row.original.returnedAt ? new Date(row.original.returnedAt) : null
       return h('span', { class: 'text-xs whitespace-nowrap' }, d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : '-')
     }
   }
-]
+])
 
-const maintenanceColumns: TableColumn<any>[] = [
-  { 
-    accessorKey: 'maintenanceAt', 
-    header: 'Date',
+const maintenanceColumns = computed<TableColumn<any>[]>(() => [
+  {
+    accessorKey: 'maintenanceAt',
+    header: t('page.maintenance.date'),
     cell: ({ row }) => h('span', { class: 'text-xs whitespace-nowrap' }, row.original.maintenanceAt)
   },
-  { 
-    accessorKey: 'note', 
-    header: 'Note',
+  {
+    accessorKey: 'note',
+    header: t('page.maintenance.note'),
     cell: ({ row }) => h('p', { class: 'text-xs whitespace-normal min-w-[120px]' }, row.original.note)
   }
-]
+])
 
-const statusColumns: TableColumn<any>[] = [
+const statusColumns = computed<TableColumn<any>[]>(() => [
   {
     accessorKey: 'type',
-    header: 'Status',
+    header: t('page.assetDetail.status'),
     cell: ({ row }) => {
       const type = (row.original as any).type
       return h(UBadge, { class: 'capitalize', variant: 'subtle', color: getStatusColor(type), size: 'sm' }, () => formatStatusLabel(type))
     }
   },
-  { 
-    accessorKey: 'note', 
-    header: 'Note', 
-    cell: ({ row }) => h('p', { class: 'text-xs truncate max-w-[150px]' }, (row.original as any).note || '-') 
+  {
+    accessorKey: 'note',
+    header: t('page.maintenance.note'),
+    cell: ({ row }) => h('p', { class: 'text-xs truncate max-w-[150px]' }, (row.original as any).note || '-')
   },
-  { 
-    accessorKey: 'createdAt', 
-    header: 'Date',
+  {
+    accessorKey: 'createdAt',
+    header: t('page.maintenance.date'),
     cell: ({ row }) => h('span', { class: 'text-xs whitespace-nowrap' }, new Date((row.original as any).createdAt).toLocaleDateString('id-ID'))
   }
-]
+])
 
 interface LocalTimelineItem {
   date?: string
@@ -252,7 +253,7 @@ async function loadLogs() {
           <div class="flex items-center gap-2">
             <UButton
               v-if="assetDetail?.isLendable"
-              label="Request"
+              :label="t('page.assetDetail.request')"
               icon="i-lucide-hand-helping"
               color="primary"
               variant="outline"
@@ -261,7 +262,7 @@ async function loadLogs() {
               @click="requestModal?.openModal()"
             />
             <UButton
-              label="Change Status"
+              :label="t('page.assetDetail.changeStatus')"
               icon="i-lucide-pencil"
               color="neutral"
               variant="outline"
@@ -270,7 +271,7 @@ async function loadLogs() {
               @click="isStatusModalOpen = true"
             />
             <UButton
-              label="Edit Asset"
+              :label="t('page.assetDetail.editAsset')"
               icon="i-lucide-pencil"
               color="primary"
               variant="solid"
@@ -309,7 +310,7 @@ async function loadLogs() {
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <UIcon name="i-lucide-info" class="w-5 h-5" />
-                  Asset Information
+                  {{ t('page.assetDetail.title') }}
                 </h3>
               </div>
             </template>
@@ -337,42 +338,42 @@ async function loadLogs() {
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2 w-full">
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Asset Name</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.assetName') }}</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
                       {{ assetDetail.name }}
                     </p>
                   </div>
 
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Serial ID</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.serialId') }}</label>
                     <p class="text-gray-900 dark:text-white font-mono text-sm">
                       {{ assetDetail.code }}
                     </p>
                   </div>
 
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Brand</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.brand') }}</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
                       {{ assetDetail.brand ?? '-' }}
                     </p>
                   </div>
 
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Model</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.model') }}</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
                       {{ assetDetail.model ?? '-' }}
                     </p>
                   </div>
 
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Category</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.category') }}</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
                       {{ assetDetail.subCategory.category.name }} > {{ assetDetail.subCategory.name }}
                     </p>
                   </div>
 
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.status') }}</label>
                     <div class="flex items-center gap-2 mt-1">
                       <UTooltip :text="assetDetail.lastStatus?.note || 'No note provided'" :disabled="!assetDetail.lastStatus?.note">
                         <div class="flex items-center gap-2">
@@ -400,28 +401,28 @@ async function loadLogs() {
                   </div>
 
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">User</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.user') }}</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
                       {{ assetDetail.user }}
                     </p>
                   </div>
 
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Price</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.price') }}</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
                       {{ formatCurrency(assetDetail.price) }}
                     </p>
                   </div>
 
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Purchase Date</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.purchaseDate') }}</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
                       {{ assetDetail.purchaseDate ? new Date(assetDetail.purchaseDate).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : '-' }}
                     </p>
                   </div>
 
                   <div>
-                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Age</label>
+                    <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.age') }}</label>
                     <p class="text-gray-900 dark:text-white font-medium text-sm">
                       {{ assetDetail.age ?? '-' }}
                     </p>
@@ -459,7 +460,7 @@ async function loadLogs() {
 
               <div v-if="assetDetail.description">
                 <div>
-                  <label class="text-sm font-medium text-gray-500 dark:text-gray-400">Description</label>
+                  <label class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('page.assetDetail.description') }}</label>
                   <p class="text-gray-900 dark:text-white mt-1 text-sm whitespace-pre-wrap">
                     {{ assetDetail.description }}
                   </p>
@@ -473,24 +474,24 @@ async function loadLogs() {
           <!-- Timeline Section -->
           <div class="xl:col-span-1 lg:col-span-1 relative h-full min-h-[400px]">
             <div class="lg:absolute lg:inset-0 h-full w-full">
-              <UCard 
-                class="flex flex-col h-full" 
-                :ui="{ 
-                  body: 'flex-1 overflow-y-auto max-h-[500px] lg:max-h-none' 
+              <UCard
+                class="flex flex-col h-full"
+                :ui="{
+                  body: 'flex-1 overflow-y-auto max-h-[500px] lg:max-h-none'
                 }"
               >
                 <template #header>
                   <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                       <UIcon name="i-lucide-history" class="w-5 h-5" />
-                      Asset History
+                      {{ t('page.assetDetail.assetHistory') }}
                     </h3>
                   </div>
                 </template>
-                
+
                 <div v-if="items.length === 0" class="flex flex-col items-center justify-center p-6 h-[200px] text-gray-500">
                   <UIcon name="i-lucide-scroll-text" class="w-10 h-10 mb-2 opacity-30" />
-                  <p class="text-sm">No data</p>
+                  <p class="text-sm">{{ t('common.noData') }}</p>
                 </div>
                 <div v-else class="p-2">
                   <UTimeline :items="items" />
@@ -510,10 +511,10 @@ async function loadLogs() {
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <UIcon name="i-lucide-users" class="w-5 h-5" />
-                    Asset Holders
+                    {{ t('page.assetDetail.assetHolders') }}
                   </h3>
                   <UButton
-                    label="See More"
+                    :label="t('page.assetDetail.seeMore')"
                     variant="ghost"
                     color="primary"
                     size="sm"
@@ -546,10 +547,10 @@ async function loadLogs() {
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <UIcon name="i-lucide-activity" class="w-5 h-5" />
-                    Status History
+                    {{ t('page.assetDetail.statusHistory') }}
                   </h3>
                   <UButton
-                    label="See More"
+                    :label="t('page.assetDetail.seeMore')"
                     variant="ghost"
                     color="primary"
                     size="sm"
@@ -575,17 +576,17 @@ async function loadLogs() {
               </div>
             </UCard>
           </div>
-          
+
           <div v-if="hasMaintenance">
             <UCard>
               <template #header>
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <UIcon name="i-lucide-wrench" class="w-5 h-5" />
-                    Maintenance History
+                    {{ t('page.assetDetail.maintenanceHistory') }}
                   </h3>
                   <UButton
-                    label="See More"
+                    :label="t('page.assetDetail.seeMore')"
                     variant="ghost"
                     color="primary"
                     size="sm"

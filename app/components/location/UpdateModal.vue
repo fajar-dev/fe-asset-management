@@ -5,6 +5,8 @@ import { useLocation } from '~/composables/useLocation'
 import { useBranch } from '~/composables/useBranch'
 import { locationSchema as schema, type LocationSchema as Schema } from '~/schemas/locationSchema'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   id: string | null
   open: boolean
@@ -94,8 +96,8 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
 <template>
   <UModal
     :open="props.open"
-    title="Edit Location"
-    description="Update location details"
+    :title="t('modal.location.editTitle')"
+    :description="t('modal.location.editSubtitle')"
     @update:open="emit('update:open', $event)"
   >
     <template #body>
@@ -105,35 +107,35 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Name" name="name" required>
+        <UFormField :label="t('common.name')" name="name" required>
           <UInput
             v-model="formData.name"
             class="w-full"
-            placeholder="Location name"
+            :placeholder="t('modal.location.namePlaceholder')"
           />
         </UFormField>
 
-        <UFormField label="Branch" name="branchId" required>
+        <UFormField :label="t('common.branch')" name="branchId" required>
           <UInputMenu
             v-model="formData.branchId"
             class="w-full"
             value-key="id"
             label-key="name"
             :items="items"
-            placeholder="Select branch"
+            :placeholder="t('modal.location.selectBranch')"
           />
         </UFormField>
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.location.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="emit('update:open', false)"
           />
           <UButton
-            label="Save"
+            :label="t('modal.location.save')"
             color="primary"
             variant="solid"
             type="submit"

@@ -13,6 +13,7 @@ import {
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
+const { t } = useI18n()
 const { priceByCategory, getPriceByCategory, loading } = useStatistic()
 
 onMounted(() => {
@@ -81,10 +82,10 @@ const chartOptions = {
     <template #header>
       <div>
         <h3 class="text-highlighted font-semibold">
-          Price by Category
+          {{ t('component.categoryPriceChart.title') }}
         </h3>
         <p class="text-xs text-muted">
-          Total asset value grouped by category
+          {{ t('component.categoryPriceChart.subtitle') }}
         </p>
       </div>
     </template>
@@ -98,7 +99,7 @@ const chartOptions = {
     </div>
 
     <div v-else class="flex justify-center items-center h-[300px] text-muted text-sm italic">
-      No data available
+      {{ t('component.categoryPriceChart.noData') }}
     </div>
   </UCard>
 </template>

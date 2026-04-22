@@ -15,6 +15,8 @@ import {
   type SubCategorySchema,
 } from '~/schemas/assetSchema'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   assetId: string
 }>()
@@ -487,8 +489,8 @@ async function startCamera(deviceId?: string) {
     }
   } catch (error: any) {
     cameraError.value = error.name === 'NotAllowedError'
-      ? 'Camera access denied. Please allow camera permissions.'
-      : 'Failed to access camera. Please check your device settings.'
+      ? t('component.barcodeScanner.cameraAccessDenied')
+      : t('component.barcodeScanner.cameraFailed')
   }
 }
 
@@ -753,8 +755,8 @@ onBeforeUnmount(() => {
 <template>
   <UModal
     v-model:open="open"
-    title="Edit Asset"
-    description="Update asset information"
+    :title="t('modal.asset.update.title')"
+    :description="t('modal.asset.update.subtitle')"
     :ui="{ content: 'max-w-6xl' }"
   >
     <template #body>
@@ -765,33 +767,33 @@ onBeforeUnmount(() => {
         @submit="onSubmit"
       >
         <div class="space-y-2">
-          <UFormField label="Serial ID" name="code" required>
-            <UInput v-model="state.code" class="w-full" placeholder="Serial ID" />
+          <UFormField :label="t('modal.asset.add.serialId')" name="code" required>
+            <UInput v-model="state.code" class="w-full" :placeholder="t('modal.asset.add.serialId')" />
           </UFormField>
 
-          <UFormField label="Name" name="name" required>
-            <UInput v-model="state.name" class="w-full" placeholder="Asset name" />
+          <UFormField :label="t('modal.asset.add.name')" name="name" required>
+            <UInput v-model="state.name" class="w-full" :placeholder="t('modal.asset.add.namePlaceholder')" />
           </UFormField>
 
-          <UFormField label="Description" name="description">
-            <UTextarea v-model="state.description" class="w-full" placeholder="Asset description (optional)" />
+          <UFormField :label="t('modal.asset.add.description')" name="description">
+            <UTextarea v-model="state.description" class="w-full" :placeholder="t('modal.asset.add.descriptionPlaceholder')" />
           </UFormField>
 
-          <UFormField label="Brand" name="brand">
-            <UInput v-model="state.brand" class="w-full" placeholder="Brand (optional)" />
+          <UFormField :label="t('modal.asset.add.brand')" name="brand">
+            <UInput v-model="state.brand" class="w-full" :placeholder="t('modal.asset.add.brandPlaceholder')" />
           </UFormField>
 
-          <UFormField label="Model" name="model">
-            <UInput v-model="state.model" class="w-full" placeholder="Model (optional)" />
+          <UFormField :label="t('modal.asset.add.model')" name="model">
+            <UInput v-model="state.model" class="w-full" :placeholder="t('modal.asset.add.modelPlaceholder')" />
           </UFormField>
 
-          <UFormField label="User" name="user" required>
-            <UInput v-model="state.user" class="w-full" placeholder="User" />
+          <UFormField :label="t('modal.asset.add.user')" name="user" required>
+            <UInput v-model="state.user" class="w-full" :placeholder="t('modal.asset.add.user')" />
           </UFormField>
         </div>
 
         <div class="space-y-2">
-          <UFormField label="Price" name="price" required>
+          <UFormField :label="t('modal.asset.add.price')" name="price" required>
             <UInput
               :model-value="displayPrice"
               class="w-full"
@@ -806,7 +808,7 @@ onBeforeUnmount(() => {
             </UInput>
           </UFormField>
 
-          <UFormField label="Purchase Date" name="purchaseDate" required>
+          <UFormField :label="t('modal.asset.add.purchaseDate')" name="purchaseDate" required>
             <UPopover>
               <UButton 
                 color="neutral" 
@@ -827,7 +829,7 @@ onBeforeUnmount(() => {
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-1">
               <label class="text-sm font-medium text-gray-700">
-                Asset Image
+                {{ t('modal.asset.add.image') }}
               </label>
             </div>
             <div class="flex items-center gap-2">
@@ -839,12 +841,12 @@ onBeforeUnmount(() => {
                 :disabled="saving"
                 @click="resetImageToOriginal"
               >
-                Reset
+                {{ t('common.reset') }}
               </UButton>
               <UButton
                 icon="i-lucide-camera"
                 variant="soft"
-                label="Take Photo"
+                :label="t('modal.asset.add.takePhoto')"
                 size="sm"
                 :disabled="saving"
                 @click="openCameraModal"
@@ -856,8 +858,8 @@ onBeforeUnmount(() => {
               <div class="relative">
                 <UFileUpload
                   v-if="!imagePreview"
-                  label="Drop your image here"
-                  description="JPEG, PNG, WebP (max. 5MB)"
+                  :label="t('modal.asset.add.dropImage')"
+                  :description="t('modal.asset.update.imageFormats')"
                   class="w-full min-h-48"
                   accept="image/jpeg,image/jpg,image/png,image/webp"
                   @update:model="handleImageUpload"
@@ -875,7 +877,7 @@ onBeforeUnmount(() => {
 
                   <div class="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
                     <UButton
-                      label="Change"
+                      :label="t('modal.asset.add.change')"
                       icon="i-lucide-image"
                       color="neutral"
                       variant="subtle"
@@ -883,7 +885,7 @@ onBeforeUnmount(() => {
                       @click="triggerFileUpload"
                     />
                     <UButton
-                      label="Retake"
+                      :label="t('modal.asset.add.retake')"
                       icon="i-lucide-camera"
                       color="neutral"
                       variant="subtle"
@@ -916,8 +918,8 @@ onBeforeUnmount(() => {
           <UFormField name="isLendable">
             <template #label>
               <div class="flex items-center gap-1">
-                <span>Is Lendable</span>
-                <UTooltip text="Can this asset be borrowed by users" :delay-duration="0">
+                <span>{{ t('modal.asset.add.isLendable') }}</span>
+                <UTooltip :text="t('modal.asset.add.isLendableHint')" :delay-duration="0">
                   <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
                 </UTooltip>
               </div>
@@ -929,12 +931,12 @@ onBeforeUnmount(() => {
             <template #label>
               <div class="flex items-center gap-1">
                 <span>
-                  Category
+                  {{ t('modal.asset.add.selectCategory') }}
                   <span class="text-red-500 ml-0.5">*</span>
                 </span>
 
                 <UTooltip
-                  text="Select the main category for this asset. You can also add or remove categories directly here."
+                  :text="t('modal.asset.add.categoryHint')"
                   :delay-duration="0"
                 >
                   <UIcon
@@ -950,7 +952,7 @@ onBeforeUnmount(() => {
                 :items="categoryItems"
                 value-key="id"
                 label-key="name"
-                placeholder="Select category"
+                :placeholder="t('modal.asset.add.selectCategory')"
                 class="flex-1"
               >
                 <template #item="{ item }">
@@ -979,12 +981,12 @@ onBeforeUnmount(() => {
             <template #label>
               <div class="flex items-center gap-1">
                 <span>
-                  Sub Category
+                  {{ t('modal.asset.add.selectSubCategory') }}
                   <span class="text-red-500 ml-0.5">*</span>
                 </span>
 
                 <UTooltip
-                  text="Select the subcategory that matches the main category. You can also add a new one if needed."
+                  :text="t('modal.asset.add.subCategoryHint')"
                   :delay-duration="0"
                 >
                   <UIcon
@@ -1000,7 +1002,7 @@ onBeforeUnmount(() => {
                 :items="subCategoryItems"
                 value-key="id"
                 label-key="name"
-                placeholder="Select sub category"
+                :placeholder="t('modal.asset.add.selectSubCategory')"
                 :disabled="!state.categoryId"
                 class="flex-1"
               >
@@ -1057,10 +1059,10 @@ onBeforeUnmount(() => {
             <div class="flex justify-between items-center">
               <div class="flex items-center gap-1">
                 <label class="text-sm font-medium text-gray-700">
-                  Labels
+                  {{ t('modal.asset.add.labels') }}
                 </label>
                 <UTooltip
-                  text="Define additional labels for this Asset (e.g. serial number, size, capacity)"
+                  :text="t('modal.asset.add.labelsHint')"
                   :delay-duration="0"
                 >
                   <UIcon
@@ -1070,7 +1072,7 @@ onBeforeUnmount(() => {
                 </UTooltip>
               </div>
               <UButton
-                label="Add"
+                :label="t('modal.asset.add.addLabel')"
                 icon="i-lucide-plus"
                 size="xs"
                 variant="soft"
@@ -1087,7 +1089,7 @@ onBeforeUnmount(() => {
                 <UFormField :name="`labels.${i}.key`" class="flex-1">
                   <UInput
                     v-model="label.key"
-                    placeholder="Key"
+                    :placeholder="t('modal.asset.add.key')"
                     class="w-full"
                     :class="{ 'border-red-500 focus:border-red-500': duplicateLabelIndices.has(i) }"
                   />
@@ -1099,7 +1101,7 @@ onBeforeUnmount(() => {
                 <UFormField :name="`labels.${i}.value`" class="flex-1">
                   <UInput
                     v-model="label.value"
-                    placeholder="Value"
+                    :placeholder="t('modal.asset.add.value')"
                     class="w-full"
                   />
                 </UFormField>
@@ -1115,21 +1117,21 @@ onBeforeUnmount(() => {
             </div>
 
             <p v-if="state.labels.length === 0" class="text-sm text-gray-500 italic">
-              No labels added yet
+              {{ t('modal.asset.add.noLabels') }}
             </p>
           </div>
         </div>
 
         <div class="col-span-3 flex justify-end gap-2 pt-4">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.add.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="open = false"
           />
           <UButton
-            label="Update"
+            :label="t('modal.asset.update.update')"
             color="primary"
             variant="solid"
             type="submit"
@@ -1143,14 +1145,14 @@ onBeforeUnmount(() => {
 
   <UModal
     v-model:open="isCameraModalOpen"
-    title="Take a Photo"
-    :description="`Press the button to capture a photo${availableCameras.length > 1 ? ` (${availableCameras.length} cameras available)` : ''}`"
+    :title="t('modal.asset.add.takePhotoTitle')"
+    :description="t('modal.asset.add.takePhotoHint')"
     @close="closeCameraModal"
   >
     <template #header>
       <div class="flex items-center justify-between w-full">
         <h3 class="text-lg font-semibold">
-          Take a Photo
+          {{ t('modal.asset.add.takePhotoTitle') }}
         </h3>
 
         <UButton
@@ -1208,7 +1210,7 @@ onBeforeUnmount(() => {
           <div v-if="!isCameraReady" class="absolute inset-0 flex items-center justify-center bg-gray-900/50">
             <div class="text-center text-white">
               <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto mb-2" />
-              <p>Opening camera...</p>
+              <p>{{ t('modal.asset.add.opening') }}</p>
             </div>
           </div>
         </div>
@@ -1217,13 +1219,13 @@ onBeforeUnmount(() => {
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.add.cancel')"
             color="neutral"
             variant="subtle"
             @click="closeCameraModal"
           />
           <UButton
-            label="Take Photo"
+            :label="t('modal.asset.add.takePhoto')"
             icon="i-lucide-camera"
             color="primary"
             variant="solid"
@@ -1237,21 +1239,21 @@ onBeforeUnmount(() => {
 
   <ConfirmModal
     v-model:open="isDeleteCategoryModalOpen"
-    title="Delete Category"
-    description="Are you sure you want to delete this category? This action cannot be undone."
-    confirm-label="Delete"
+    :title="t('modal.asset.add.deleteCategoryTitle')"
+    :description="t('modal.asset.add.deleteCategoryDesc')"
+    :confirm-label="t('common.delete')"
     :on-confirm="confirmDeleteCategory"
   />
 
   <ConfirmModal
     v-model:open="isDeleteSubCategoryModalOpen"
-    title="Delete Sub Category"
-    description="Are you sure you want to delete this sub category? This action cannot be undone."
-    confirm-label="Delete"
+    :title="t('modal.asset.add.deleteSubCategoryTitle')"
+    :description="t('modal.asset.add.deleteSubCategoryDesc')"
+    :confirm-label="t('common.delete')"
     :on-confirm="confirmDeleteSubCategory"
   />
 
-  <UModal v-model:open="openCategoryModal" title="Add Category" description="Create a new category">
+  <UModal v-model:open="openCategoryModal" :title="t('modal.category.addTitle')" :description="t('modal.category.addSubtitle')">
     <template #body>
       <UForm
         :schema="categorySchema"
@@ -1259,32 +1261,32 @@ onBeforeUnmount(() => {
         class="space-y-4"
         @submit="onAddCategory"
       >
-        <UFormField label="Name" name="name" required>
-          <UInput v-model="newCategory.name" class="w-full" placeholder="Category name" />
+        <UFormField :label="t('common.name')" name="name" required>
+          <UInput v-model="newCategory.name" class="w-full" :placeholder="t('modal.category.namePlaceholder')" />
         </UFormField>
 
         <UFormField name="hasMaintenance">
-          <USwitch v-model="newCategory.hasMaintenance" label="Has Maintenance" />
+          <USwitch v-model="newCategory.hasMaintenance" :label="t('modal.category.hasMaintenance')" />
         </UFormField>
 
         <UFormField name="hasHolder">
-          <USwitch v-model="newCategory.hasHolder" label="Has Holder" />
+          <USwitch v-model="newCategory.hasHolder" :label="t('modal.category.hasHolder')" />
         </UFormField>
 
         <UFormField name="hasLocation">
-          <USwitch v-model="newCategory.hasLocation" label="Has Location" />
+          <USwitch v-model="newCategory.hasLocation" :label="t('modal.category.hasLocation')" />
         </UFormField>
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.add.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="savingCategory"
             @click="openCategoryModal = false"
           />
           <UButton
-            label="Save"
+            :label="t('modal.asset.add.save')"
             color="primary"
             variant="solid"
             type="submit"
@@ -1295,7 +1297,7 @@ onBeforeUnmount(() => {
     </template>
   </UModal>
 
-  <UModal v-model:open="openSubCategoryModal" title="Add Sub Category" description="Create a new sub category">
+  <UModal v-model:open="openSubCategoryModal" :title="t('modal.subCategory.addTitle')" :description="t('modal.subCategory.addSubtitle')">
     <template #body>
       <UForm
         :schema="subCategorySchema"
@@ -1303,27 +1305,27 @@ onBeforeUnmount(() => {
         class="space-y-4"
         @submit="onAddSubCategory"
       >
-        <UFormField label="Category" name="categoryId">
+        <UFormField :label="t('modal.subCategory.selectCategory')" name="categoryId">
           <USelectMenu
             v-model="newSubCategory.categoryId"
             :items="categoryItems"
             value-key="id"
             label-key="name"
-            placeholder="Select category"
+            :placeholder="t('modal.subCategory.selectCategory')"
             class="w-full"
             disabled
           />
         </UFormField>
 
-        <UFormField label="Name" name="name" required>
-          <UInput v-model="newSubCategory.name" class="w-full" placeholder="Sub Category name" />
+        <UFormField :label="t('common.name')" name="name" required>
+          <UInput v-model="newSubCategory.name" class="w-full" :placeholder="t('modal.subCategory.namePlaceholder')" />
         </UFormField>
 
         <div class="space-y-2">
           <div class="flex justify-between items-center">
-            <label class="text-sm font-medium">Properties</label>
+            <label class="text-sm font-medium">{{ t('modal.subCategory.properties') }}</label>
             <UButton
-              label="Add Property"
+              :label="t('modal.subCategory.addProperty')"
               icon="i-lucide-plus"
               size="xs"
               @click="addSubCategoryProperty"
@@ -1332,7 +1334,7 @@ onBeforeUnmount(() => {
 
           <div v-for="(prop, i) in newSubCategory.properties" :key="i" class="flex gap-3 py-1 items-start">
             <UFormField :name="`properties.${i}.name`" class="flex-1">
-              <UInput v-model="prop.name" placeholder="Property name" class="w-full" />
+              <UInput v-model="prop.name" :placeholder="t('modal.subCategory.propertyNamePlaceholder')" class="w-full" />
             </UFormField>
 
             <UFormField :name="`properties.${i}.dataType`" class="w-30">
@@ -1362,14 +1364,14 @@ onBeforeUnmount(() => {
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.add.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="savingSubCategory"
             @click="openSubCategoryModal = false"
           />
           <UButton
-            label="Save"
+            :label="t('modal.asset.add.save')"
             color="primary"
             variant="solid"
             type="submit"

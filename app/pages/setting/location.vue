@@ -7,6 +7,8 @@ import { useRole } from '~/composables/useRole'
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 
+const { t } = useI18n()
+
 const search = ref('')
 const pageLimit = ref(10)
 const isDeleteModalOpen = ref(false)
@@ -57,9 +59,9 @@ async function confirmDelete() {
 
 function getRowItems(row: Row<any>) {
   return [
-    { type: 'label', label: 'Actions' },
+    { type: 'label', label: t('common.actions') },
     {
-      label: 'Edit',
+      label: t('common.edit'),
       icon: 'i-lucide-pencil',
       onSelect: () => {
         editingLocationId.value = row.original.id
@@ -67,7 +69,7 @@ function getRowItems(row: Row<any>) {
       }
     },
     {
-      label: 'Delete',
+      label: t('common.delete'),
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect: () => {
@@ -78,10 +80,10 @@ function getRowItems(row: Row<any>) {
   ]
 }
 
-const columns: TableColumn<any>[] = [
-  { accessorKey: 'name', header: 'Name' },
+const columns = computed<TableColumn<any>[]>(() => [
+  { accessorKey: 'name', header: t('page.locationSetting.name') },
   {
-    header: 'Branch',
+    header: t('page.locationSetting.branch'),
     cell: ({ row }) => {
       const branch = row.original.branch
       return `${branch.branchId} - ${branch.name}`
@@ -108,13 +110,13 @@ const columns: TableColumn<any>[] = [
       )
     }
   }
-]
+])
 </script>
 
 <template>
   <UDashboardPanel id="locations">
     <template #header>
-      <UDashboardNavbar title="Locations">
+      <UDashboardNavbar :title="t('page.locationSetting.title')">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -130,9 +132,9 @@ const columns: TableColumn<any>[] = [
       <RoleWrapper role="admin">
         <ConfirmModal
           v-model:open="isDeleteModalOpen"
-          title="Delete Location"
-          description="Are you sure? This action cannot be undone."
-          confirm-label="Delete"
+          :title="t('page.locationSetting.deleteTitle')"
+          :description="t('page.locationSetting.deleteDescription')"
+          :confirm-label="t('common.delete')"
           :on-confirm="confirmDelete"
         />
         <LocationUpdateModal
@@ -147,7 +149,7 @@ const columns: TableColumn<any>[] = [
             v-model="search"
             class="w-full"
             icon="i-lucide-search"
-            placeholder="Search locations..."
+            :placeholder="t('page.locationSetting.searchPlaceholder')"
           />
           <USelect
             v-model="pageLimit"
@@ -185,7 +187,7 @@ const columns: TableColumn<any>[] = [
         />
 
         <div v-if="apiPagination" class="text-sm text-muted mb-2">
-          Showing {{ showingFrom }} to {{ showingTo }} of {{ apiPagination.totalItems }} results
+          {{ t('common.showing') }} {{ showingFrom }} {{ t('common.to') }} {{ showingTo }} {{ t('common.of') }} {{ apiPagination.totalItems }} {{ t('common.results') }}
         </div>
       </div>
     </template>

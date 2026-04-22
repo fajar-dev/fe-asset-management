@@ -2,6 +2,7 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const toast = useToast()
+const { t } = useI18n()
 
 const open = ref(false)
 
@@ -19,33 +20,33 @@ const feedbackState = reactive({
 const links = computed<NavigationMenuItem[][]>(() => [[
 
   {
-    label: 'Home',
+    label: t('nav.home'),
     icon: 'i-lucide-house',
     to: '/',
     onSelect: () => (open.value = false),
     class: 'pb-1.5'
   },
   {
-    label: 'Asset',
+    label: t('nav.asset'),
     icon: 'i-lucide-package',
     to: '/asset',
     class: 'mt-1 py-1.5',
     onSelect: () => (open.value = false)
   },
   {
-    label: 'Setting',
+    label: t('nav.setting'),
     icon: 'i-lucide-settings',
     defaultOpen: true,
     type: 'trigger',
     class: 'mt-1 py-1.5',
     children: [
-      { label: 'Category', to: '/setting/category', onSelect: () => (open.value = false) },
-      { label: 'Sub Category', to: '/setting/sub-category', onSelect: () => (open.value = false) },
-      { label: 'Location', to: '/setting/location', onSelect: () => (open.value = false) }
+      { label: t('nav.category'), to: '/setting/category', onSelect: () => (open.value = false) },
+      { label: t('nav.subCategory'), to: '/setting/sub-category', onSelect: () => (open.value = false) },
+      { label: t('nav.location'), to: '/setting/location', onSelect: () => (open.value = false) }
     ]
   },
   {
-    label: 'Asset Loan',
+    label: t('nav.assetLoan'),
     icon: 'i-lucide-hand-helping',
     to: '/asset-loan',
     class: 'mt-1 py-1.5',
@@ -53,7 +54,7 @@ const links = computed<NavigationMenuItem[][]>(() => [[
   }
 ], [
   {
-    label: isFeedbackLoading.value ? 'Loading...' : 'Feedback',
+    label: isFeedbackLoading.value ? t('common.loading') : t('nav.feedback'),
     icon: 'i-lucide-message-square-warning',
     disabled: isFeedbackLoading.value,
     onSelect: async () => {
@@ -103,16 +104,16 @@ onMounted(() => {
   if (cookie.value === 'accepted') return
 
   toast.add({
-    title: 'We use first-party cookies to enhance your experience on our website.',
+    title: t('cookie.message'),
     duration: 0,
     close: false,
     actions: [{
-      label: 'Accept',
+      label: t('cookie.accept'),
       color: 'neutral',
       variant: 'outline',
       onClick: () => { cookie.value = 'accepted' }
     }, {
-      label: 'Opt out',
+      label: t('cookie.optOut'),
       color: 'neutral',
       variant: 'ghost'
     }]
@@ -145,9 +146,9 @@ onMounted(() => {
       <template #default="{ collapsed }">
         <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
         <div :class="collapsed ? 'px-0' : 'px-0' ">
-          <UTooltip :text="collapsed ? 'Scan Asset' : undefined" :popper="{ placement: 'right' }" class="w-full">
+          <UTooltip :text="collapsed ? t('nav.scanAsset') : undefined" :popper="{ placement: 'right' }" class="w-full">
             <UButton
-              :label="collapsed ? undefined : 'Scan Asset'"
+              :label="collapsed ? undefined : t('nav.scanAsset')"
               icon="i-lucide-scan-barcode"
               block
               :square="collapsed"

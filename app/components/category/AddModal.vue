@@ -3,6 +3,8 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { useCategory } from '~/composables/useCategory'
 import { categorySchema as schema, type CategorySchema as Schema } from '~/schemas/categorySchema'
 
+const { t } = useI18n()
+
 const emit = defineEmits<{ (e: 'created'): void }>()
 const open = ref(false)
 const saving = ref(false)
@@ -39,8 +41,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 </script>
 
 <template>
-  <UModal v-model:open="open" title="New Category" description="Add a new category">
-    <UButton label="New Category" icon="i-lucide-plus" />
+  <UModal v-model:open="open" :title="t('modal.category.addTitle')" :description="t('modal.category.addSubtitle')">
+    <UButton :label="t('modal.category.addTitle')" icon="i-lucide-plus" />
 
     <template #body>
       <UForm
@@ -50,15 +52,15 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         @submit="onSubmit"
       >
         <!-- Name -->
-        <UFormField label="Name" name="name" required>
-          <UInput v-model="state.name" class="w-full" placeholder="Category name" />
+        <UFormField :label="t('common.name')" name="name" required>
+          <UInput v-model="state.name" class="w-full" :placeholder="t('modal.category.namePlaceholder')" />
         </UFormField>
 
         <!-- Has Location -->
         <UFormField name="hasLocation">
           <div class="flex items-center gap-2">
-            <USwitch v-model="state.hasLocation" label="Has Location" />
-            <UTooltip text="Enable if this category involves asset locations" :delay-duration="0">
+            <USwitch v-model="state.hasLocation" :label="t('modal.category.hasLocation')" />
+            <UTooltip :text="t('modal.category.hasLocationHint')" :delay-duration="0">
               <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
             </UTooltip>
           </div>
@@ -67,8 +69,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         <!-- Has Maintenance -->
         <UFormField name="hasMaintenance">
           <div class="flex items-center gap-2">
-            <USwitch v-model="state.hasMaintenance" label="Has Maintenance" />
-            <UTooltip text="Enable if this category requires maintenance tracking" :delay-duration="0">
+            <USwitch v-model="state.hasMaintenance" :label="t('modal.category.hasMaintenance')" />
+            <UTooltip :text="t('modal.category.hasMaintenanceHint')" :delay-duration="0">
               <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
             </UTooltip>
           </div>
@@ -77,8 +79,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         <!-- Has Holder -->
         <UFormField name="hasHolder">
           <div class="flex items-center gap-2">
-            <USwitch v-model="state.hasHolder" label="Has Holder" />
-            <UTooltip text="Enable if this category is assigned to a person or holder" :delay-duration="0">
+            <USwitch v-model="state.hasHolder" :label="t('modal.category.hasHolder')" />
+            <UTooltip :text="t('modal.category.hasHolderHint')" :delay-duration="0">
               <UIcon name="i-lucide-info" class="w-4 h-4 text-gray-500 cursor-pointer" />
             </UTooltip>
           </div>
@@ -87,14 +89,14 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         <!-- Action Buttons -->
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.category.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="open = false"
           />
           <UButton
-            label="Save"
+            :label="t('modal.category.save')"
             color="primary"
             variant="solid"
             type="submit"

@@ -11,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: 'returned'): void }>()
 
 
+const { t } = useI18n()
 const open = ref(false)
 const saving = ref(false)
 const state = reactive({
@@ -124,8 +125,8 @@ defineExpose({
 <template>
   <UModal
     v-model:open="open"
-    title="Return Asset"
-    description="Take a photo of the asset to submit a return request"
+    :title="t('modal.asset.loan.returnTitle')"
+    :description="t('modal.asset.loan.returnSubtitle')"
     :prevent-close="saving"
   >
     <template #body>
@@ -135,7 +136,7 @@ defineExpose({
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Photo" name="image" required>
+        <UFormField :label="t('modal.asset.loan.photo')" name="image" required>
           <div class="space-y-4">
             <!-- Camera Preview -->
             <div v-if="isCameraOpen" class="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
@@ -163,7 +164,7 @@ defineExpose({
               <div class="absolute top-2 right-2">
                 <UButton
                   icon="i-lucide-refresh-cw"
-                  label="Retake"
+                  :label="t('modal.asset.loan.retake')"
                   size="xs"
                   color="neutral"
                   variant="soft"
@@ -175,29 +176,29 @@ defineExpose({
             <!-- Start Camera Button -->
             <div v-else class="flex flex-col items-center justify-center border-2 border-dashed border-default rounded-lg p-8 bg-muted/50">
               <UIcon name="i-lucide-camera" class="w-10 h-10 text-muted mb-3" />
-              <p class="text-sm text-muted mb-4 text-center">Take a photo of the asset to proceed</p>
+              <p class="text-sm text-muted mb-4 text-center">{{ t('modal.asset.loan.photoHint') }}</p>
               <UButton
-                label="Open Camera"
+                :label="t('modal.asset.loan.openCamera')"
                 icon="i-lucide-camera"
                 color="neutral"
                 variant="outline"
                 @click="startCamera"
               />
-              <p v-if="cameraError" class="text-xs text-red-500 mt-2">{{ cameraError }}</p>
+              <p v-if="cameraError" class="text-xs text-red-500 mt-2">{{ t('modal.asset.loan.cameraError') }}</p>
             </div>
           </div>
         </UFormField>
 
         <div class="flex justify-end gap-2 mt-6">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.loan.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="open = false"
           />
           <UButton
-            label="Submit"
+            :label="t('modal.asset.loan.submit')"
             color="primary"
             variant="solid"
             type="submit"

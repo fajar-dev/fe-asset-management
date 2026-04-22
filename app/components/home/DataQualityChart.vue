@@ -13,6 +13,7 @@ import {
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
+const { t } = useI18n()
 const { dataQuality, getDataQuality, loading } = useStatistic()
 
 onMounted(() => {
@@ -67,10 +68,10 @@ const chartOptions = {
     <template #header>
       <div>
         <h3 class="text-highlighted font-semibold">
-          Data Quality
+          {{ t('component.dataQualityChart.title') }}
         </h3>
         <p class="text-xs text-muted">
-          Missing asset information overview
+          {{ t('component.dataQualityChart.subtitle') }}
         </p>
       </div>
     </template>
@@ -84,7 +85,7 @@ const chartOptions = {
     </div>
 
     <div v-else class="flex justify-center items-center h-[275px] text-muted text-sm italic">
-      No data available
+      {{ t('component.dataQualityChart.noData') }}
     </div>
   </UCard>
 </template>

@@ -4,6 +4,7 @@ import { useAssetMaintenance } from '~/composables/useAssetMaintenance'
 import { maintenanceSchema, type MaintenanceSchema } from '~/schemas/maintenanceSchema'
 import { formatCalendarDate, calendarDateToISOString } from '~/utils/date'
 
+const { t } = useI18n()
 const props = defineProps<{ assetId: string }>()
 const emit = defineEmits<{ (e: 'created'): void }>()
 
@@ -46,8 +47,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 </script>
 
 <template>
-  <UModal v-model:open="open" title="New Maintenance" description="Add a new maintenance record">
-    <UButton label="Add Maintenance" icon="i-lucide-plus" :ui="{ label: 'hidden sm:inline-block' }" @click="open = true" />
+  <UModal v-model:open="open" :title="t('modal.asset.maintenance.addTitle')" :description="t('modal.asset.maintenance.addSubtitle')">
+    <UButton :label="t('modal.asset.maintenance.addTitle')" icon="i-lucide-plus" :ui="{ label: 'hidden sm:inline-block' }" @click="open = true" />
 
     <template #body>
       <UForm
@@ -56,7 +57,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Date" name="maintenanceAt" required>
+        <UFormField :label="t('modal.asset.maintenance.date')" name="maintenanceAt" required>
           <UPopover :popper="{ placement: 'bottom-start' }">
             <UButton
               icon="i-lucide-calendar"
@@ -71,24 +72,24 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           </UPopover>
         </UFormField>
 
-        <UFormField label="Note" name="note" required>
+        <UFormField :label="t('modal.asset.maintenance.note')" name="note" required>
           <UTextarea
             v-model="state.note"
-            placeholder="Note"
+            :placeholder="t('modal.asset.maintenance.note')"
             class="w-full"
           />
         </UFormField>
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.maintenance.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="open = false"
           />
           <UButton
-            label="Save"
+            :label="t('modal.asset.maintenance.save')"
             color="primary"
             variant="solid"
             type="submit"

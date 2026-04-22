@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { BrowserMultiFormatReader } from '@zxing/library'
 
+const { t } = useI18n()
+
 const emit = defineEmits<{
   scanned: [value: string]
   close: []
@@ -138,8 +140,8 @@ defineExpose({ openModal })
 <template>
   <UModal
     v-model:open="open"
-    title="Scan Barcode"
-    description="Arahkan kamera ke barcode / QR code buku"
+    :title="t('component.barcodeScanner.title')"
+    :description="t('component.barcodeScanner.instruction')"
     @close="closeModal"
   >
     <template #body>
@@ -170,7 +172,7 @@ defineExpose({ openModal })
           >
             <div class="text-center text-white">
               <UIcon name="i-lucide-camera" class="w-12 h-12 mx-auto mb-2 animate-pulse" />
-              <p class="text-sm">Membuka kamera...</p>
+              <p class="text-sm">{{ t('component.barcodeScanner.opening') }}</p>
             </div>
           </div>
 
@@ -181,9 +183,9 @@ defineExpose({ openModal })
           >
             <div class="text-center p-4 max-w-sm">
               <UIcon name="i-lucide-camera-off" class="w-12 h-12 text-red-500 mx-auto mb-3" />
-              <h3 class="font-semibold text-red-700 mb-2">Kamera Error</h3>
+              <h3 class="font-semibold text-red-700 mb-2">{{ t('component.barcodeScanner.error') }}</h3>
               <p class="text-red-600 text-sm mb-4">{{ cameraError }}</p>
-              <UButton label="Coba Lagi" size="sm" icon="i-lucide-refresh-cw" @click="retryCamera" />
+              <UButton :label="t('component.barcodeScanner.tryAgain')" size="sm" icon="i-lucide-refresh-cw" @click="retryCamera" />
             </div>
           </div>
 
@@ -202,13 +204,13 @@ defineExpose({ openModal })
         </div>
 
         <p class="text-xs text-muted text-center">
-          Arahkan kamera ke barcode / QR code buku
+          {{ t('component.barcodeScanner.instruction') }}
         </p>
 
         <!-- Footer -->
         <div class="flex justify-end">
           <UButton
-            label="Batal"
+            :label="t('component.barcodeScanner.cancel')"
             color="neutral"
             variant="subtle"
             @click="closeModal"

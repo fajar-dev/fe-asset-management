@@ -13,6 +13,7 @@ const UDropdownMenu = resolveComponent('UDropdownMenu')
 const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
+const { t } = useI18n()
 
 const assetDetail = ref<any>(null)
 const loading = ref(false)
@@ -77,9 +78,9 @@ async function confirmDelete() {
 
 function getRowItems(row: Row<any>) {
   return [
-    { type: 'label', label: 'Actions' },
+    { type: 'label', label: t('page.maintenance.actions') },
     {
-      label: 'Edit',
+      label: t('page.maintenance.edit'),
       icon: 'i-lucide-pencil',
       onSelect: () => {
         editingMaintenanceId.value = row.original.id
@@ -87,7 +88,7 @@ function getRowItems(row: Row<any>) {
       }
     },
     {
-      label: 'Delete',
+      label: t('common.delete'),
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect: () => {
@@ -99,9 +100,9 @@ function getRowItems(row: Row<any>) {
 }
 
 // columns
-const columns: TableColumn<any>[] = [
-  { accessorKey: 'maintenanceAt', header: 'Date' },
-  { accessorKey: 'note', header: 'Note' },
+const columns = computed<TableColumn<any>[]>(() => [
+  { accessorKey: 'maintenanceAt', header: t('page.maintenance.date') },
+  { accessorKey: 'note', header: t('page.maintenance.note') },
   {
     id: 'actions',
     cell: ({ row }) => {
@@ -123,7 +124,7 @@ const columns: TableColumn<any>[] = [
       )
     }
   }
-]
+])
 </script>
 
 <template>
@@ -162,9 +163,9 @@ const columns: TableColumn<any>[] = [
       <RoleWrapper role="admin">
         <ConfirmModal
           v-model:open="isDeleteModalOpen"
-          title="Delete Maintenance"
-          description="Are you sure? This action cannot be undone."
-          confirm-label="Delete"
+          :title="t('page.maintenance.deleteTitle')"
+          :description="t('page.maintenance.deleteDescription')"
+          :confirm-label="t('common.delete')"
           :on-confirm="confirmDelete"
         />
         <AssetMaintenanceUpdateModal
@@ -205,8 +206,8 @@ const columns: TableColumn<any>[] = [
         />
 
         <div v-if="apiPagination" class="text-sm text-muted mb-2">
-          Showing {{ showingFrom }} to {{ showingTo }} of
-          {{ apiPagination.totalItems }} results
+          {{ t('common.showing') }} {{ showingFrom }} {{ t('common.to') }} {{ showingTo }} {{ t('common.of') }}
+          {{ apiPagination.totalItems }} {{ t('common.results') }}
         </div>
       </div>
     </template>

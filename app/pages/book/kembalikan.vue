@@ -15,10 +15,22 @@ useSeoMeta({
 
 const route = useRoute()
 const toast = useToast()
-const tabs = [
-  { label: 'Pinjam', to: '/book/pinjam', icon: 'i-lucide-book-open' },
-  { label: 'Kembalikan', to: '/book/kembalikan', icon: 'i-lucide-book-check' },
-]
+const { t } = useI18n()
+
+const normalizePath = (path?: string) => {
+  if (!path) return '/'
+  const normalized = path.replace(/\/+$/, '')
+  return normalized || '/'
+}
+
+const isTabActive = (to: string) => {
+  return normalizePath(route.path) === normalizePath(to)
+}
+
+const tabs = computed(() => [
+  { label: t('page.book.borrow'), to: '/book/pinjam', icon: 'i-lucide-book-open' },
+  { label: t('page.book.return'), to: '/book/kembalikan', icon: 'i-lucide-book-check' },
+])
 
 const loading = ref(false)
 const loansLoading = ref(false)
@@ -48,7 +60,7 @@ async function startCamera() {
       videoRef.value.srcObject = mediaStream
     }
   } catch {
-    cameraError.value = 'Tidak dapat mengakses kamera. Pastikan izin kamera sudah diberikan.'
+    cameraError.value = t('page.book.cameraError')
     isCameraOpen.value = false
   }
 }
@@ -116,29 +128,28 @@ const loanOptions = computed(() => {
 
 async function onSubmit(payload: FormSubmitEvent<Schema>) {
   if (!photoFile.value) {
-    toast.add({ title: 'Foto wajib diisi', description: 'Ambil foto pengembalian terlebih dahulu sebagai bukti', color: 'error' })
+    toast.add({ title: t('page.book.photoRequired'), description: t('page.book.takeReturnPhoto'), color: 'error' })
     return
   }
   loading.value = true
   try {
     await bookService.returnLoan(state.assetHolderId!, state.purpose!, photoFile.value)
-    
+
     toast.add({
-      title: 'Pengembalian Berhasil',
-      description: 'Buku telah berhasil dikembalikan ke perpustakaan.',
+      title: t('page.book.returnSuccess'),
+      description: t('page.book.returnSuccessMessage'),
       color: 'success'
     })
 
-    // Reset form
     state.assetHolderId = undefined
     state.purpose = undefined
     capturedImage.value = null
     photoFile.value = null
-    await fetchUserLoans() // Refresh loans
+    await fetchUserLoans()
   } catch (err: any) {
     toast.add({
-      title: 'Gagal Mengembalikan',
-      description: err.data?.message || 'Terjadi kesalahan saat memproses pengembalian.',
+      title: t('page.book.returnFailed'),
+      description: err.data?.message || t('page.book.returnFailedMessage'),
       color: 'error'
     })
   } finally {
@@ -157,26 +168,24 @@ onUnmounted(() => {
 
 <template>
   <div class="space-y-5">
-    <!-- Header -->
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
         <UIcon name="i-lucide-library" class="w-5 h-5 text-primary" />
       </div>
       <div>
-        <h1 class="text-base font-semibold text-highlighted">Form Baca Buku</h1>
-        <p class="text-xs text-muted">Peminjaman &amp; pengembalian buku</p>
+        <h1 class="text-base font-semibold text-highlighted">{{ t('page.book.title') }}</h1>
+        <p class="text-xs text-muted">{{ t('page.book.subtitle') }}</p>
       </div>
     </div>
 
-    <!-- Tabs -->
     <div class="flex rounded-lg border border-default overflow-hidden">
       <NuxtLink
         v-for="tab in tabs"
         :key="tab.to"
         :to="tab.to"
         class="flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors"
-        :class="route.path === tab.to
-          ? 'bg-primary text-white pointer-events-none'
+        :class="isTabActive(tab.to)
+          ? 'bg-primary text-white'
           : 'text-muted hover:text-highlighted hover:bg-elevated'"
       >
         <UIcon :name="tab.icon" class="w-4 h-4" />
@@ -184,37 +193,34 @@ onUnmounted(() => {
       </NuxtLink>
     </div>
 
-    <!-- Form Kembalikan -->
     <UForm
       :schema="schema"
       :state="state"
       class="space-y-4"
       @submit="onSubmit"
     >
-      <UFormField label="Pilih Buku" name="assetHolderId" required>
+      <UFormField :label="t('page.book.selectBook')" name="assetHolderId" required>
         <USelect
           v-model="state.assetHolderId"
           :items="loanOptions"
           :loading="loansLoading"
-          placeholder="Pilih buku yang sedang Anda pinjam"
+          :placeholder="t('page.book.selectBookPlaceholder')"
           icon="i-lucide-book"
           class="w-full"
         />
       </UFormField>
 
-      <UFormField label="Link Goodreads" name="purpose" required>
+      <UFormField :label="t('page.book.goodreadsLink')" name="purpose" required>
         <UTextarea
           v-model="state.purpose"
-          placeholder="Tempel link buku di Goodreads"
+          :placeholder="t('page.book.goodreadsPlaceholder')"
           class="w-full"
           :rows="4"
         />
       </UFormField>
 
-      <!-- Foto Pengembalian -->
-      <UFormField label="Foto Pengembalian" name="image" required>
+      <UFormField :label="t('page.book.returnPhoto')" name="image" required>
         <div class="space-y-2">
-          <!-- Live Camera Preview -->
           <div v-if="isCameraOpen" class="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
             <video
               ref="videoRef"
@@ -234,30 +240,29 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Captured Photo Preview -->
           <div v-else-if="capturedImage" class="relative rounded-lg overflow-hidden aspect-[4/3] border border-default">
             <img :src="capturedImage" class="w-full h-full object-cover" alt="Foto pengembalian">
             <div class="absolute top-2 right-2">
               <UButton
                 icon="i-lucide-refresh-cw"
-                label="Ulang"
+                :label="t('page.book.retake')"
                 size="xs"
                 color="neutral"
                 variant="soft"
+                type="button"
                 @click="retakePhoto"
               />
             </div>
           </div>
 
-          <!-- Start Camera Button -->
           <div
             v-else
             class="flex flex-col items-center justify-center border-2 border-dashed border-default rounded-lg p-8"
           >
             <UIcon name="i-lucide-camera" class="w-10 h-10 text-muted mb-3" />
-            <p class="text-sm text-muted mb-4 text-center">Ambil foto buku yang dikembalikan</p>
+            <p class="text-sm text-muted mb-4 text-center">{{ t('page.book.returnPhotoSubtitle') }}</p>
             <UButton
-              label="Buka Kamera"
+              :label="t('page.book.openCamera')"
               icon="i-lucide-camera"
               color="neutral"
               variant="outline"
@@ -278,7 +283,7 @@ onUnmounted(() => {
         :loading="loading"
         icon="i-lucide-book-check"
       >
-        Kembalikan Buku
+        {{ t('page.book.returnBook') }}
       </UButton>
     </UForm>
   </div>

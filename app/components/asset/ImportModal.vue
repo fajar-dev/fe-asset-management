@@ -3,6 +3,7 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { useAsset } from '~/composables/useAsset'
 import { assetImportSchema as schema, type AssetImportSchema as Schema } from '~/schemas/importSchema'
 
+const { t } = useI18n()
 const emit = defineEmits<{ (e: 'created'): void }>()
 const open = defineModel<boolean>('open', { default: false })
 const saving = ref(false)
@@ -78,7 +79,7 @@ function handleCancel() {
         <div class="bg-white dark:bg-gray-800 rounded-lg p-6 flex flex-col items-center gap-4">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500" />
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            Importing assets...
+            {{ t('modal.asset.import.importing') }}
           </p>
         </div>
       </div>
@@ -86,8 +87,8 @@ function handleCancel() {
 
     <UModal
       v-model:open="open"
-      title="Import Assets"
-      description="Import assets in bulk using an Excel file."
+      :title="t('modal.asset.import.title')"
+      :description="t('modal.asset.import.subtitle')"
       :ui="{ content: 'max-w-sm' }"
     >
       <template #body>
@@ -101,7 +102,7 @@ function handleCancel() {
             <UFileUpload
               v-model="state.file"
               label=""
-              description="Drag and drop your files here or click to browse. (xlsx, xls)"
+              :description="t('modal.asset.import.dragDrop')"
               class="w-full min-h-48"
               accept=".xlsx,.xls"
             />
@@ -109,7 +110,7 @@ function handleCancel() {
 
           <div class="flex justify-between pt-4">
             <UButton
-              label="Template"
+              :label="t('modal.asset.import.template')"
               color="primary"
               variant="link"
               icon="i-lucide-file-text"
@@ -117,14 +118,14 @@ function handleCancel() {
             />
             <div class="flex gap-2">
               <UButton
-                label="Cancel"
+                :label="t('modal.asset.import.cancel')"
                 color="neutral"
                 variant="subtle"
                 :disabled="saving"
                 @click="handleCancel"
               />
               <UButton
-                label="Save"
+                :label="t('modal.asset.import.save')"
                 color="primary"
                 variant="solid"
                 type="submit"
@@ -138,7 +139,7 @@ function handleCancel() {
 
     <UModal
       v-model:open="showResultModal"
-      title="Import Result"
+      :title="t('modal.asset.import.resultTitle')"
       :ui="{ content: 'max-w-2xl' }"
       :dismissible="false"
     >
@@ -147,7 +148,7 @@ function handleCancel() {
           <div class="grid grid-cols-3 gap-4">
             <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                Total
+                {{ t('modal.asset.import.total') }}
               </p>
               <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {{ importResult.total }}
@@ -155,7 +156,7 @@ function handleCancel() {
             </div>
             <div class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                Success
+                {{ t('modal.asset.import.success') }}
               </p>
               <p class="text-2xl font-bold text-green-600 dark:text-green-400">
                 {{ importResult.success }}
@@ -163,7 +164,7 @@ function handleCancel() {
             </div>
             <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                Failed
+                {{ t('modal.asset.import.failed') }}
               </p>
               <p class="text-2xl font-bold text-red-600 dark:text-red-400">
                 {{ importResult.failed }}
@@ -172,7 +173,7 @@ function handleCancel() {
           </div>
           <div v-if="importResult.failed > 0" class="space-y-2">
             <h3 class="font-semibold text-sm text-gray-700 dark:text-gray-300">
-              Failed Items:
+              {{ t('modal.asset.import.failedItems') }}
             </h3>
             <div class="max-h-64 overflow-y-auto space-y-2">
               <div
@@ -192,7 +193,7 @@ function handleCancel() {
 
           <div class="flex justify-end pt-4">
             <UButton
-              label="Close"
+              :label="t('modal.asset.import.close')"
               color="neutral"
               variant="subtle"
               @click="closeResultModal"

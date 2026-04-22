@@ -10,6 +10,7 @@ const { logout, user: authUser } = useAuth()
 const colorMode = useColorMode()
 const router = useRouter()
 const toast = useToast()
+const { t, locale, setLocale } = useI18n()
 
 const currentUser = computed(() => {
   if (!authUser.value) {
@@ -49,6 +50,7 @@ async function handleLogout() {
     })
   }
 }
+
 const items = computed<DropdownMenuItem[][]>(() => ([
   [
     {
@@ -59,11 +61,11 @@ const items = computed<DropdownMenuItem[][]>(() => ([
   ],
   [
     {
-      label: 'Appearance',
+      label: t('menu.appearance'),
       icon: 'i-lucide-sun-moon',
       children: [
         {
-          label: 'Light',
+          label: t('menu.light'),
           icon: 'i-lucide-sun',
           type: 'checkbox',
           checked: colorMode.value === 'light',
@@ -73,7 +75,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([
           }
         },
         {
-          label: 'Dark',
+          label: t('menu.dark'),
           icon: 'i-lucide-moon',
           type: 'checkbox',
           checked: colorMode.value === 'dark',
@@ -83,7 +85,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([
           }
         },
         {
-          label: 'System',
+          label: t('menu.system'),
           icon: 'i-lucide-monitor',
           type: 'checkbox',
           checked: colorMode.value === 'system',
@@ -95,12 +97,36 @@ const items = computed<DropdownMenuItem[][]>(() => ([
       ]
     },
     {
-      label: 'My Feedback',
+      label: t('menu.language'),
+      icon: 'i-lucide-languages',
+      children: [
+        {
+          label: '🇺🇸 English',
+          type: 'checkbox',
+          checked: locale.value === 'en',
+          onSelect(e: Event) {
+            e.preventDefault()
+            setLocale('en')
+          }
+        },
+        {
+          label: '🇮🇩 Bahasa Indonesia',
+          type: 'checkbox',
+          checked: locale.value === 'id',
+          onSelect(e: Event) {
+            e.preventDefault()
+            setLocale('id')
+          }
+        }
+      ]
+    },
+    {
+      label: t('menu.myFeedback'),
       icon: 'i-lucide-message-square',
       to: '/my-feedback'
     },
     {
-      label: 'Log out',
+      label: t('menu.logout'),
       icon: 'i-lucide-log-out',
       onSelect: handleLogout
     }

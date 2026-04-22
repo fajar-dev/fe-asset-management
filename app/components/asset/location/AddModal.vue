@@ -5,6 +5,7 @@ import { useLocation } from '~/composables/useLocation'
 import { useAssetLocation } from '~/composables/useAssetLocation'
 import { assetLocationSelectSchema as schema, type AssetLocationSelectSchema as Schema } from '~/schemas/importSchema'
 
+const { t } = useI18n()
 const props = defineProps<{ assetId: string }>()
 const emit = defineEmits<{ (e: 'created'): void }>()
 
@@ -54,9 +55,9 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 </script>
 
 <template>
-  <UButton label="Relocate Asset" icon="i-lucide-move" :ui="{ label: 'hidden sm:inline-block' }" @click="openModal" />
+  <UButton :label="t('modal.asset.location.title')" icon="i-lucide-move" :ui="{ label: 'hidden sm:inline-block' }" @click="openModal" />
 
-  <UModal v-model:open="open" title="Relocate Asset" description="Assign a new location to this asset">
+  <UModal v-model:open="open" :title="t('modal.asset.location.title')" :description="t('modal.asset.location.subtitle')">
     <template #body>
       <UForm
         :schema="schema"
@@ -64,27 +65,27 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="New Location" name="locationId" required>
+        <UFormField :label="t('modal.asset.location.newLocation')" name="locationId" required>
           <UInputMenu
             v-model="value"
             class="w-full"
             value-key="id"
             label-key="name"
             :items="items"
-            placeholder="Select new location"
+            :placeholder="t('modal.asset.location.selectLocation')"
           />
         </UFormField>
 
         <div class="flex justify-end gap-2">
           <UButton
-            label="Cancel"
+            :label="t('modal.asset.location.cancel')"
             color="neutral"
             variant="subtle"
             :disabled="saving"
             @click="open = false"
           />
           <UButton
-            label="Relocate"
+            :label="t('modal.asset.location.relocate')"
             color="primary"
             variant="solid"
             type="submit"
