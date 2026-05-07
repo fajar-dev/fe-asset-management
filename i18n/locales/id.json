@@ -594,11 +594,26 @@
     },
     "barcodeScanner": {
       "title": "Scan Barcode",
+      "subtitle": "Pilih metode pemindaian barcode",
       "instruction": "Arahkan kamera ke barcode / QR code buku",
+      "conventional": "Konvensional",
+      "withAI": "Dengan AI",
       "opening": "Membuka kamera...",
       "error": "Kamera Error",
       "tryAgain": "Coba Lagi",
-      "cancel": "Batal"
+      "cancel": "Batal",
+      "howToScan": "Cara scan barcode:",
+      "scanTip1": "Pegang perangkat dengan stabil",
+      "scanTip2": "Arahkan kamera ke barcode",
+      "scanTip3": "Barcode akan terdeteksi otomatis",
+      "scanTip4": "Pastikan pencahayaan dan fokus baik",
+      "howToScanAI": "Cara scan dengan AI:",
+      "aiTip1": "Arahkan kamera ke barcode buku",
+      "aiTip2": "Tekan tombol kamera untuk mengambil foto",
+      "aiTip3": "AI akan membaca barcode dari foto",
+      "analyzingAI": "Menganalisis dengan AI...",
+      "aiError": "Scan Gagal",
+      "aiErrorMessage": "Barcode tidak terdeteksi pada foto. Silakan coba lagi."
     },
     "subCategoryChart": {
       "title": "Sub Kategori",

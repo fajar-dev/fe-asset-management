@@ -614,11 +614,26 @@
     },
     "barcodeScanner": {
       "title": "Scan Barcode",
+      "subtitle": "Choose your barcode scanning method",
       "instruction": "Point camera at the book barcode / QR code",
+      "conventional": "Conventional",
+      "withAI": "With AI",
       "opening": "Opening camera...",
       "error": "Camera Error",
       "tryAgain": "Try Again",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "howToScan": "How to scan barcode:",
+      "scanTip1": "Hold your device steady",
+      "scanTip2": "Point camera at the barcode",
+      "scanTip3": "Barcode will be detected automatically",
+      "scanTip4": "Ensure good lighting and focus",
+      "howToScanAI": "How to scan with AI:",
+      "aiTip1": "Point camera at the book barcode",
+      "aiTip2": "Press the camera button to take a photo",
+      "aiTip3": "AI will read the barcode from the photo",
+      "analyzingAI": "Analyzing with AI...",
+      "aiError": "Scan Failed",
+      "aiErrorMessage": "Barcode not detected in the photo. Please try again."
     }
   },
   "cookie": {
