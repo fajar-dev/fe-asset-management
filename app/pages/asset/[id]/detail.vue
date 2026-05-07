@@ -2,7 +2,6 @@
 import { h } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import { useAssetHolder } from '~/composables/useAssetHolder'
-import { useAssetMaintenance } from '~/composables/useAssetMaintenance'
 import { formatCurrency, formatStatusLabel, getStatusColor } from '~/utils/formatters'
 
 const UAvatar = resolveComponent('UAvatar')
@@ -23,7 +22,6 @@ const isStatusModalOpen = ref(false)
 const { getAssetById, getAssetLogs } = useAsset()
 const { statuses, loading: statusLoading, fetchAssetStatuses } = useAssetStatus()
 const { holders, loading: holderLoading, fetchHolders } = useAssetHolder()
-const { maintenances, loading: maintenanceLoading, fetchMaintenances } = useAssetMaintenance()
 
 function openImageModal(url: string) {
   previewImage.value = url
@@ -34,11 +32,7 @@ function closeImageModal() {
 }
 
 async function loadHolders() {
-  await fetchHolders(assetId, '', 1, 10)
-}
-
-async function loadMaintenances() {
-  await fetchMaintenances(assetId, undefined, 1, 10)
+  await fetchHolders(assetId, '', 1, 5)
 }
 
 async function loadAssetData() {
@@ -47,13 +41,7 @@ async function loadAssetData() {
   if (res) {
     assetDetail.value = res.data
     await loadLogs()
-
-    // Load related data
-    const promises = []
-    if (hasHolder.value) promises.push(loadHolders())
-    if (hasMaintenance.value) promises.push(loadMaintenances())
-
-    await Promise.all(promises)
+    if (hasHolder.value) await loadHolders()
   } else {
     await router.push(`/asset`)
   }
@@ -66,10 +54,6 @@ async function handleAssetUpdated() {
 
 const hasHolder = computed(() => {
   return assetDetail.value?.subCategory?.category?.hasHolder ?? false
-})
-
-const hasMaintenance = computed(() => {
-  return assetDetail.value?.subCategory?.category?.hasMaintenance ?? false
 })
 
 const hasActiveHolder = computed(() => {
@@ -100,14 +84,14 @@ const holderColumns = computed<TableColumn<any>[]>(() => [
   {
     accessorKey: 'purpose',
     header: t('page.assetDetail.purpose'),
-    cell: ({ row }) => h('p', { class: 'text-xs whitespace-normal min-w-[100px] line-clamp-2' }, row.original.purpose)
+    cell: ({ row }) => h('p', { class: 'whitespace-normal min-w-[100px] line-clamp-2' }, row.original.purpose)
   },
   {
     accessorKey: 'assignedAt',
     header: t('page.assetDetail.assigned'),
     cell: ({ row }) => {
       const d = row.original.assignedAt ? new Date(row.original.assignedAt) : null
-      return h('span', { class: 'text-xs whitespace-nowrap' }, d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : '-')
+      return h('span', { class: 'whitespace-nowrap' }, d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : '-')
     }
   },
   {
@@ -115,21 +99,8 @@ const holderColumns = computed<TableColumn<any>[]>(() => [
     header: t('page.assetDetail.returned'),
     cell: ({ row }) => {
       const d = row.original.returnedAt ? new Date(row.original.returnedAt) : null
-      return h('span', { class: 'text-xs whitespace-nowrap' }, d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : '-')
+      return h('span', { class: 'whitespace-nowrap' }, d ? `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}` : '-')
     }
-  }
-])
-
-const maintenanceColumns = computed<TableColumn<any>[]>(() => [
-  {
-    accessorKey: 'maintenanceAt',
-    header: t('page.maintenance.date'),
-    cell: ({ row }) => h('span', { class: 'text-xs whitespace-nowrap' }, row.original.maintenanceAt)
-  },
-  {
-    accessorKey: 'note',
-    header: t('page.maintenance.note'),
-    cell: ({ row }) => h('p', { class: 'text-xs whitespace-normal min-w-[120px]' }, row.original.note)
   }
 ])
 
@@ -139,19 +110,35 @@ const statusColumns = computed<TableColumn<any>[]>(() => [
     header: t('page.assetDetail.status'),
     cell: ({ row }) => {
       const type = (row.original as any).type
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color: getStatusColor(type), size: 'sm' }, () => formatStatusLabel(type))
+      return h(UBadge, { class: 'capitalize', variant: 'subtle', color: getStatusColor(type)}, () => formatStatusLabel(type))
     }
   },
   {
     accessorKey: 'note',
     header: t('page.maintenance.note'),
-    cell: ({ row }) => h('p', { class: 'text-xs truncate max-w-[150px]' }, (row.original as any).note || '-')
+    cell: ({ row }) => h('p', { class: 'truncate max-w-[150px]' }, (row.original as any).note || '-')
   },
   {
     accessorKey: 'createdAt',
     header: t('page.maintenance.date'),
-    cell: ({ row }) => h('span', { class: 'text-xs whitespace-nowrap' }, new Date((row.original as any).createdAt).toLocaleDateString('id-ID'))
-  }
+    cell: ({ row }) => h('span', { class: 'whitespace-nowrap' }, new Date((row.original as any).createdAt).toLocaleDateString('id-ID'))
+  },
+  {
+    accessorKey: 'user',
+    header: t('page.assetDetail.employee'),
+    cell: ({ row }) => {
+      return h('div', { class: 'flex items-center gap-2 min-w-[120px]' }, [
+        h(UAvatar, {
+          src: row.original.user.avatar,
+          size: 'md'
+        }),
+        h('div', { class: 'min-w-0' }, [
+          h('p', { class: 'font-medium text-highlighted text- truncate' }, row.original.user.name),
+          h('p', { class: 'text-xs opacity-70' }, row.original.user.employeeId)
+        ])
+      ])
+    }
+  },
 ])
 
 interface LocalTimelineItem {
@@ -500,118 +487,74 @@ async function loadLogs() {
             </div>
           </div>
 
-          <!-- Holders & Maintenance Section -->
+          <!-- Holders & Status Section -->
           <div
-            v-if="hasHolder || hasMaintenance"
+            v-if="hasHolder || statuses?.length > 0"
             class="grid gap-5 xl:col-span-2 lg:col-span-1 content-start"
           >
             <div v-if="hasHolder">
-            <UCard>
-              <template #header>
-                <div class="flex items-center justify-between">
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <UIcon name="i-lucide-users" class="w-5 h-5" />
-                    {{ t('page.assetDetail.assetHolders') }}
-                  </h3>
-                  <UButton
-                    :label="t('page.assetDetail.seeMore')"
-                    variant="ghost"
-                    color="primary"
-                    size="sm"
-                    trailing-icon="i-lucide-arrow-right"
-                    :to="`/asset/${assetId}/holder`"
+              <UCard>
+                <template #header>
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <UIcon name="i-lucide-users" class="w-5 h-5" />
+                      {{ t('page.assetDetail.assetHolders') }}
+                    </h3>
+                    <UButton
+                      :label="t('page.assetDetail.seeMore')"
+                      variant="ghost"
+                      color="primary"
+                      
+                      trailing-icon="i-lucide-arrow-right"
+                      :to="`/asset/${assetId}/holder`"
+                    />
+                  </div>
+                </template>
+                <div class="overflow-x-auto">
+                  <UTable
+                    :data="holders"
+                    :columns="holderColumns"
+                    :loading="holderLoading"
+                    class="w-full"
+                    :ui="{
+                      base: 'table-auto border-separate border-spacing-0',
+                      thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+                      tbody: '[&>tr]:last:[&>td]:border-b-0',
+                      th: 'py-2 px-3 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap',
+                      td: 'px-3 py-2 border-b border-default'
+                    }"
                   />
                 </div>
-              </template>
-              <div class="overflow-x-auto">
-                <UTable
-                  :data="holders"
-                  :columns="holderColumns"
-                  :loading="holderLoading"
-                  class="w-full"
-                  :ui="{
-                    base: 'table-auto border-separate border-spacing-0',
-                    thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-                    tbody: '[&>tr]:last:[&>td]:border-b-0',
-                    th: 'py-2 px-3 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap text-xs',
-                    td: 'px-3 py-2 border-b border-default'
-                  }"
-                />
-              </div>
-            </UCard>
-          </div>
+              </UCard>
+            </div>
 
-          <div v-if="statuses?.length > 0">
-            <UCard>
-              <template #header>
-                <div class="flex items-center justify-between">
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <UIcon name="i-lucide-activity" class="w-5 h-5" />
-                    {{ t('page.assetDetail.statusHistory') }}
-                  </h3>
-                  <UButton
-                    :label="t('page.assetDetail.seeMore')"
-                    variant="ghost"
-                    color="primary"
-                    size="sm"
-                    trailing-icon="i-lucide-arrow-right"
-                    :to="`/asset/${assetId}/status`"
+            <div v-if="statuses?.length > 0">
+              <UCard>
+                <template #header>
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <UIcon name="i-lucide-activity" class="w-5 h-5" />
+                      {{ t('page.assetDetail.statusHistory') }}
+                    </h3>
+                  </div>
+                </template>
+                <div class="overflow-x-auto">
+                  <UTable
+                    :data="statuses.slice(0, 5)"
+                    :columns="statusColumns"
+                    :loading="statusLoading"
+                    class="w-full"
+                    :ui="{
+                      base: 'table-auto border-separate border-spacing-0',
+                      thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+                      tbody: '[&>tr]:last:[&>td]:border-b-0',
+                      th: 'py-2 px-3 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap',
+                      td: 'px-3 py-2 border-b border-default'
+                    }"
                   />
                 </div>
-              </template>
-              <div class="overflow-x-auto">
-                <UTable
-                  :data="statuses.slice(0, 5)"
-                  :columns="statusColumns"
-                  :loading="statusLoading"
-                  class="w-full"
-                  :ui="{
-                    base: 'table-auto border-separate border-spacing-0',
-                    thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-                    tbody: '[&>tr]:last:[&>td]:border-b-0',
-                    th: 'py-2 px-3 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap text-xs',
-                    td: 'px-3 py-2 border-b border-default'
-                  }"
-                />
-              </div>
-            </UCard>
-          </div>
-
-          <div v-if="hasMaintenance">
-            <UCard>
-              <template #header>
-                <div class="flex items-center justify-between">
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <UIcon name="i-lucide-wrench" class="w-5 h-5" />
-                    {{ t('page.assetDetail.maintenanceHistory') }}
-                  </h3>
-                  <UButton
-                    :label="t('page.assetDetail.seeMore')"
-                    variant="ghost"
-                    color="primary"
-                    size="sm"
-                    trailing-icon="i-lucide-arrow-right"
-                    :to="`/asset/${assetId}/maintenance`"
-                  />
-                </div>
-              </template>
-              <div class="overflow-x-auto">
-                <UTable
-                  :data="maintenances"
-                  :columns="maintenanceColumns"
-                  :loading="maintenanceLoading"
-                  class="w-full"
-                  :ui="{
-                    base: 'table-auto border-separate border-spacing-0',
-                    thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-                    tbody: '[&>tr]:last:[&>td]:border-b-0',
-                    th: 'py-2 px-3 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r whitespace-nowrap text-xs',
-                    td: 'px-3 py-2 border-b border-default'
-                  }"
-                />
-              </div>
-            </UCard>
-          </div>
+              </UCard>
+            </div>
           </div>
         </div>
       </div>
