@@ -1,8 +1,25 @@
 import { BaseService } from '~/services/base'
 import type { BookResponse, LoanListResponse } from '~/types/book'
 
+export interface BarcodeScanResponse {
+  success: boolean
+  statusCode: number
+  message: string
+  data: { barcode: string, type: string }
+}
+
 export class BookService extends BaseService {
   private basePath = '/v2/book'
+
+  async scanBarcodeByImage(image: File): Promise<BarcodeScanResponse> {
+    const formData = new FormData()
+    formData.append('image', image)
+    return await this.api<BarcodeScanResponse>('/v1/gemini/scan-barcode', {
+      method: 'POST',
+      body: formData,
+      headers: this.getAuthHeader(),
+    })
+  }
 
   async getBookByCode(code: string): Promise<BookResponse> {
     return await this.api<BookResponse>(`${this.basePath}/${code}`, {
