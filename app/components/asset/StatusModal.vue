@@ -19,21 +19,25 @@ const { updateAssetStatus, loading } = useAssetStatus()
 
 const state = reactive({
   type: undefined as any,
-  note: ''
+  note: '',
+  isTransferred: false,
+  attachments: [] as File[]
 })
+
+const canAddMoreImages = computed(() => !state.attachments || state.attachments.length < 3)
 
 watch(open, (isOpen) => {
   if (isOpen) {
     state.type = props.currentStatus || 'active'
     state.note = ''
+    state.isTransferred = false
+    state.attachments = []
   }
 })
 
 const statusOptions = computed(() => [
   { label: t('modal.asset.status.active'), value: 'active', icon: 'i-lucide-check-circle', color: 'text-green-500' },
-  { label: t('modal.asset.status.sold'), value: 'sold', icon: 'i-lucide-shopping-cart', color: 'text-yellow-500' },
-  { label: t('modal.asset.status.granted'), value: 'granted', icon: 'i-lucide-gift', color: 'text-blue-500' },
-  { label: t('modal.asset.status.disposed'), value: 'disposed', icon: 'i-lucide-trash-2', color: 'text-red-500' }
+  { label: t('modal.asset.status.inactive'), value: 'inactive', icon: 'i-lucide-x-circle', color: 'text-red-500' }
 ])
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
@@ -84,6 +88,49 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             class="w-full"
             :placeholder="t('modal.asset.status.notePlaceholder')"
           />
+        </UFormField>
+
+        <UFormField name="isTransferred">
+          <UCheckbox
+            v-model="state.isTransferred"
+            :label="t('modal.asset.status.isTransferred')"
+          />
+        </UFormField>
+
+        <UFormField name="attachments" :label="t('modal.asset.status.attachments')">
+          <UFileUpload
+            v-model="state.attachments"
+            layout="grid"
+            multiple
+            :interactive="false"
+            class="w-full min-h-25"
+          >
+            <template #actions="{ open }">
+              <UButton
+                :label="t('modal.asset.status.selectAttachments')"
+                icon="i-lucide-upload"
+                color="neutral"
+                variant="outline"
+                :disabled="!canAddMoreImages"
+                @click="open()"
+              />
+            </template>
+            <template #files-top="{ open, files }">
+              <div v-if="files?.length" class="mb-2 flex items-center justify-between">
+                <p class="font-bold">
+                  {{ t('modal.asset.status.attachments') }} ({{ files.length }})
+                </p>
+                <UButton
+                  icon="i-lucide-plus"
+                  :label="t('modal.asset.status.addMore')"
+                  color="neutral"
+                  variant="outline"
+                  :disabled="!canAddMoreImages"
+                  @click="open()"
+                />
+              </div>
+            </template>
+          </UFileUpload>
         </UFormField>
 
         <div class="flex justify-end gap-2 pt-2">
