@@ -18,9 +18,7 @@ export function formatStatusLabel(status: string): string {
 
 const STATUS_COLOR_MAP: Record<string, 'success' | 'error' | 'warning' | 'primary' | 'neutral'> = {
   active: 'success',
-  disposed: 'error',
-  sold: 'warning',
-  granted: 'primary'
+  inactive: 'error'
 }
 
 export function getStatusColor(status: string): 'success' | 'error' | 'warning' | 'primary' | 'neutral' {

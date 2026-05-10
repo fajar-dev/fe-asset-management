@@ -96,9 +96,7 @@ const pageLimitOptions = [10, 25, 50, 100, 200, 500]
 
 const statusItems = computed<SelectMenuItem[]>(() => [
   { label: t('page.asset.status.active'), id: 'active' },
-  { label: t('page.asset.status.sold'), id: 'sold' },
-  { label: t('page.asset.status.granted'), id: 'granted' },
-  { label: t('page.asset.status.disposed'), id: 'disposed' }
+  { label: t('page.asset.status.inactive'), id: 'inactive' }
 ])
 
 onMounted(async () => {
