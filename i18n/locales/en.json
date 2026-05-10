@@ -57,7 +57,9 @@
     "back": "Back",
     "areYouSure": "Are you sure?",
     "cannotBeUndone": "Are you sure? This action cannot be undone.",
-    "or": "OR"
+    "or": "OR",
+    "yes": "Yes",
+    "no": "No"
   },
   "page": {
     "home": {
@@ -124,9 +126,7 @@
       },
       "status": {
         "active": "Active",
-        "sold": "Sold",
-        "granted": "Granted",
-        "disposed": "Disposed"
+        "inactive": "Inactive"
       },
       "actions": {
         "location": "Location",
@@ -160,7 +160,9 @@
       "assigned": "Assigned",
       "returned": "Returned",
       "statusHistory": "Status History",
-      "maintenanceHistory": "Maintenance History"
+      "maintenanceHistory": "Maintenance History",
+      "isTransferred": "Transferred",
+      "attachments": "Attachments"
     },
     "holder": {
       "employee": "Employee",
@@ -427,10 +429,12 @@
         "subtitle": "Update the current status of this asset",
         "selectStatus": "Select new status",
         "active": "Active",
-        "sold": "Sold",
-        "granted": "Granted",
-        "disposed": "Disposed",
+        "inactive": "Inactive",
         "notePlaceholder": "Optional note about this status change...",
+        "isTransferred": "Asset Transfered to Nusaware?",
+        "attachments": "Attachments (Max 3)",
+        "selectAttachments": "Select attachments",
+        "addMore": "Add more",
         "cancel": "Cancel",
         "update": "Update Status"
       },
