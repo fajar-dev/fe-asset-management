@@ -6,6 +6,7 @@ import { formatCurrency, formatStatusLabel, getStatusColor } from '~/utils/forma
 
 const UAvatar = resolveComponent('UAvatar')
 const UBadge = resolveComponent('UBadge')
+const UButton = resolveComponent('UButton')
 const router = useRouter()
 const route = useRoute()
 const assetId = route.params.id as string
@@ -119,6 +120,37 @@ const statusColumns = computed<TableColumn<any>[]>(() => [
     cell: ({ row }) => h('p', { class: 'truncate max-w-[150px]' }, (row.original as any).note || '-')
   },
   {
+    accessorKey: 'isTransferred',
+    header: t('page.assetDetail.isTransferred'),
+    cell: ({ row }) => {
+      const val = (row.original as any).isTransferred
+      return h(UBadge, {
+        variant: 'subtle',
+        color: val ? 'success' : 'neutral'
+      }, () => val ? t('common.yes') : t('common.no'))
+    }
+  },
+  {
+    accessorKey: 'attachmentUrls',
+    header: t('page.assetDetail.attachments'),
+    cell: ({ row }) => {
+      const files: string[] = (row.original as any).attachmentUrls ?? []
+      if (!files.length) return h('span', { class: 'text-gray-400 text-xs' }, '-')
+      return h('div', { class: 'flex gap-1 flex-wrap' },
+        files.map((url, i) =>
+          h(UButton, {
+            icon: 'i-lucide-file',
+            size: 'xs',
+            color: 'neutral',
+            variant: 'outline',
+            title: `File ${i + 1}`,
+            onClick: () => window.open(url, '_blank', 'noopener')
+          })
+        )
+      )
+    }
+  },
+  {
     accessorKey: 'createdAt',
     header: t('page.maintenance.date'),
     cell: ({ row }) => h('span', { class: 'whitespace-nowrap' }, new Date((row.original as any).createdAt).toLocaleDateString('id-ID'))
@@ -163,13 +195,11 @@ function getIconByLogType(type: string): string {
 
 const STATUS_ICON_MAP: Record<string, string> = {
   active: 'i-lucide-check-circle',
-  disposed: 'i-lucide-trash-2',
-  sold: 'i-lucide-shopping-cart',
-  granted: 'i-lucide-gift'
+  inactive: 'i-lucide-x-circle'
 }
 const STATUS_TEXT_COLOR_MAP: Record<string, string> = {
   active: 'text-green-500',
-  disposed: 'text-red-500'
+  inactive: 'text-red-500'
 }
 
 function getStatusIcon(status: string): string {
@@ -250,7 +280,7 @@ async function loadLogs() {
             />
             <UButton
               :label="t('page.assetDetail.changeStatus')"
-              icon="i-lucide-pencil"
+              icon="i-lucide-arrow-right-left"
               color="neutral"
               variant="outline"
               :disabled="loading"
@@ -489,7 +519,7 @@ async function loadLogs() {
 
           <!-- Holders & Status Section -->
           <div
-            v-if="hasHolder || statuses?.length > 0"
+            v-if="hasHolder"
             class="grid gap-5 xl:col-span-2 lg:col-span-1 content-start"
           >
             <div v-if="hasHolder">
@@ -528,7 +558,7 @@ async function loadLogs() {
               </UCard>
             </div>
 
-            <div v-if="statuses?.length > 0">
+            <div>
               <UCard>
                 <template #header>
                   <div class="flex items-center justify-between">

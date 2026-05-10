@@ -57,7 +57,9 @@
     "back": "Kembali",
     "areYouSure": "Apakah Anda yakin?",
     "cannotBeUndone": "Apakah Anda yakin? Tindakan ini tidak dapat dibatalkan.",
-    "or": "ATAU"
+    "or": "ATAU",
+    "yes": "Ya",
+    "no": "Tidak"
   },
   "page": {
     "home": {
@@ -124,9 +126,7 @@
       },
       "status": {
         "active": "Aktif",
-        "sold": "Terjual",
-        "granted": "Diberikan",
-        "disposed": "Dibuang"
+        "inactive": "Tidak Aktif"
       },
       "actions": {
         "location": "Lokasi",
@@ -160,7 +160,9 @@
       "assigned": "Ditetapkan",
       "returned": "Dikembalikan",
       "statusHistory": "Riwayat Status",
-      "maintenanceHistory": "Riwayat Pemeliharaan"
+      "maintenanceHistory": "Riwayat Pemeliharaan",
+      "isTransferred": "Dialihkan",
+      "attachments": "Lampiran"
     },
     "holder": {
       "employee": "Karyawan",
@@ -427,10 +429,12 @@
         "subtitle": "Perbarui status aset saat ini",
         "selectStatus": "Pilih status baru",
         "active": "Aktif",
-        "sold": "Terjual",
-        "granted": "Diberikan",
-        "disposed": "Dibuang",
+        "inactive": "Tidak Aktif",
         "notePlaceholder": "Catatan opsional tentang perubahan status ini...",
+        "isTransferred": "Transfer Asset ke Nusaware?",
+        "attachments": "Lampiran (Maks 3)",
+        "selectAttachments": "Pilih lampiran",
+        "addMore": "Tambah lagi",
         "cancel": "Batal",
         "update": "Perbarui Status"
       },
