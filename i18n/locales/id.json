@@ -122,7 +122,10 @@
         "selectLocation": "Pilih lokasi terakhir",
         "searchLocation": "Cari lokasi...",
         "selectHolder": "Pilih pemegang",
-        "searchEmployee": "Cari karyawan..."
+        "searchEmployee": "Cari karyawan...",
+        "hasHolder": "Punya Pemegang",
+        "noHolder": "Tanpa Pemegang",
+        "allNoFilter": "Semua (tanpa filter)"
       },
       "status": {
         "active": "Aktif",

@@ -63,7 +63,7 @@ const selectedCategoryId = ref<string[]>([])
 const selectedSubCategoryId = ref<string[]>([])
 const selectedStatus = ref<string[]>([])
 const selectedEmployee = ref<string[]>([])
-const selectedHasHolder = ref<boolean>(false)
+const selectedHasHolder = ref<string | undefined>(undefined)
 const selectedLocation = ref<string[]>([])
 const selectedBranch = ref<string[]>([])
 const selectedUser = ref<string | undefined>(undefined)
@@ -76,7 +76,7 @@ const tempCategoryId = ref<string[]>([])
 const tempSubCategoryId = ref<string[]>([])
 const tempStatus = ref<string[]>([])
 const tempEmployee = ref<string[]>([])
-const tempHasHolder = ref<boolean>(false)
+const tempHasHolder = ref<string | undefined>(undefined)
 const tempLocation = ref<string[]>([])
 const tempBranch = ref<string[]>([])
 const tempDateRange = ref<any>(undefined)
@@ -97,6 +97,11 @@ const pageLimitOptions = [10, 25, 50, 100, 200, 500]
 const statusItems = computed<SelectMenuItem[]>(() => [
   { label: t('page.asset.status.active'), id: 'active' },
   { label: t('page.asset.status.inactive'), id: 'inactive' }
+])
+
+const holderFilterItems = computed<SelectMenuItem[]>(() => [
+  { label: t('page.asset.filter.hasHolder'), id: 'true' },
+  { label: t('page.asset.filter.noHolder'), id: 'false' },
 ])
 
 onMounted(async () => {
@@ -150,17 +155,17 @@ onMounted(async () => {
     tempUser.value = q.user as string
   }
 
-  if (q.hasHolder === 'true') {
-    selectedHasHolder.value = true
-    tempHasHolder.value = true
+  if (q.hasHolder === 'true' || q.hasHolder === 'false') {
+    selectedHasHolder.value = q.hasHolder as string
+    tempHasHolder.value = q.hasHolder as string
   }
 
   if (q.employeeId) {
     const ids = String(q.employeeId).split(',')
     selectedEmployee.value = ids
     tempEmployee.value = [...ids]
-    selectedHasHolder.value = true
-    tempHasHolder.value = true
+    selectedHasHolder.value = 'true'
+    tempHasHolder.value = 'true'
   }
 
   if (q.branchId) {
@@ -247,7 +252,7 @@ watch(tempCategoryId, async (newIds) => {
 })
 
 watch(tempHasHolder, (newValue) => {
-  if (!newValue) {
+  if (newValue !== 'true') {
     tempEmployee.value = []
   }
 })
@@ -284,7 +289,7 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
     status: selectedStatus.value.length > 0 ? selectedStatus.value.join(',') : undefined,
     employeeId: selectedEmployee.value.length > 0 ? selectedEmployee.value.join(',') : undefined,
     user: selectedUser.value,
-    hasHolder: selectedHasHolder.value || undefined,
+    hasHolder: selectedHasHolder.value !== undefined ? selectedHasHolder.value : undefined,
     locationId: selectedLocation.value.length > 0 ? selectedLocation.value.join(',') : undefined,
     branchId: selectedBranch.value.length > 0 ? selectedBranch.value.join(',') : undefined,
     labels: selectedLabels.value.length > 0 ? selectedLabels.value.join(',') : undefined,
@@ -300,7 +305,7 @@ function loadAssets(page = pagination.value.pageIndex + 1) {
   // Sync active params to URL (replace so back button isn't broken)
   const query: Record<string, string> = {}
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && value !== '' && value !== false) {
+    if (value !== undefined && value !== null && value !== '') {
       query[key] = String(value)
     }
   }
@@ -334,7 +339,7 @@ function resetFilters() {
   selectedSubCategoryId.value = []
   selectedStatus.value = []
   selectedEmployee.value = []
-  selectedHasHolder.value = false
+  selectedHasHolder.value = undefined
   selectedLocation.value = []
   selectedBranch.value = []
   selectedUser.value = undefined
@@ -347,7 +352,7 @@ function resetFilters() {
   tempSubCategoryId.value = []
   tempStatus.value = []
   tempEmployee.value = []
-  tempHasHolder.value = false
+  tempHasHolder.value = undefined
   tempLocation.value = []
   tempBranch.value = []
   tempDateRange.value = undefined
@@ -394,7 +399,7 @@ async function handleExport() {
     subCategoryId: selectedSubCategoryId.value.length > 0 ? selectedSubCategoryId.value.join(',') : undefined,
     status: selectedStatus.value.length > 0 ? selectedStatus.value.join(',') : undefined,
     employeeId: selectedEmployee.value.length > 0 ? selectedEmployee.value.join(',') : undefined,
-    hasHolder: selectedHasHolder.value,
+    hasHolder: selectedHasHolder.value !== undefined ? selectedHasHolder.value : undefined,
     locationId: selectedLocation.value.length > 0 ? selectedLocation.value.join(',') : undefined,
     branchId: selectedBranch.value.length > 0 ? selectedBranch.value.join(',') : undefined,
     labels: selectedLabels.value.length > 0 ? selectedLabels.value.join(',') : undefined
@@ -426,7 +431,7 @@ const activeFiltersCount = computed(() => {
   if (selectedSubCategoryId.value.length > 0) count++
   if (selectedStatus.value.length > 0) count++
   if (selectedEmployee.value.length > 0) count++
-  if (selectedHasHolder.value) count++
+  if (selectedHasHolder.value !== undefined) count++
   if (selectedLocation.value.length > 0) count++
   if (selectedBranch.value.length > 0) count++
   if (selectedUser.value) count++
@@ -1095,13 +1100,18 @@ const columns = computed<TableColumn<any>[]>(() => [
                   </div>
 
                   <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                      <label class="block text-sm font-medium">Filter by Holder</label>
-                      <USwitch v-model="tempHasHolder" />
-                    </div>
+                    <label class="block text-sm font-medium mb-1.5">Filter by Holder</label>
+                    <USelectMenu
+                      v-model="tempHasHolder"
+                      class="w-full"
+                      :items="holderFilterItems"
+                      value-key="id"
+                      :placeholder="t('page.asset.filter.allNoFilter')"
+                      clearable
+                    />
                   </div>
 
-                  <div v-if="tempHasHolder">
+                  <div v-if="tempHasHolder === 'true'">
                     <label class="block text-sm font-medium mb-1.5">Active Holder</label>
                     <USelectMenu
                       v-model="tempEmployee"

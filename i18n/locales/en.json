@@ -122,7 +122,10 @@
         "selectLocation": "Select last location",
         "searchLocation": "Search location...",
         "selectHolder": "Select holder",
-        "searchEmployee": "Search employee..."
+        "searchEmployee": "Search employee...",
+        "hasHolder": "Has Holder",
+        "noHolder": "No Holder",
+        "allNoFilter": "All (no filter)"
       },
       "status": {
         "active": "Active",
